@@ -3,7 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import logo from "@/assets/cofund-logo.png.asset.json";
+import logo from "@/assets/icon.png";
 import { TrendingUp, Briefcase, Rocket, GraduationCap, Wrench, Users, Check } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
@@ -61,7 +61,7 @@ function Onboarding() {
     <div className="min-h-screen bg-secondary/40">
       <div className="mx-auto max-w-3xl px-4 py-12 sm:py-16">
         <div className="mb-8 flex items-center gap-2.5">
-          <img src={logo.url} alt="CoFund" className="h-9 w-9" />
+          <img src={logo} alt="CoFund" className="h-9 w-9" />
           <span className="font-display text-xl font-bold">CoFund</span>
         </div>
         <h1 className="font-display text-3xl font-extrabold sm:text-4xl">What brings you to CoFund today?</h1>

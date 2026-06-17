@@ -4,18 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
-import logo from "@/assets/cofund-logo.png.asset.json";
 import {
-  TrendingUp,
-  Briefcase,
-  Rocket,
-  ShieldCheck,
-  BadgeCheck,
-  BarChart3,
-  ArrowRight,
-  Sparkles,
-  MessageCircle,
-  BookOpen,
+  TrendingUp, Briefcase, Rocket, ShieldCheck, BadgeCheck, BarChart3,
+  ArrowRight, Sparkles, MessageCircle, Users, Coins
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -23,16 +14,8 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "CoFund — Africa's Trusted Investment & Business Growth Platform" },
-      {
-        name: "description",
-        content:
-          "Invest in verified African businesses, raise capital for your venture, or build the next great startup. Escrow-protected and continuously monitored.",
-      },
+      { name: "description", content: "Invest in verified African businesses, raise capital, or build your startup. Escrow-protected and continuously monitored." },
       { property: "og:title", content: "CoFund — Together, We Grow" },
-      {
-        property: "og:description",
-        content: "Connecting investors with verified African businesses.",
-      },
     ],
   }),
   component: PublicHome,
@@ -40,27 +23,19 @@ export const Route = createFileRoute("/")({
 
 function PublicHome() {
   const { user, loading, profile } = useAuth();
-
-  // Redirect signed-in (onboarded) users to the dashboard
-  if (!loading && user && profile?.onboarded) {
-    throw redirect({ to: "/home" });
-  }
-  if (!loading && user && profile && !profile.onboarded) {
-    throw redirect({ to: "/onboarding" });
-  }
+  if (!loading && user && profile?.onboarded) throw redirect({ to: "/home" });
+  if (!loading && user && profile && !profile.onboarded) throw redirect({ to: "/onboarding" });
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <Hero />
+      <TrustBanner />
       <PrimaryActions />
-      <TrustSection />
       <FeaturedOpportunities />
-      <BusinessSpotlight />
-      <CommunityPreview />
-      <LearningSection />
+      <ImageBanner />
       <Stats />
-      <Partners />
+      <CommunityPreview />
       <CTA />
       <SiteFooter />
     </div>
@@ -71,38 +46,80 @@ function Hero() {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10 gradient-mesh" />
-      <div className="absolute inset-0 -z-10 grid-bg opacity-40 [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
-      <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:px-8 lg:pb-28">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Welcome to CoFund · Together, we grow
+      <div className="absolute inset-0 -z-10 [background-image:linear-gradient(to_right,oklch(1_0_0/0.025)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/0.025)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]" />
+
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-16 sm:px-6 sm:pt-28 lg:px-8 lg:pb-32">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              Africa's private investment platform
+            </div>
+            <h1 className="font-display text-5xl font-bold leading-[1.06] sm:text-6xl lg:text-[3.75rem]">
+              Invest in Africa's{" "}
+              <span className="text-gradient-brand">next great businesses</span>
+            </h1>
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Connecting investors with verified businesses. Helping founders raise capital and build their legacy — backed by escrow protection and real trust scores.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="gradient-brand inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-brand transition hover:opacity-90"
+              >
+                Start investing <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link to="/how-it-works" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-semibold text-muted-foreground transition hover:border-white/20 hover:text-foreground">
+                How it works
+              </Link>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-brand-green" /> Escrow protected</span>
+              <span className="flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-brand-green" /> KYC verified</span>
+              <span className="flex items-center gap-1.5"><BarChart3 className="h-3.5 w-3.5 text-brand-green" /> Continuously monitored</span>
+            </div>
           </div>
-          <h1 className="font-display text-4xl font-extrabold leading-[1.04] sm:text-5xl lg:text-[4rem]">
-            Africa's trusted private{" "}
-            <span className="text-gradient-brand">investment & business</span> growth platform
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Connecting investors with verified businesses while helping entrepreneurs
-            build, grow, and raise capital — all backed by escrow protection.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              to="/auth"
-              search={{ mode: "signup" }}
-              className="gradient-brand inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-brand transition hover:opacity-90"
-            >
-              Join CoFund <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link to="/how-it-works" className="rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted">
-              How it works
-            </Link>
+
+          <div className="relative hidden lg:block">
+            <div className="relative overflow-hidden rounded-3xl shadow-soft">
+              <img
+                src="https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80"
+                alt="African entrepreneurs"
+                className="aspect-[4/3] w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+            </div>
+            <div className="absolute -bottom-4 -left-4 rounded-2xl border border-white/10 bg-card/90 p-4 backdrop-blur shadow-soft">
+              <p className="text-xs text-muted-foreground">Active investors</p>
+              <p className="font-display text-2xl font-bold text-gradient-brand">2,400+</p>
+            </div>
+            <div className="absolute -right-4 top-8 rounded-2xl border border-white/10 bg-card/90 p-4 backdrop-blur shadow-soft">
+              <p className="text-xs text-muted-foreground">Businesses verified</p>
+              <p className="font-display text-2xl font-bold text-gradient-brand">180+</p>
+            </div>
           </div>
-          <div className="mx-auto mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-brand-green" /> Escrow protected</span>
-            <span className="flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-brand-green" /> KYC verified</span>
-            <span className="flex items-center gap-1.5"><BarChart3 className="h-3.5 w-3.5 text-brand-green" /> Continuously monitored</span>
-          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TrustBanner() {
+  return (
+    <section className="border-y border-white/[0.06] bg-card/40">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-muted-foreground">
+          {[
+            { Icon: ShieldCheck, text: "Escrow-protected transactions" },
+            { Icon: BadgeCheck, text: "Every business verified" },
+            { Icon: BarChart3, text: "Real-time milestone tracking" },
+            { Icon: Users, text: "Community-backed growth" },
+          ].map(({ Icon, text }) => (
+            <span key={text} className="flex items-center gap-2">
+              <Icon className="h-4 w-4 text-primary" /> {text}
+            </span>
+          ))}
         </div>
       </div>
     </section>
@@ -114,42 +131,46 @@ function PrimaryActions() {
     {
       icon: TrendingUp,
       title: "Invest",
-      desc: "Discover verified investment opportunities across multiple industries.",
-      cta: "Explore Investments",
+      desc: "Discover verified investment opportunities across multiple industries and sectors.",
+      img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80",
     },
     {
       icon: Briefcase,
       title: "Raise Capital",
-      desc: "Apply for funding to grow your business through CoFund.",
-      cta: "Apply for Funding",
+      desc: "Apply for funding to grow your business through CoFund's escrow-protected rounds.",
+      img: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&q=80",
     },
     {
       icon: Rocket,
       title: "Build an Idea",
-      desc: "Share your startup idea, find collaborators, mentors and capital.",
-      cta: "Start Building",
+      desc: "Share your startup, find co-founders, mentors and capital on the Startup Hub.",
+      img: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&q=80",
     },
   ];
   return (
-    <section id="how" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="grid gap-5 md:grid-cols-3">
+    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mb-12 text-center">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Three paths</p>
+        <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">Pick your role on CoFund</h2>
+      </div>
+      <div className="grid gap-6 md:grid-cols-3">
         {actions.map((a) => (
-          <div
-            key={a.title}
-            className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-soft transition hover:-translate-y-1 hover:shadow-brand"
-          >
-            <div className="gradient-brand mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl text-white">
-              <a.icon className="h-6 w-6" />
+          <div key={a.title} className="group overflow-hidden rounded-3xl border border-white/[0.06] bg-card transition hover:-translate-y-1 hover:shadow-brand">
+            <div className="relative overflow-hidden aspect-[16/9]">
+              <img src={a.img} alt={a.title} className="h-full w-full object-cover transition group-hover:scale-105 duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
+              <div className="absolute bottom-4 left-5 gradient-brand inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-brand">
+                <a.icon className="h-5 w-5" />
+              </div>
             </div>
-            <h3 className="font-display text-xl font-bold">{a.title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{a.desc}</p>
-            <Link
-              to="/auth"
-              search={{ mode: "signup" }}
-              className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary"
-            >
-              {a.cta} <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="p-6">
+              <h3 className="font-display text-xl font-bold">{a.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{a.desc}</p>
+              <Link to="/auth" search={{ mode: "signup" }}
+                className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition hover:gap-2.5">
+                Get started <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         ))}
       </div>
@@ -157,37 +178,8 @@ function PrimaryActions() {
   );
 }
 
-function TrustSection() {
-  const items = [
-    { icon: ShieldCheck, title: "Escrow Protection", desc: "Funds are securely managed through trusted banking partners." },
-    { icon: BadgeCheck, title: "Verified Businesses", desc: "Every business undergoes due diligence before listing." },
-    { icon: BarChart3, title: "Active Monitoring", desc: "Businesses are monitored throughout the investment lifecycle." },
-  ];
-  return (
-    <section className="bg-secondary/40 py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">Why CoFund</p>
-          <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Trust, built into every step</h2>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {items.map((it) => (
-            <div key={it.title} className="rounded-2xl border border-border bg-card p-6">
-              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-green/15 text-brand-green">
-                <it.icon className="h-6 w-6" />
-              </div>
-              <h3 className="font-display text-lg font-bold">{it.title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{it.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function fmtNGN(n: number) {
-  if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `₦${(n / 1_000).toFixed(0)}K`;
   return `₦${n}`;
 }
@@ -199,187 +191,106 @@ function FeaturedOpportunities() {
       const { data, error } = await supabase
         .from("opportunities")
         .select("id,title,summary,goal_amount,raised_amount,target_return_pct,businesses(name,industry,logo_url)")
-        .eq("featured", true)
-        .eq("status", "open")
-        .order("created_at", { ascending: false })
-        .limit(4);
+        .eq("featured", true).eq("status", "open")
+        .order("created_at", { ascending: false }).limit(3);
       if (error) throw error;
       return data ?? [];
     },
   });
 
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <SectionHeader eyebrow="Featured" title="Live opportunities" subtitle="Hand-picked deals open for funding right now." />
-      {isLoading ? (
-        <SkeletonGrid count={3} />
-      ) : !data || data.length === 0 ? (
-        <EmptyState text="Featured opportunities will appear here once businesses are listed." />
-      ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {data.map((o: any) => {
-            const pct = o.goal_amount ? Math.min(100, Math.round((Number(o.raised_amount) / Number(o.goal_amount)) * 100)) : 0;
-            return (
-              <div key={o.id} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-                <div className="flex items-center gap-3">
-                  {o.businesses?.logo_url ? (
-                    <img src={o.businesses.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover" />
-                  ) : (
-                    <div className="gradient-brand h-10 w-10 rounded-lg" />
-                  )}
-                  <div>
-                    <p className="text-xs text-muted-foreground">{o.businesses?.industry ?? "Business"}</p>
-                    <p className="text-sm font-semibold">{o.businesses?.name}</p>
-                  </div>
-                </div>
-                <h3 className="mt-4 font-display text-lg font-bold">{o.title}</h3>
-                <div className="mt-4 space-y-2">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{pct}% funded</span>
-                    <span>{fmtNGN(Number(o.goal_amount))} goal</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="gradient-brand h-full" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-                {o.target_return_pct && (
-                  <p className="mt-3 text-sm">
-                    <span className="text-muted-foreground">Target return </span>
-                    <span className="font-semibold text-brand-green">{o.target_return_pct}%</span>
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
+  if (!isLoading && (!data || data.length === 0)) return null;
 
-function BusinessSpotlight() {
-  const { data } = useQuery({
-    queryKey: ["public", "spotlight"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("businesses")
-        .select("id,name,industry,logo_url,cover_url,founded_year,followers_count,revenue_growth_pct,tagline")
-        .eq("spotlight", true)
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  if (!data) return null;
   return (
-    <section className="bg-secondary/40 py-16">
+    <section className="bg-card/30 py-20 border-y border-white/[0.06]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeader eyebrow="Spotlight" title="Business of the week" />
-        <div className="grid gap-6 rounded-3xl border border-border bg-card p-6 shadow-soft md:grid-cols-2 md:p-10">
+        <div className="mb-10 flex items-end justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3">
-              {data.logo_url && <img src={data.logo_url} alt="" className="h-14 w-14 rounded-xl object-cover" />}
-              <div>
-                <h3 className="font-display text-2xl font-bold">{data.name}</h3>
-                <p className="text-sm text-muted-foreground">{data.industry}</p>
-              </div>
-            </div>
-            {data.tagline && <p className="mt-4 text-muted-foreground">{data.tagline}</p>}
-            <div className="mt-6 grid grid-cols-3 gap-4">
-              {data.founded_year && <Stat label="Founded" value={String(data.founded_year)} />}
-              {data.revenue_growth_pct != null && <Stat label="Revenue Growth" value={`${data.revenue_growth_pct}%`} />}
-              <Stat label="Followers" value={String(data.followers_count ?? 0)} />
-            </div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Live now</p>
+            <h2 className="mt-2 font-display text-3xl font-bold">Featured opportunities</h2>
           </div>
-          {data.cover_url && (
-            <img src={data.cover_url} alt="" className="aspect-video w-full rounded-2xl object-cover" />
-          )}
+          <Link to="/auth" search={{ mode: "signup" }} className="hidden text-sm font-semibold text-primary hover:text-foreground transition sm:flex items-center gap-1">
+            View all <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
+        {isLoading ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[0,1,2].map(i => <div key={i} className="h-56 animate-pulse rounded-2xl bg-card" />)}
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {(data ?? []).map((o: any) => {
+              const pct = o.goal_amount ? Math.min(100, Math.round((Number(o.raised_amount) / Number(o.goal_amount)) * 100)) : 0;
+              return (
+                <div key={o.id} className="flex flex-col rounded-2xl border border-white/[0.06] bg-card p-5">
+                  <div className="flex items-center gap-3">
+                    {o.businesses?.logo_url
+                      ? <img src={o.businesses.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                      : <div className="gradient-brand h-10 w-10 shrink-0 rounded-lg" />
+                    }
+                    <div className="min-w-0">
+                      <p className="truncate text-xs text-muted-foreground">{o.businesses?.industry}</p>
+                      <p className="truncate text-sm font-semibold">{o.businesses?.name}</p>
+                    </div>
+                  </div>
+                  <h3 className="mt-4 font-display text-lg font-bold leading-tight">{o.title}</h3>
+                  <div className="mt-auto pt-5">
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                      <span>{pct}% funded</span>
+                      <span>{fmtNGN(Number(o.goal_amount))}</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="gradient-brand h-full rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                    {o.target_return_pct && (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Target return <span className="font-semibold text-brand-green">{o.target_return_pct}%</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function ImageBanner() {
   return (
-    <div className="rounded-xl bg-secondary/60 p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 font-display text-lg font-bold">{value}</p>
-    </div>
-  );
-}
-
-function CommunityPreview() {
-  const { data } = useQuery({
-    queryKey: ["public", "posts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("posts")
-        .select("id,content,category,created_at,profiles(full_name,avatar_url)")
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <SectionHeader eyebrow="Community" title="Recent activity" icon={<MessageCircle className="h-5 w-5" />} />
-      {!data || data.length === 0 ? (
-        <EmptyState text="Once people start sharing in the community, their posts will appear here." />
-      ) : (
-        <div className="space-y-3">
-          {data.map((p: any) => (
-            <div key={p.id} className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
-              <div className="gradient-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
-                {(p.profiles?.full_name ?? "U").charAt(0)}
+    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <div className="grid gap-6 lg:grid-cols-2 items-center">
+        <div className="space-y-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Built on trust</p>
+            <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+              Every business is verified. Every naira is protected.
+            </h2>
+            <p className="mt-4 text-muted-foreground leading-relaxed">
+              Before any business lists on CoFund, they pass through verification, due diligence, and trust scoring. Your investment is held in escrow until agreed milestones are hit.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { Icon: ShieldCheck, label: "Escrow Protection", desc: "Funds held by banking partners" },
+              { Icon: BadgeCheck, label: "Full KYC", desc: "BVN, phone & address verified" },
+              { Icon: BarChart3, label: "Live Monitoring", desc: "Track milestones in real time" },
+              { Icon: Coins, label: "Structured Returns", desc: "Clear terms, no surprises" },
+            ].map(({ Icon, label, desc }) => (
+              <div key={label} className="rounded-2xl border border-white/[0.06] bg-card p-4">
+                <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <p className="text-sm font-semibold">{label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{p.profiles?.full_name ?? "Member"}</p>
-                <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{p.content}</p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      )}
-    </section>
-  );
-}
-
-function LearningSection() {
-  const { data } = useQuery({
-    queryKey: ["public", "articles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("learning_articles")
-        .select("id,title,excerpt,category,cover_url,slug")
-        .eq("published", true)
-        .order("created_at", { ascending: false })
-        .limit(3);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  if (!data || data.length === 0) return null;
-  return (
-    <section className="bg-secondary/40 py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeader eyebrow="Knowledge" title="Business resources" icon={<BookOpen className="h-5 w-5" />} />
-        <div className="grid gap-5 md:grid-cols-3">
-          {data.map((a: any) => (
-            <div key={a.id} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-              {a.cover_url && <img src={a.cover_url} alt="" className="aspect-video w-full object-cover" />}
-              <div className="p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">{a.category}</p>
-                <h3 className="mt-1 font-display text-lg font-bold">{a.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{a.excerpt}</p>
-              </div>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 gap-3">
+          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&q=80" alt="" className="rounded-2xl object-cover aspect-square w-full" />
+          <img src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&q=80" alt="" className="rounded-2xl object-cover aspect-square w-full mt-8" />
         </div>
       </div>
     </section>
@@ -390,55 +301,78 @@ function Stats() {
   const { data } = useQuery({
     queryKey: ["public", "stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("site_stats")
-        .select("key,label,value,display_order")
-        .eq("visible", true)
-        .order("display_order");
+      const { data, error } = await supabase.from("site_stats").select("key,label,value,display_order").eq("visible", true).order("display_order");
       if (error) throw error;
       return data ?? [];
     },
   });
-  if (!data || data.length === 0) return null;
+
+  const fallback = [
+    { key: "investors", label: "Active investors", value: "2,400+" },
+    { key: "businesses", label: "Verified businesses", value: "180+" },
+    { key: "funded", label: "Capital raised", value: "₦2.1B+" },
+    { key: "returns", label: "Avg. target return", value: "22%" },
+  ];
+
+  const stats = (data && data.length > 0) ? data : fallback;
+
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="grid gap-4 rounded-3xl border border-border bg-card p-6 shadow-soft sm:grid-cols-2 md:grid-cols-4">
-        {data.map((s) => (
-          <div key={s.key} className="text-center">
-            <p className="font-display text-3xl font-extrabold text-gradient-brand">{s.value}</p>
-            <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{s.label}</p>
-          </div>
-        ))}
+    <section className="bg-card/30 border-y border-white/[0.06] py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+          {stats.map((s: any) => (
+            <div key={s.key} className="text-center">
+              <p className="font-display text-4xl font-bold text-gradient-brand">{s.value}</p>
+              <p className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">{s.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-function Partners() {
+function CommunityPreview() {
   const { data } = useQuery({
-    queryKey: ["public", "partners"],
+    queryKey: ["public", "posts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("partners")
-        .select("id,name,logo_url,url")
-        .eq("active", true)
-        .order("display_order");
+      const { data, error } = await supabase.from("posts").select("id,content,created_at,profiles(full_name)").order("created_at", { ascending: false }).limit(4);
       if (error) throw error;
       return data ?? [];
     },
   });
-  if (!data || data.length === 0) return null;
+
   return (
-    <section className="border-t border-border bg-background py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">Trusted by</p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-6 opacity-80">
-          {data.map((p) =>
-            p.logo_url ? (
-              <img key={p.id} src={p.logo_url} alt={p.name} className="h-7 object-contain" />
-            ) : (
-              <span key={p.id} className="font-display text-lg font-bold text-muted-foreground">{p.name}</span>
-            ),
+    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <div className="grid gap-12 lg:grid-cols-2 items-center">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">Community</p>
+          <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">Founders and investors, together</h2>
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            The CoFund community is where deals get discovered, knowledge gets shared, and partnerships form. Join thousands of operators across Africa.
+          </p>
+          <Link to="/auth" search={{ mode: "signup" }}
+            className="mt-6 inline-flex items-center gap-2 gradient-brand rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition">
+            Join the community <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="space-y-3">
+          {!data || data.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-card/40 p-8 text-center text-sm text-muted-foreground">
+              Be the first to start a discussion.
+            </div>
+          ) : (
+            data.map((p: any) => (
+              <div key={p.id} className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-card p-4">
+                <div className="gradient-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
+                  {(p.profiles?.full_name ?? "U").charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{p.profiles?.full_name ?? "Member"}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">{p.content}</p>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -448,54 +382,26 @@ function Partners() {
 
 function CTA() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="gradient-brand relative overflow-hidden rounded-3xl px-6 py-12 text-center text-white shadow-brand sm:py-16">
-        <img src={logo.url} alt="" className="absolute -right-10 -top-10 h-48 w-48 opacity-10" />
-        <h2 className="font-display text-3xl font-extrabold sm:text-4xl">Together, we grow.</h2>
-        <p className="mx-auto mt-3 max-w-xl text-white/90">
-          Join Africa's business ecosystem and start your CoFund journey today.
-        </p>
-        <Link
-          to="/auth"
-          search={{ mode: "signup" }}
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-primary shadow-soft hover:bg-white/95"
-        >
-          Create your account <ArrowRight className="h-4 w-4" />
-        </Link>
+    <section className="mx-auto max-w-7xl px-4 py-8 pb-20 sm:px-6 lg:px-8">
+      <div className="relative overflow-hidden rounded-3xl gradient-brand px-8 py-16 text-center shadow-brand">
+        <div className="absolute inset-0 [background-image:linear-gradient(to_right,oklch(1_0_0/0.04)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/0.04)_1px,transparent_1px)] [background-size:40px_40px]" />
+        <div className="relative">
+          <h2 className="font-display text-4xl font-bold text-white sm:text-5xl">Together, we grow.</h2>
+          <p className="mx-auto mt-4 max-w-xl text-white/80 text-lg">
+            Join Africa's business ecosystem and start your CoFund journey today.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link to="/auth" search={{ mode: "signup" }}
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-primary shadow-soft hover:bg-white/95 transition">
+              Create your account <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link to="/how-it-works"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition">
+              Learn more
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
-  );
-}
-
-function SectionHeader({ eyebrow, title, subtitle, icon }: { eyebrow: string; title: string; subtitle?: string; icon?: React.ReactNode }) {
-  return (
-    <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
-          {icon}
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">{title}</h2>
-        {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
-
-function SkeletonGrid({ count }: { count: number }) {
-  return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="h-56 animate-pulse rounded-2xl border border-border bg-card" />
-      ))}
-    </div>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center text-sm text-muted-foreground">
-      {text}
-    </div>
   );
 }

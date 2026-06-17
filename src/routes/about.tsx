@@ -1,15 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { ShieldCheck, BadgeCheck, BarChart3, Sparkles, ArrowRight } from "lucide-react";
+import { ShieldCheck, BadgeCheck, BarChart3, ArrowRight, Globe, Target, Heart } from "lucide-react";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — CoFund" },
       { name: "description", content: "CoFund is building Africa's most trusted business and investment ecosystem." },
-      { property: "og:title", content: "About CoFund" },
-      { property: "og:description", content: "Africa's trusted private investment & business growth platform." },
     ],
   }),
   component: AboutPage,
@@ -19,72 +17,101 @@ function AboutPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <section className="relative overflow-hidden border-b border-border">
+
+      <section className="relative overflow-hidden border-b border-white/[0.06]">
         <div className="absolute inset-0 -z-10 gradient-mesh" />
-        <div className="mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 lg:px-8 lg:py-28">
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft">
-            <Sparkles className="h-3.5 w-3.5 text-primary" /> Our story
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
+          <div className="grid gap-12 lg:grid-cols-2 items-center">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">Our story</p>
+              <h1 className="font-display text-5xl font-bold leading-[1.06] sm:text-6xl">
+                Building Africa's{" "}
+                <span className="text-gradient-brand">business ecosystem</span>
+              </h1>
+              <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+                CoFund is a business identity, trust, investment and growth platform — one home for investors, founders, mentors and operators across the continent.
+              </p>
+              <Link to="/auth" search={{ mode: "signup" }}
+                className="mt-8 inline-flex items-center gap-2 gradient-brand rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition">
+                Join the ecosystem <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="relative hidden lg:block">
+              <img
+                src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&q=80"
+                alt="Team collaboration"
+                className="rounded-3xl aspect-[4/3] w-full object-cover shadow-soft"
+              />
+            </div>
           </div>
-          <h1 className="font-display text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl">
-            Building Africa's <span className="text-gradient-brand">business ecosystem</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            CoFund is a business identity, trust, investment and growth platform — one home for
-            investors, founders, mentors and operators across the continent.
-          </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="grid gap-10 md:grid-cols-2">
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="grid gap-12 md:grid-cols-2 items-start">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Mission</p>
-            <h2 className="mt-2 font-display text-3xl font-extrabold">Verified, protected, and built to last.</h2>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Mission</p>
+            <h2 className="font-display text-3xl font-bold">Verified, protected, and built to last.</h2>
           </div>
-          <p className="text-muted-foreground">
-            We exist to make private investment in Africa safer, more transparent, and more accessible.
-            Every business on CoFund is verified. Every transaction is escrow-protected. Every
-            relationship is built on a real, traceable trust score — not promises.
-          </p>
+          <div className="space-y-4 text-muted-foreground leading-relaxed">
+            <p>
+              We exist to make private investment in Africa safer, more transparent, and more accessible.
+              Every business on CoFund is verified. Every transaction is escrow-protected.
+            </p>
+            <p>
+              Every relationship is built on a real, traceable trust score — not promises. We believe Africa's next generation of great businesses deserves the same institutional-grade infrastructure that global markets take for granted.
+            </p>
+          </div>
         </div>
       </section>
 
-      <section className="bg-secondary/40 py-20">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-3xl font-extrabold">What we believe</h2>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+      <section className="bg-card/40 border-y border-white/[0.06] py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <h2 className="font-display text-3xl font-bold">What we believe</h2>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
             {[
-              { icon: ShieldCheck, t: "Trust is infrastructure", d: "Escrow, KYC, and continuous monitoring are non-negotiable." },
-              { icon: BadgeCheck, t: "Verification beats hype", d: "Real businesses, real founders, real numbers." },
-              { icon: BarChart3, t: "Community compounds", d: "Investors, founders and mentors growing together." },
+              { icon: ShieldCheck, color: "text-primary bg-primary/10", t: "Trust is infrastructure", d: "Escrow, KYC, and continuous monitoring are non-negotiable features, not nice-to-haves." },
+              { icon: BadgeCheck, color: "text-brand-green bg-brand-green/10", t: "Verification beats hype", d: "Real businesses, real founders, real numbers. We do the homework so investors don't have to." },
+              { icon: BarChart3, color: "text-gold bg-gold/10", t: "Community compounds", d: "Investors, founders and mentors growing together create value that no single actor can unlock alone." },
             ].map((v) => (
-              <div key={v.t} className="rounded-2xl border border-border bg-card p-6 shadow-card">
-                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-green/15 text-brand-green">
-                  <v.icon className="h-5 w-5" />
+              <div key={v.t} className="rounded-2xl border border-white/[0.06] bg-card p-7">
+                <div className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl ${v.color}`}>
+                  <v.icon className="h-6 w-6" />
                 </div>
                 <h3 className="font-display text-lg font-bold">{v.t}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground">{v.d}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{v.d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="gradient-brand relative overflow-hidden rounded-3xl px-6 py-12 text-center text-white shadow-brand sm:py-16">
-          <h2 className="font-display text-3xl font-extrabold sm:text-4xl">Join the ecosystem.</h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/90">
-            One account. Every role. Investor, founder, mentor, or member — start where you are.
-          </p>
-          <Link
-            to="/auth"
-            search={{ mode: "signup" }}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-primary shadow-soft hover:bg-white/95"
-          >
-            Create your account <ArrowRight className="h-4 w-4" />
-          </Link>
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&q=80" alt="" className="rounded-2xl aspect-[4/3] w-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80" alt="" className="rounded-2xl aspect-[4/3] w-full object-cover lg:mt-8" />
+          <img src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=600&q=80" alt="" className="rounded-2xl aspect-[4/3] w-full object-cover sm:col-span-2 lg:col-span-1" />
         </div>
       </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl gradient-brand px-8 py-16 text-center shadow-brand">
+          <div className="absolute inset-0 [background-image:linear-gradient(to_right,oklch(1_0_0/0.04)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/0.04)_1px,transparent_1px)] [background-size:40px_40px]" />
+          <div className="relative">
+            <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">Join the ecosystem.</h2>
+            <p className="mx-auto mt-3 max-w-xl text-white/80">
+              One account. Every role. Investor, founder, mentor, or member — start where you are.
+            </p>
+            <Link to="/auth" search={{ mode: "signup" }}
+              className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-primary hover:bg-white/95 transition">
+              Create your account <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <SiteFooter />
     </div>
   );

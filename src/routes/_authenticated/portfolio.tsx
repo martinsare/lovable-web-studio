@@ -9,10 +9,10 @@ export const Route = createFileRoute("/_authenticated/portfolio")({
 
 function PortfolioPage() {
   const stats = [
-    { icon: Wallet, label: "Total invested", value: "₦0" },
-    { icon: PiggyBank, label: "Returns paid", value: "₦0" },
-    { icon: TrendingUp, label: "Active positions", value: "0" },
-    { icon: ArrowUpRight, label: "Avg. target return", value: "—" },
+    { icon: Wallet, label: "Total invested", value: "₦0", color: "text-primary bg-primary/10" },
+    { icon: PiggyBank, label: "Returns paid", value: "₦0", color: "text-brand-green bg-brand-green/10" },
+    { icon: TrendingUp, label: "Active positions", value: "0", color: "text-gold bg-gold/10" },
+    { icon: ArrowUpRight, label: "Avg. target return", value: "—", color: "text-primary bg-primary/10" },
   ];
   return (
     <PageShell
@@ -20,19 +20,19 @@ function PortfolioPage() {
       title="My Portfolio"
       description="Track your investments, escrow status, milestones and returns — all in one place."
       actions={
-        <Link to="/browse" className="gradient-brand hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-soft sm:inline-flex">
+        <Link to="/browse" className="gradient-brand hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-brand sm:inline-flex">
           Browse opportunities
         </Link>
       }
     >
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border bg-card p-5 shadow-card">
-            <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <s.icon className="h-4 w-4" />
+          <div key={s.label} className="rounded-2xl border border-white/[0.06] bg-card p-5">
+            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl ${s.color}`}>
+              <s.icon className="h-5 w-5" />
             </div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">{s.label}</p>
-            <p className="mt-1 font-display text-2xl font-extrabold">{s.value}</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">{s.label}</p>
+            <p className="mt-1 font-display text-2xl font-bold">{s.value}</p>
           </div>
         ))}
       </section>
