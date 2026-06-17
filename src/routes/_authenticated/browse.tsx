@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,7 +125,7 @@ function Businesses({ q }: { q: string }) {
     queryFn: async () => {
       let qb = supabase
         .from("businesses")
-        .select("id,name,industry,tagline,logo_url,cover_url,verified,followers_count")
+        .select("id,slug,name,industry,tagline,logo_url,cover_url,verified,followers_count")
         .order("followers_count", { ascending: false })
         .limit(24);
       if (q) qb = qb.ilike("name", `%${q}%`);
@@ -142,7 +142,12 @@ function Businesses({ q }: { q: string }) {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((b: any) => (
-        <article key={b.id} className="overflow-hidden rounded-2xl border border-border bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-brand">
+        <Link
+          key={b.id}
+          to="/business/$slug"
+          params={{ slug: b.slug }}
+          className="group overflow-hidden rounded-2xl border border-border bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-brand block"
+        >
           {b.cover_url ? (
             <img src={b.cover_url} alt="" className="aspect-[16/8] w-full object-cover" />
           ) : (
@@ -159,7 +164,7 @@ function Businesses({ q }: { q: string }) {
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <h3 className="truncate font-display text-base font-bold">{b.name}</h3>
+                  <h3 className="truncate font-display text-base font-bold group-hover:text-primary transition-colors">{b.name}</h3>
                   {b.verified && <BadgeCheck className="h-4 w-4 shrink-0 text-brand-green" />}
                 </div>
                 <p className="truncate text-xs text-muted-foreground">{b.industry}</p>
@@ -168,7 +173,7 @@ function Businesses({ q }: { q: string }) {
             {b.tagline && <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{b.tagline}</p>}
             <p className="mt-3 text-xs text-muted-foreground">{b.followers_count ?? 0} followers</p>
           </div>
-        </article>
+        </Link>
       ))}
     </div>
   );

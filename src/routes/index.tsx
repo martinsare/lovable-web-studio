@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "CoFund — Africa's Trusted Investment & Business Growth Platform" },

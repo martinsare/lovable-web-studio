@@ -26,6 +26,7 @@ import { Route as AuthenticatedMyBusinessRouteImport } from './routes/_authentic
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
 import { Route as AuthenticatedBrowseRouteImport } from './routes/_authenticated/browse'
+import { Route as AuthenticatedBusinessSlugRouteImport } from './routes/_authenticated/business/$slug'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -111,6 +112,12 @@ const AuthenticatedBrowseRoute = AuthenticatedBrowseRouteImport.update({
   path: '/browse',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBusinessSlugRoute =
+  AuthenticatedBusinessSlugRouteImport.update({
+    id: '/business/$slug',
+    path: '/business/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/my-business': typeof AuthenticatedMyBusinessRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/business/$slug': typeof AuthenticatedBusinessSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesByTo {
   '/my-business': typeof AuthenticatedMyBusinessRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/business/$slug': typeof AuthenticatedBusinessSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -167,6 +176,7 @@ export interface FileRoutesById {
   '/_authenticated/my-business': typeof AuthenticatedMyBusinessRoute
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/business/$slug': typeof AuthenticatedBusinessSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/my-business'
     | '/portfolio'
     | '/profile'
+    | '/business/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/my-business'
     | '/portfolio'
     | '/profile'
+    | '/business/$slug'
   id:
     | '__root__'
     | '/'
@@ -224,6 +236,7 @@ export interface FileRouteTypes {
     | '/_authenticated/my-business'
     | '/_authenticated/portfolio'
     | '/_authenticated/profile'
+    | '/_authenticated/business/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -361,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrowseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/business/$slug': {
+      id: '/_authenticated/business/$slug'
+      path: '/business/$slug'
+      fullPath: '/business/$slug'
+      preLoaderRoute: typeof AuthenticatedBusinessSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -371,6 +391,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMyBusinessRoute: typeof AuthenticatedMyBusinessRoute
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedBusinessSlugRoute: typeof AuthenticatedBusinessSlugRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -380,6 +401,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMyBusinessRoute: AuthenticatedMyBusinessRoute,
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedBusinessSlugRoute: AuthenticatedBusinessSlugRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
