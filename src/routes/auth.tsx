@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import logo from "@/assets/icon.png";
+import logo from "@/assets/image_1781739713451.png";
 import { useAuth } from "@/hooks/use-auth";
 import { ShieldCheck, BadgeCheck, TrendingUp } from "lucide-react";
 
@@ -71,9 +71,7 @@ function AuthPage() {
             <div className="absolute inset-0 gradient-mesh opacity-60" />
           </div>
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand shadow-brand">
-              <img src={logo} alt="CoFund" className="h-6 w-6 object-contain brightness-0 invert" />
-            </div>
+            <img src={logo} alt="CoFund" className="h-10 w-10 object-contain" />
             <span className="font-display text-xl font-bold">CoFund</span>
           </Link>
           <div>
@@ -97,9 +95,7 @@ function AuthPage() {
         <div className="flex flex-col items-center justify-center px-4 py-12 sm:px-8">
           <div className="w-full max-w-sm">
             <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-brand shadow-brand">
-                <img src={logo} alt="CoFund" className="h-5 w-5 object-contain brightness-0 invert" />
-              </div>
+              <img src={logo} alt="CoFund" className="h-9 w-9 object-contain" />
               <span className="font-display text-lg font-bold">CoFund</span>
             </Link>
 

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
-import logo from "@/assets/icon.png";
+import logo from "@/assets/image_1781739713451.png";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
@@ -31,9 +31,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-background/80 backdrop-blur-2xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-brand shadow-brand">
-            <img src={logo} alt="CoFund" className="h-5 w-5 object-contain brightness-0 invert" />
-          </div>
+          <img src={logo} alt="CoFund" className="h-9 w-9 object-contain" />
           <span className="font-display text-[17px] font-bold tracking-tight">CoFund</span>
         </Link>
 

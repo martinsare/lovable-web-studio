@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/icon.png";
+import logo from "@/assets/image_1781739713451.png";
 import { Mail } from "lucide-react";
 
 function XIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -52,9 +52,7 @@ export function SiteFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-brand">
-                <img src={logo} alt="" className="h-5 w-5 object-contain brightness-0 invert" />
-              </div>
+              <img src={logo} alt="" className="h-9 w-9 object-contain" />
               <span className="font-display text-[17px] font-bold">CoFund</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">

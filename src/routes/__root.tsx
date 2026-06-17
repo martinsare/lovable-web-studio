@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import logo from "../assets/icon.png";
+import logo from "../assets/image_1781739713451.png";
 import { AuthProvider } from "../hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 
