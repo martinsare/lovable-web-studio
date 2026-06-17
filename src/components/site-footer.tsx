@@ -1,6 +1,30 @@
 import { Link } from "@tanstack/react-router";
 import logo from "@/assets/cofund-logo.png.asset.json";
-import { Twitter, Linkedin, Instagram, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
+
+function XIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M18.244 2H21l-6.52 7.45L22 22h-6.86l-4.79-6.27L4.8 22H2l7-8L1.6 2h6.92l4.33 5.74L18.244 2Zm-1.2 18h1.66L7.04 4H5.28l11.764 16Z" />
+    </svg>
+  );
+}
+function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5ZM.22 8h4.56v14H.22V8Zm7.4 0h4.37v1.92h.06c.61-1.15 2.1-2.36 4.32-2.36 4.62 0 5.47 3.04 5.47 7v7.44h-4.56v-6.6c0-1.57-.03-3.6-2.19-3.6-2.2 0-2.53 1.72-2.53 3.49V22H7.62V8Z" />
+    </svg>
+  );
+}
+function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="2" y="2" width="20" height="20" rx="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
 
 type Item = { label: string; to: string };
 
@@ -38,9 +62,9 @@ export function SiteFooter() {
               Invest in verified businesses, raise capital, and build the next great venture.
             </p>
             <div className="mt-5 flex items-center gap-2">
-              <Social href="https://twitter.com" Icon={Twitter} label="Twitter" />
-              <Social href="https://linkedin.com" Icon={Linkedin} label="LinkedIn" />
-              <Social href="https://instagram.com" Icon={Instagram} label="Instagram" />
+              <Social href="https://twitter.com" Icon={XIcon} label="X" />
+              <Social href="https://linkedin.com" Icon={LinkedinIcon} label="LinkedIn" />
+              <Social href="https://instagram.com" Icon={InstagramIcon} label="Instagram" />
               <Social href="mailto:hello@cofund.africa" Icon={Mail} label="Email" />
             </div>
           </div>
