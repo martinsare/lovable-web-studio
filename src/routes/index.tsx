@@ -69,22 +69,21 @@ function PublicHome() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-secondary/60 via-background to-background" />
-      <div className="absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute -left-20 top-40 -z-10 h-80 w-80 rounded-full bg-brand-green/10 blur-3xl" />
-      <div className="mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pt-24 lg:px-8 lg:pb-24">
+      <div className="absolute inset-0 -z-10 gradient-mesh" />
+      <div className="absolute inset-0 -z-10 grid-bg opacity-40 [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:px-8 lg:pb-28">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft">
+          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-soft backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Welcome to CoFund
+            Welcome to CoFund · Together, we grow
           </div>
-          <h1 className="font-display text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl">
+          <h1 className="font-display text-4xl font-extrabold leading-[1.04] sm:text-5xl lg:text-[4rem]">
             Africa's trusted private{" "}
             <span className="text-gradient-brand">investment & business</span> growth platform
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Connecting investors with verified businesses while helping entrepreneurs build, grow,
-            and raise capital.
+            Connecting investors with verified businesses while helping entrepreneurs
+            build, grow, and raise capital — all backed by escrow protection.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
@@ -94,9 +93,14 @@ function Hero() {
             >
               Join CoFund <ArrowRight className="h-4 w-4" />
             </Link>
-            <a href="#how" className="rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted">
+            <Link to="/how-it-works" className="rounded-xl border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted">
               How it works
-            </a>
+            </Link>
+          </div>
+          <div className="mx-auto mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-brand-green" /> Escrow protected</span>
+            <span className="flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-brand-green" /> KYC verified</span>
+            <span className="flex items-center gap-1.5"><BarChart3 className="h-3.5 w-3.5 text-brand-green" /> Continuously monitored</span>
           </div>
         </div>
       </div>
