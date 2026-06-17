@@ -3,7 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import logo from "@/assets/image_1781739713451.png";
+import logo from "@/assets/icon.png";
 import { TrendingUp, Briefcase, Rocket, GraduationCap, Wrench, Users, Check } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({

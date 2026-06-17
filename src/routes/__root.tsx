@@ -7,11 +7,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import logo from "../assets/image_1781739713451.png";
+import logo from "../assets/icon.png";
 import { AuthProvider } from "../hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -110,9 +110,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('cofund-theme')||'dark';document.documentElement.className=t;})();`,
+          }}
+        />
       </head>
       <body>
         {children}

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import logo from "@/assets/image_1781739713451.png";
+import logo from "@/assets/icon.png";
 import { useAuth } from "@/hooks/use-auth";
 import { ShieldCheck, BadgeCheck, TrendingUp } from "lucide-react";
 

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/image_1781739713451.png";
+import logo from "@/assets/icon.png";
 import { Mail } from "lucide-react";
 
 function XIcon(props: React.SVGProps<SVGSVGElement>) {
