@@ -14,16 +14,332 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      businesses: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          featured: boolean
+          followers_count: number
+          founded_year: number | null
+          id: string
+          industry: string | null
+          location: string | null
+          logo_url: string | null
+          name: string
+          owner_id: string
+          revenue_growth_pct: number | null
+          slug: string
+          spotlight: boolean
+          tagline: string | null
+          trust_score: number
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          followers_count?: number
+          founded_year?: number | null
+          id?: string
+          industry?: string | null
+          location?: string | null
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          revenue_growth_pct?: number | null
+          slug: string
+          spotlight?: boolean
+          tagline?: string | null
+          trust_score?: number
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          followers_count?: number
+          founded_year?: number | null
+          id?: string
+          industry?: string | null
+          location?: string | null
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          revenue_growth_pct?: number | null
+          slug?: string
+          spotlight?: boolean
+          tagline?: string | null
+          trust_score?: number
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      learning_articles: {
+        Row: {
+          body: string | null
+          category: string | null
+          cover_url: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published: boolean
+          slug: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean
+          slug: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean
+          slug?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      opportunities: {
+        Row: {
+          business_id: string
+          closes_at: string | null
+          created_at: string
+          featured: boolean
+          goal_amount: number
+          id: string
+          raised_amount: number
+          status: string
+          summary: string | null
+          target_return_pct: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          closes_at?: string | null
+          created_at?: string
+          featured?: boolean
+          goal_amount: number
+          id?: string
+          raised_amount?: number
+          status?: string
+          summary?: string | null
+          target_return_pct?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          closes_at?: string | null
+          created_at?: string
+          featured?: boolean
+          goal_amount?: number
+          id?: string
+          raised_amount?: number
+          status?: string
+          summary?: string | null
+          target_return_pct?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_order: number
+          id: string
+          logo_url: string | null
+          name: string
+          url: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          logo_url?: string | null
+          name: string
+          url?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          logo_url?: string | null
+          name?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          author_id: string
+          business_id: string | null
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id: string
+          business_id?: string | null
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string
+          business_id?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          location: string | null
+          occupation: string | null
+          onboarded: boolean
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          location?: string | null
+          occupation?: string | null
+          onboarded?: boolean
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          occupation?: string | null
+          onboarded?: boolean
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      site_stats: {
+        Row: {
+          display_order: number
+          key: string
+          label: string
+          value: string
+          visible: boolean
+        }
+        Insert: {
+          display_order?: number
+          key: string
+          label: string
+          value: string
+          visible?: boolean
+        }
+        Update: {
+          display_order?: number
+          key?: string
+          label?: string
+          value?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "investor"
+        | "business_owner"
+        | "startup_builder"
+        | "mentor"
+        | "professional"
+        | "community_member"
+        | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +466,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "investor",
+        "business_owner",
+        "startup_builder",
+        "mentor",
+        "professional",
+        "community_member",
+        "admin",
+      ],
+    },
   },
 } as const
