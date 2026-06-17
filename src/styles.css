@@ -109,12 +109,19 @@
 
 :root {
   --gradient-brand: linear-gradient(135deg, oklch(0.45 0.13 245), oklch(0.68 0.16 152));
+  --gradient-mesh: radial-gradient(at 20% 0%, oklch(0.45 0.13 245 / 0.18) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, oklch(0.68 0.16 152 / 0.18) 0px, transparent 50%),
+    radial-gradient(at 40% 90%, oklch(0.7 0.12 200 / 0.12) 0px, transparent 50%);
   --shadow-brand: 0 10px 40px -12px oklch(0.45 0.13 245 / 0.35);
   --shadow-soft: 0 4px 24px -8px oklch(0.45 0.13 245 / 0.18);
+  --shadow-card: 0 1px 2px oklch(0.18 0.05 260 / 0.04), 0 8px 24px -12px oklch(0.18 0.05 260 / 0.08);
 }
 
 @utility gradient-brand {
   background-image: var(--gradient-brand);
+}
+@utility gradient-mesh {
+  background-image: var(--gradient-mesh);
 }
 @utility text-gradient-brand {
   background-image: var(--gradient-brand);
@@ -127,6 +134,15 @@
 }
 @utility shadow-soft {
   box-shadow: var(--shadow-soft);
+}
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
+@utility grid-bg {
+  background-image:
+    linear-gradient(to right, oklch(0.45 0.13 245 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.45 0.13 245 / 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 @utility font-display {
   font-family: var(--font-display);
