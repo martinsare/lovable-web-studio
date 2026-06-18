@@ -235,6 +235,25 @@ function RightSidebar() {
     },
   });
 
+  const { data: memberCount = null } = useQuery<number | null>({
+    queryKey: ["community", "member-count"],
+    staleTime: 300_000,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("user_roles")
+        .select("user_id", { count: "exact", head: true })
+        .in("role", ["investor", "business_owner", "startup_builder"]);
+      if (error) return null;
+      return count as number;
+    },
+  });
+
+  function fmtCount(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M+`;
+    if (n >= 1_000) return `${Math.floor(n / 100) * 100}+`;
+    return `${n}`;
+  }
+
   return (
     <>
       {/* Search */}
@@ -298,7 +317,9 @@ function RightSidebar() {
       {/* Stat card */}
       <div className="rounded-2xl border border-border/60 bg-card p-4">
         <p className="text-xs font-bold text-muted-foreground">Community size</p>
-        <p className="mt-1 font-display text-2xl font-bold">2,400+</p>
+        <p className="mt-1 font-display text-2xl font-bold">
+          {memberCount === null ? "—" : fmtCount(memberCount)}
+        </p>
         <p className="text-xs text-muted-foreground">investors & founders</p>
       </div>
     </>
