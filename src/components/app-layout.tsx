@@ -50,7 +50,7 @@ function buildNav(roles: AppRole[], unreadCount: number): NavItem[] {
     items.push({ to: "/suitability", icon: Star, label: "Suitability" });
   }
   items.push({ to: "/notifications", icon: Bell, label: "Notifications", badge: unreadCount });
-  items.push({ to: "/profile", icon: Settings, label: "Settings" });
+  items.push({ to: "/settings", icon: Settings, label: "Settings" });
   if (roles.includes("admin")) {
     items.push({ to: "/admin", icon: ShieldCheck, label: "Admin" });
   }

@@ -22,6 +22,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedSuitabilityRouteImport } from './routes/_authenticated/suitability'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSecurityRouteImport } from './routes/_authenticated/security'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
@@ -100,6 +101,11 @@ const AuthenticatedSuitabilityRoute =
     path: '/suitability',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSecurityRoute = AuthenticatedSecurityRouteImport.update({
   id: '/security',
   path: '/security',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/security': typeof AuthenticatedSecurityRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/suitability': typeof AuthenticatedSuitabilityRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/business/$slug': typeof AuthenticatedBusinessSlugRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/security': typeof AuthenticatedSecurityRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/suitability': typeof AuthenticatedSuitabilityRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/business/$slug': typeof AuthenticatedBusinessSlugRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/security': typeof AuthenticatedSecurityRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/suitability': typeof AuthenticatedSuitabilityRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/business/$slug': typeof AuthenticatedBusinessSlugRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/profile'
     | '/security'
+    | '/settings'
     | '/suitability'
     | '/wallet'
     | '/business/$slug'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/profile'
     | '/security'
+    | '/settings'
     | '/suitability'
     | '/wallet'
     | '/business/$slug'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/_authenticated/portfolio'
     | '/_authenticated/profile'
     | '/_authenticated/security'
+    | '/_authenticated/settings'
     | '/_authenticated/suitability'
     | '/_authenticated/wallet'
     | '/_authenticated/business/$slug'
@@ -434,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuitabilityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/security': {
       id: '/_authenticated/security'
       path: '/security'
@@ -531,6 +550,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSuitabilityRoute: typeof AuthenticatedSuitabilityRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedBusinessSlugRoute: typeof AuthenticatedBusinessSlugRoute
@@ -548,6 +568,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSecurityRoute: AuthenticatedSecurityRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSuitabilityRoute: AuthenticatedSuitabilityRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedBusinessSlugRoute: AuthenticatedBusinessSlugRoute,
