@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { aboutHero, aboutGrid1, aboutGrid2, aboutGrid3 } from "@/assets/images";
 import { ShieldCheck, BadgeCheck, BarChart3, ArrowRight, Globe, Target, Heart } from "lucide-react";
 
 export const Route = createFileRoute("/about")({
@@ -37,11 +38,7 @@ function AboutPage() {
               </Link>
             </div>
             <div className="relative hidden lg:block">
-              <img
-                src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&q=80"
-                alt="Team collaboration"
-                className="rounded-3xl aspect-[4/3] w-full object-cover shadow-soft"
-              />
+              <img src={aboutHero} alt="Team collaboration" className="rounded-3xl aspect-[4/3] w-full object-cover shadow-soft" />
             </div>
           </div>
         </div>
@@ -90,9 +87,9 @@ function AboutPage() {
 
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&q=80" alt="" className="rounded-2xl aspect-[4/3] w-full object-cover" />
-          <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80" alt="" className="rounded-2xl aspect-[4/3] w-full object-cover lg:mt-8" />
-          <img src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=600&q=80" alt="" className="rounded-2xl aspect-[4/3] w-full object-cover sm:col-span-2 lg:col-span-1" />
+          <img src={aboutGrid1} alt="" className="rounded-2xl aspect-[4/3] w-full object-cover" />
+          <img src={aboutGrid2} alt="" className="rounded-2xl aspect-[4/3] w-full object-cover lg:mt-8" />
+          <img src={aboutGrid3} alt="" className="rounded-2xl aspect-[4/3] w-full object-cover sm:col-span-2 lg:col-span-1" />
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { howInvest, howRaise, howBuild } from "@/assets/images";
 import { TrendingUp, Briefcase, Rocket, ArrowRight, UserPlus, ShieldCheck, LineChart } from "lucide-react";
 
 export const Route = createFileRoute("/how-it-works")({
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/how-it-works")({
 const tracks = [
   {
     icon: TrendingUp,
-    img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&q=80",
+    img: howInvest,
     title: "Invest",
     desc: "Discover verified investment opportunities across multiple industries.",
     steps: [
@@ -28,7 +29,7 @@ const tracks = [
   },
   {
     icon: Briefcase,
-    img: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&q=80",
+    img: howRaise,
     title: "Raise Capital",
     desc: "Apply for funding to grow your business through CoFund.",
     steps: [
@@ -40,7 +41,7 @@ const tracks = [
   },
   {
     icon: Rocket,
-    img: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80",
+    img: howBuild,
     title: "Build an Idea",
     desc: "Share your startup idea, find collaborators, mentors and capital.",
     steps: [

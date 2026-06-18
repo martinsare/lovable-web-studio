@@ -3,6 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import {
+  homeHero,
+  homeInvest,
+  homeCapital,
+  homeBuild,
+  homeBanner1,
+  homeBanner2,
+} from "@/assets/images";
 import { useAuth } from "@/hooks/use-auth";
 import {
   TrendingUp, Briefcase, Rocket, ShieldCheck, BadgeCheck, BarChart3,
@@ -83,11 +91,7 @@ function Hero() {
 
           <div className="relative hidden lg:block">
             <div className="relative overflow-hidden rounded-3xl shadow-soft">
-              <img
-                src="https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80"
-                alt="African entrepreneurs"
-                className="aspect-[4/3] w-full object-cover"
-              />
+              <img src={homeHero} alt="African entrepreneurs" className="aspect-[4/3] w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
             </div>
             <div className="absolute -bottom-4 -left-4 rounded-2xl border border-white/10 bg-card/90 p-4 backdrop-blur shadow-soft">
@@ -132,19 +136,19 @@ function PrimaryActions() {
       icon: TrendingUp,
       title: "Invest",
       desc: "Discover verified investment opportunities across multiple industries and sectors.",
-      img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80",
+      img: homeInvest,
     },
     {
       icon: Briefcase,
       title: "Raise Capital",
       desc: "Apply for funding to grow your business through CoFund's escrow-protected rounds.",
-      img: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&q=80",
+      img: homeCapital,
     },
     {
       icon: Rocket,
       title: "Build an Idea",
       desc: "Share your startup, find co-founders, mentors and capital on the Startup Hub.",
-      img: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&q=80",
+      img: homeBuild,
     },
   ];
   return (
@@ -289,8 +293,8 @@ function ImageBanner() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&q=80" alt="" className="rounded-2xl object-cover aspect-square w-full" />
-          <img src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&q=80" alt="" className="rounded-2xl object-cover aspect-square w-full mt-8" />
+          <img src={homeBanner1} alt="" className="rounded-2xl object-cover aspect-square w-full" />
+          <img src={homeBanner2} alt="" className="rounded-2xl object-cover aspect-square w-full mt-8" />
         </div>
       </div>
     </section>

@@ -1,0 +1,14 @@
+export { default as authHero } from "./auth-hero.jpg";
+export { default as homeHero } from "./home-hero.jpg";
+export { default as homeInvest } from "./home-invest.jpg";
+export { default as homeCapital } from "./home-capital.jpg";
+export { default as homeBuild } from "./home-build.jpg";
+export { default as homeBanner1 } from "./home-banner-1.jpg";
+export { default as homeBanner2 } from "./home-banner-2.jpg";
+export { default as aboutHero } from "./about-hero.jpg";
+export { default as aboutGrid1 } from "./about-grid-1.jpg";
+export { default as aboutGrid2 } from "./about-grid-2.jpg";
+export { default as aboutGrid3 } from "./about-grid-3.jpg";
+export { default as howInvest } from "./how-invest.jpg";
+export { default as howRaise } from "./how-raise.jpg";
+export { default as howBuild } from "./how-build.jpg";

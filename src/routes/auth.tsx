@@ -5,6 +5,7 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/icon.png";
+import { authHero } from "@/assets/images";
 import { useAuth } from "@/hooks/use-auth";
 import { ShieldCheck, BadgeCheck, TrendingUp } from "lucide-react";
 
@@ -62,11 +63,7 @@ function AuthPage() {
       <div className="grid min-h-screen lg:grid-cols-2">
         <div className="hidden lg:flex flex-col justify-between relative overflow-hidden p-12">
           <div className="absolute inset-0 -z-10">
-            <img
-              src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1200&q=80"
-              alt=""
-              className="h-full w-full object-cover"
-            />
+              <img src={authHero} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-background/75 backdrop-blur-sm" />
             <div className="absolute inset-0 gradient-mesh opacity-60" />
           </div>

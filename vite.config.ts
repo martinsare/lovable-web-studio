@@ -13,6 +13,10 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    define: {
+      // TanStack Start client code checks NODE_ENV in the browser bundle.
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "development"),
+    },
     server: {
       host: "0.0.0.0",
       port: 5000,
