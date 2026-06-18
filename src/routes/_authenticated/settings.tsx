@@ -56,7 +56,6 @@ function SettingsPage() {
 
   // Account form
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
-  const [username, setUsername] = useState(profile?.username ?? "");
   const [bio, setBio] = useState((profile as any)?.bio ?? "");
   const [country, setCountry] = useState((profile as any)?.country ?? "Nigeria");
   const [occupation, setOccupation] = useState((profile as any)?.occupation ?? "");
@@ -70,7 +69,6 @@ function SettingsPage() {
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name ?? "");
-      setUsername(profile.username ?? "");
       setBio((profile as any).bio ?? "");
       setCountry((profile as any).country ?? "Nigeria");
       setOccupation((profile as any).occupation ?? "");
@@ -230,7 +228,6 @@ function SettingsPage() {
         .from("profiles")
         .update({
           full_name: fullName.trim() || null,
-          username: username.trim() || null,
           bio: bio.trim() || null,
           occupation: occupation.trim() || null,
           city: city.trim() || null,
@@ -364,14 +361,9 @@ function SettingsPage() {
                     </SettingRow>
 
                     <SettingRow label="Username" desc="Your unique handle on CoFund.">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm text-muted-foreground">@</span>
-                        <input
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value.replace(/[^a-z0-9_]/gi, "").toLowerCase())}
-                          placeholder="username"
-                          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary w-44 font-mono"
-                        />
+                      <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono">
+                        <span className="text-muted-foreground">@</span>
+                        <span className="text-foreground">{profile?.username ?? "Not set"}</span>
                       </div>
                     </SettingRow>
 

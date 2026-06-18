@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { DOCUMENT_BUCKETS, formatDocumentSize, getDocumentSignedUrl, uploadDocumentFile } from "@/lib/document-storage";
 import { formatMoney } from "@/lib/investment-checkout";
 import { createNotification } from "@/lib/notifications";
+import { formatCurrency } from "@/lib/mentor";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin Operations - CoFund" }] }),
@@ -456,21 +457,21 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
         <StatCard icon={CircleDollarSign} label="Funding queue" value={String(fundedCommitments.length)} note="Commitments needing ops oversight" />
       </section>
 
-      <section className="mt-8 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-3xl border border-border bg-card p-6">
+      <section className="mt-10 grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="space-y-5">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-primary" />
             <h2 className="font-display text-xl font-bold">Verification review queue</h2>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">This is the operator-facing layer for Sumsub, Youverify, and internal manual review.</p>
-          <div className="mt-5 grid gap-4">
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">This is the operator-facing layer for Sumsub, Youverify, and internal manual review.</p>
+          <div className="space-y-3 border-t border-border pt-4">
             {sessionsLoading ? (
-              Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-28 animate-pulse rounded-2xl bg-background" />)
+              Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-24 animate-pulse rounded-2xl bg-card/70" />)
             ) : pendingSessions.length === 0 ? (
               <EmptyState title="Verification queue is clear" hint="New sessions will appear here when users start KYC or KYB." />
             ) : (
               pendingSessions.map((session) => (
-                <div key={session.id} className="rounded-2xl border border-border bg-background p-4">
+                <div key={session.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold">{session.subject_type.replaceAll("_", " ")} via {session.provider}</p>
@@ -489,7 +490,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           <SimpleListCard title="Entity register" icon={<Building2 className="h-5 w-5 text-primary" />} items={entities} emptyTitle="No entities yet" emptyHint="Approved companies and SPVs will appear here.">
             {(entity: any) => (
               <div className="flex items-start justify-between gap-3">
@@ -516,18 +517,18 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
         </div>
       </section>
 
-      <section className="mt-8 rounded-3xl border border-border bg-card p-6">
+      <section className="mt-12">
         <div className="flex items-center gap-2">
           <GraduationCap className="h-5 w-5 text-primary" />
           <h2 className="font-display text-xl font-bold">Mentor applications</h2>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">Applicants must meet the tenure, activity, investment, and proof requirements before admin approval can grant the mentor role.</p>
-        <div className="mt-5 grid gap-3">
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Applicants must meet the tenure, activity, investment, and proof requirements before admin approval can grant the mentor role.</p>
+        <div className="mt-5 space-y-3 border-t border-border pt-4">
           {mentorApplications.length === 0 ? (
             <EmptyState title="No mentor applications yet" hint="Eligible users will submit applications from their profile." />
           ) : (
             mentorApplications.map((application) => (
-              <div key={application.id} className="rounded-2xl border border-border bg-background p-4">
+              <div key={application.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">{application.applicant_name ?? application.applicant_email ?? application.user_id}</p>
@@ -568,21 +569,21 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
         </div>
       </section>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-border bg-card p-6">
+      <section className="mt-12 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div>
           <div className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5 text-primary" />
             <h2 className="font-display text-xl font-bold">Document review queue</h2>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">Founder uploads land here so compliance can approve or reject them before they are relied on in fundraising or KYB.</p>
-          <div className="mt-5 grid gap-3">
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Founder uploads land here so compliance can approve or reject them before they are relied on in fundraising or KYB.</p>
+          <div className="mt-5 space-y-3 border-t border-border pt-4">
             {!pendingDocuments.length ? (
               <EmptyState title="No pending uploads" hint="Founder and issuer uploads will appear here when they need review." />
             ) : (
               pendingDocuments.map((doc) => {
                 const table = doc.business_entity_id ? "business_entity_documents" : "offering_documents";
                 return (
-                  <div key={doc.id} className="rounded-2xl border border-border bg-background p-4">
+                  <div key={doc.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{doc.title}</p>
@@ -610,13 +611,13 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-border bg-card p-6">
+        <div>
           <div className="flex items-center gap-2">
             <FileCheck2 className="h-5 w-5 text-primary" />
             <h2 className="font-display text-xl font-bold">Investor statements and certificates</h2>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">Operations can upload formal statements, certificates, and receipts here. Investors receive an inbox alert and secure portfolio download.</p>
-          <div className="mt-5 grid gap-4">
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Operations can upload formal statements, certificates, and receipts here. Investors receive an inbox alert and secure portfolio download.</p>
+          <div className="mt-5 space-y-4 border-t border-border pt-4">
             <label className="grid gap-2">
               <span className="text-sm font-medium">Investor</span>
               <select value={statementUserId} onChange={(event) => setStatementUserId(event.target.value)} className={selectCls}>
@@ -662,18 +663,18 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
         </div>
       </section>
 
-      <section className="mt-8 rounded-3xl border border-border bg-card p-6">
+      <section className="mt-12">
         <div className="flex items-center gap-2">
           <CircleDollarSign className="h-5 w-5 text-primary" />
           <h2 className="font-display text-xl font-bold">Funding and reconciliation queue</h2>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">Operators should be able to mark inbound transfers as received, matched, escrowed, released, or refunded.</p>
-        <div className="mt-5 grid gap-3">
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Operators should be able to mark inbound transfers as received, matched, escrowed, released, or refunded.</p>
+        <div className="mt-5 space-y-3 border-t border-border pt-4">
           {commitments.length === 0 ? (
             <EmptyState title="No commitments yet" hint="Investment checkout activity will populate this queue." />
           ) : (
             commitments.map((commitment) => (
-              <div key={commitment.id} className="rounded-2xl border border-border bg-background p-4">
+              <div key={commitment.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">{formatMoney(Number(commitment.amount ?? 0))}</p>
@@ -694,7 +695,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
         </div>
       </section>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-3">
+      <section className="mt-12 grid gap-6 lg:grid-cols-3">
         <SimpleListCard title="Recent reconciliation events" icon={<CircleDollarSign className="h-5 w-5 text-primary" />} items={reconciliationEvents} emptyTitle="No reconciliation events yet" emptyHint="Payment matching and escrow steps will appear here.">
           {(event: any) => (
             <>
@@ -728,7 +729,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
 
 function StatCard({ icon: Icon, label, value, note }: { icon: any; label: string; value: string; note: string }) {
   return (
-    <div className="rounded-3xl border border-border bg-card p-5">
+    <div className="rounded-3xl border border-border/70 bg-card/30 p-5">
       <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
         <Icon className="h-5 w-5" />
       </div>
@@ -741,13 +742,13 @@ function StatCard({ icon: Icon, label, value, note }: { icon: any; label: string
 
 function SimpleListCard({ title, icon, items, emptyTitle, emptyHint, children }: { title: string; icon: ReactNode; items: any[]; emptyTitle: string; emptyHint: string; children: (item: any) => ReactNode }) {
   return (
-    <div className="rounded-3xl border border-border bg-card p-6">
+    <div className="rounded-3xl border border-border/70 bg-card/20 p-6">
       <div className="flex items-center gap-2">
         {icon}
         <h2 className="font-display text-xl font-bold">{title}</h2>
       </div>
-      <div className="mt-4 grid gap-3">
-        {items.length === 0 ? <EmptyState title={emptyTitle} hint={emptyHint} /> : items.map((item) => <div key={item.id} className="rounded-2xl border border-border bg-background p-4">{children(item)}</div>)}
+      <div className="mt-4 space-y-3 border-t border-border pt-4">
+        {items.length === 0 ? <EmptyState title={emptyTitle} hint={emptyHint} /> : items.map((item) => <div key={item.id} className="border-b border-border pb-3 last:border-b-0 last:pb-0">{children(item)}</div>)}
       </div>
     </div>
   );
@@ -771,3 +772,6 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const selectCls = "w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring";
+
+
+
