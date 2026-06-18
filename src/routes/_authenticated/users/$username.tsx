@@ -11,11 +11,10 @@ import {
   Users,
   UserPlus,
   UserCheck,
-  MessageCircle,
   Briefcase,
   Globe,
   Link2,
-  TrendingUp,
+  BadgeCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,7 +42,7 @@ function UserProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id,full_name,username,avatar_url,bio,location,city,country,occupation,linkedin_url,website_url,created_at",
+          "id,full_name,username,avatar_url,bio,location,city,country,occupation,linkedin_url,website_url,created_at,onboarded",
         )
         .eq("username", username)
         .maybeSingle();
@@ -204,6 +203,11 @@ function UserProfilePage() {
           <div className="min-w-0 flex-1 pb-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-display text-2xl font-extrabold sm:text-3xl">{displayName}</h1>
+              {profile.onboarded && (
+                <span title="Verified member" className="inline-flex items-center gap-1 rounded-full bg-brand-green/10 px-2.5 py-1 text-xs font-bold text-brand-green">
+                  <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                </span>
+              )}
               {roles.map((r) => (
                 <RoleChip key={r} role={r} />
               ))}
