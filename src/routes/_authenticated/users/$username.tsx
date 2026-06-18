@@ -41,31 +41,41 @@ function UserProfilePage() {
   const { data: profile, isLoading } = useQuery({
     queryKey: profileQK,
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id,full_name,username,avatar_url,bio,location,city,country,occupation,linkedin_url,website_url,created_at,followers_count,following_count",
+          "id,full_name,username,avatar_url,bio,location,city,country,occupation,linkedin_url,website_url,created_at",
         )
         .eq("username", username)
         .maybeSingle();
       if (error) throw error;
       if (!data) throw notFound();
-      return data as {
-        id: string;
-        full_name: string | null;
-        username: string | null;
-        avatar_url: string | null;
-        bio: string | null;
-        location: string | null;
-        city: string | null;
-        country: string | null;
-        occupation: string | null;
-        linkedin_url: string | null;
-        website_url: string | null;
-        created_at: string;
-        followers_count: number;
-        following_count: number;
-      };
+      return data;
+    },
+  });
+
+  // Follower/following counts — queried from user_follows (graceful 0 if table absent)
+  const { data: followerCount = 0 } = useQuery({
+    enabled: !!profile?.id,
+    queryKey: ["follower-count", profile?.id],
+    queryFn: async () => {
+      const { count } = await db
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("following_id", profile!.id);
+      return (count as number | null) ?? 0;
+    },
+  });
+
+  const { data: followingCount = 0 } = useQuery({
+    enabled: !!profile?.id,
+    queryKey: ["following-count", profile?.id],
+    queryFn: async () => {
+      const { count } = await db
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("follower_id", profile!.id);
+      return (count as number | null) ?? 0;
     },
   });
 
@@ -126,29 +136,26 @@ function UserProfilePage() {
       }
     },
     onMutate: async (shouldFollow) => {
-      await qc.cancelQueries({ queryKey: profileQK });
+      const followerCountQK = ["follower-count", profile?.id];
       await qc.cancelQueries({ queryKey: followQK });
+      await qc.cancelQueries({ queryKey: followerCountQK });
 
-      const prevProfile = qc.getQueryData(profileQK);
       const prevFollow = qc.getQueryData(followQK);
+      const prevCount = qc.getQueryData<number>(followerCountQK) ?? 0;
 
-      qc.setQueryData(profileQK, (old: any) =>
-        old
-          ? { ...old, followers_count: Math.max(0, old.followers_count + (shouldFollow ? 1 : -1)) }
-          : old,
-      );
       qc.setQueryData(followQK, shouldFollow);
+      qc.setQueryData(followerCountQK, Math.max(0, prevCount + (shouldFollow ? 1 : -1)));
 
-      return { prevProfile, prevFollow };
+      return { prevFollow, prevCount };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prevProfile) qc.setQueryData(profileQK, ctx.prevProfile);
       if (ctx?.prevFollow !== undefined) qc.setQueryData(followQK, ctx.prevFollow);
+      if (ctx?.prevCount !== undefined) qc.setQueryData(["follower-count", profile?.id], ctx.prevCount);
       toast.error("Could not update follow status.");
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: profileQK });
       qc.invalidateQueries({ queryKey: followQK });
+      qc.invalidateQueries({ queryKey: ["follower-count", profile?.id] });
     },
   });
 
@@ -166,14 +173,8 @@ function UserProfilePage() {
 
   const TABS: { key: ProfileTab; label: string }[] = [
     { key: "overview", label: "Overview" },
-    {
-      key: "followers",
-      label: `Followers${profile.followers_count ? ` (${profile.followers_count})` : ""}`,
-    },
-    {
-      key: "following",
-      label: `Following${profile.following_count ? ` (${profile.following_count})` : ""}`,
-    },
+    { key: "followers", label: followerCount > 0 ? `Followers (${followerCount})` : "Followers" },
+    { key: "following", label: followingCount > 0 ? `Following (${followingCount})` : "Following" },
   ];
 
   return (
@@ -261,8 +262,8 @@ function UserProfilePage() {
         {/* Stats row */}
         <div className="mb-6 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card">
           {[
-            { label: "Followers", value: profile.followers_count ?? 0, tab: "followers" as ProfileTab },
-            { label: "Following", value: profile.following_count ?? 0, tab: "following" as ProfileTab },
+            { label: "Followers", value: followerCount, tab: "followers" as ProfileTab },
+            { label: "Following", value: followingCount, tab: "following" as ProfileTab },
             { label: "Investments", value: investmentCount, tab: null as ProfileTab | null },
           ].map(({ label, value, tab: t }) => (
             <button
@@ -303,7 +304,7 @@ function UserProfilePage() {
         <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
           <div className="min-w-0">
             {tab === "overview" && (
-              <OverviewTab profile={profile} roles={roles} />
+              <OverviewTab profile={profile} roles={roles} followerCount={followerCount} followingCount={followingCount} />
             )}
             {tab === "followers" && (
               <FollowersList
@@ -339,7 +340,7 @@ function RoleChip({ role }: { role: string }) {
   );
 }
 
-function OverviewTab({ profile, roles }: { profile: any; roles: string[] }) {
+function OverviewTab({ profile, roles, followerCount, followingCount }: { profile: any; roles: string[]; followerCount: number; followingCount: number }) {
   const { data: recentPosts = [] } = useQuery({
     queryKey: ["user-posts", profile.id],
     queryFn: async () => {
@@ -383,8 +384,8 @@ function OverviewTab({ profile, roles }: { profile: any; roles: string[] }) {
         <h2 className="mb-3 font-display text-lg font-bold">Activity</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {[
-            { icon: Users, label: "Followers", value: profile.followers_count ?? 0 },
-            { icon: TrendingUp, label: "Following", value: profile.following_count ?? 0 },
+            { icon: Users, label: "Followers", value: followerCount },
+            { icon: TrendingUp, label: "Following", value: followingCount },
             { icon: MessageCircle, label: "Posts", value: recentPosts.length },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="rounded-2xl border border-border bg-card p-4 shadow-card">
