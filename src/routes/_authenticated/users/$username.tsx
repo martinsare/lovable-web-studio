@@ -191,10 +191,10 @@ function UserProfilePage() {
             <img
               src={profile.avatar_url}
               alt={displayName}
-              className="h-24 w-24 shrink-0 rounded-2xl border-4 border-background object-cover shadow-elevated"
+              className="h-24 w-24 shrink-0 rounded-2xl ring-2 ring-border object-cover"
             />
           ) : (
-            <div className="gradient-brand flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-background text-3xl font-bold text-primary-foreground shadow-elevated">
+            <div className="gradient-brand flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl ring-2 ring-border text-3xl font-bold text-primary-foreground">
               {initial}
             </div>
           )}
