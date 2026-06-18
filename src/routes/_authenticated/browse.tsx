@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/app-layout";
 import { EmptySearchIllustration } from "@/components/animated-illustration";
 import {
@@ -54,34 +55,54 @@ function daysLeft(closesAt: string | null): number | null {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-function useWatchlist() {
-  const [saved, setSaved] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem("cofund_watchlist");
-      return raw ? new Set(JSON.parse(raw)) : new Set();
-    } catch { return new Set(); }
+function useWatchlist(userId: string) {
+  const qc = useQueryClient();
+  const qk = ["watchlist", userId];
+
+  const { data: savedArr = [] } = useQuery<string[]>({
+    queryKey: qk,
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_watchlist")
+        .select("item_id")
+        .eq("user_id", userId)
+        .eq("item_type", "opportunity");
+      return (data ?? []).map((r: any) => r.item_id as string);
+    },
   });
 
-  function toggle(id: string) {
-    setSaved((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      try { localStorage.setItem("cofund_watchlist", JSON.stringify([...next])); } catch {}
-      return next;
-    });
+  const saved = new Set(savedArr);
+
+  async function toggle(id: string) {
+    if (!userId) return;
+    const isIn = saved.has(id);
+    if (isIn) {
+      await supabase
+        .from("user_watchlist")
+        .delete()
+        .eq("user_id", userId)
+        .eq("item_id", id)
+        .eq("item_type", "opportunity");
+    } else {
+      await supabase
+        .from("user_watchlist")
+        .insert({ user_id: userId, item_id: id, item_type: "opportunity" });
+    }
+    qc.invalidateQueries({ queryKey: qk });
   }
 
   return { saved, toggle };
 }
 
 function BrowsePage() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<ViewTab>("opportunities");
   const [q, setQ] = useState("");
   const [industry, setIndustry] = useState("All");
   const [sort, setSort] = useState<SortKey>("newest");
   const [showSort, setShowSort] = useState(false);
-  const { saved, toggle } = useWatchlist();
+  const { saved, toggle } = useWatchlist(user?.id ?? "");
 
   return (
     <AppLayout>

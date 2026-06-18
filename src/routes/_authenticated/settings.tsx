@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Bell,
@@ -52,19 +52,6 @@ const RISK_LEVELS = [
 
 const MIN_AMOUNTS = ["₦25,000", "₦50,000", "₦100,000", "₦250,000", "₦500,000", "₦1,000,000+"];
 
-function getPrefs() {
-  try {
-    const raw = localStorage.getItem("cofund_investor_prefs");
-    return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
-}
-
-function savePrefs(update: Record<string, any>) {
-  try {
-    const existing = getPrefs();
-    localStorage.setItem("cofund_investor_prefs", JSON.stringify({ ...existing, ...update }));
-  } catch {}
-}
 
 function SettingsPage() {
   const { user, profile, signOut } = useAuth();
@@ -88,35 +75,103 @@ function SettingsPage() {
     }
   }, [profile]);
 
-  // Notification prefs (stored in localStorage for now)
-  const [notifs, setNotifs] = useState(() => ({
+  // ── Notification preferences ──────────────────────────────────────────────
+  const [notifs, setNotifs] = useState({
     newDeals: true,
     investmentUpdates: true,
     communityActivity: false,
     securityAlerts: true,
     marketingEmails: false,
-    ...getPrefs().notifications,
-  }));
+  });
 
-  // Investment prefs
-  const [investPrefs, setInvestPrefs] = useState(() => ({
+  const { data: dbNotifPrefs } = useQuery({
+    queryKey: ["notification-preferences", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("notification_preferences")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (dbNotifPrefs) {
+      setNotifs({
+        newDeals: dbNotifPrefs.new_deals ?? true,
+        investmentUpdates: dbNotifPrefs.investment_updates ?? true,
+        communityActivity: dbNotifPrefs.community_activity ?? false,
+        securityAlerts: dbNotifPrefs.security_alerts ?? true,
+        marketingEmails: dbNotifPrefs.marketing_emails ?? false,
+      });
+    }
+  }, [dbNotifPrefs]);
+
+  // ── Investment preferences ─────────────────────────────────────────────────
+  const [investPrefs, setInvestPrefs] = useState({
     industries: [] as string[],
     riskLevel: "moderate",
     minTicket: "₦100,000",
-    ...getPrefs().invest,
-  }));
+  });
 
-  function patchNotif(key: string, val: boolean) {
+  const { data: dbInvestPrefs } = useQuery({
+    queryKey: ["investor-preferences", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("investor_preferences")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (dbInvestPrefs) {
+      setInvestPrefs({
+        industries: dbInvestPrefs.industries ?? [],
+        riskLevel: dbInvestPrefs.risk_level ?? "moderate",
+        minTicket: dbInvestPrefs.min_ticket ?? "₦100,000",
+      });
+    }
+  }, [dbInvestPrefs]);
+
+  async function patchNotif(key: string, val: boolean) {
     const next = { ...notifs, [key]: val };
     setNotifs(next);
-    savePrefs({ notifications: next });
+    if (user?.id) {
+      await supabase.from("notification_preferences").upsert(
+        {
+          user_id: user.id,
+          new_deals: next.newDeals,
+          investment_updates: next.investmentUpdates,
+          community_activity: next.communityActivity,
+          security_alerts: next.securityAlerts,
+          marketing_emails: next.marketingEmails,
+        },
+        { onConflict: "user_id" },
+      );
+    }
     toast.success("Notification preference saved.");
   }
 
-  function patchInvest(update: Partial<typeof investPrefs>) {
+  async function patchInvest(update: Partial<typeof investPrefs>) {
     const next = { ...investPrefs, ...update };
     setInvestPrefs(next);
-    savePrefs({ invest: next });
+    if (user?.id) {
+      await supabase.from("investor_preferences").upsert(
+        {
+          user_id: user.id,
+          industries: next.industries,
+          risk_level: next.riskLevel,
+          min_ticket: next.minTicket,
+        },
+        { onConflict: "user_id" },
+      );
+    }
   }
 
   function toggleIndustry(ind: string) {

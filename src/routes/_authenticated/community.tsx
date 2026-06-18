@@ -70,6 +70,7 @@ type PostData = {
   like_count: number;
   comment_count: number;
   liked_by_me: boolean;
+  bookmarked_by_me: boolean;
 };
 
 type CommentRow = {
@@ -119,22 +120,25 @@ async function fetchEnrichedPosts(
   const ids = posts.map((p) => p.id);
   const authorIds = [...new Set(posts.map((p) => p.author_id))];
 
-  const [pRes, lRes, mlRes, cRes] = await Promise.allSettled([
+  const [pRes, lRes, mlRes, cRes, bmRes] = await Promise.allSettled([
     supabase.from("profiles").select("id, full_name, username, avatar_url").in("id", authorIds),
     supabase.from("post_likes").select("post_id").in("post_id", ids),
     supabase.from("post_likes").select("post_id").in("post_id", ids).eq("user_id", userId),
     supabase.from("post_comments").select("post_id").in("post_id", ids),
+    supabase.from("post_bookmarks").select("post_id").in("post_id", ids).eq("user_id", userId),
   ]);
 
   const profiles = pRes.status === "fulfilled" ? (pRes.value.data ?? []) : [];
   const likes = lRes.status === "fulfilled" ? (lRes.value.data ?? []) : [];
   const myLikes = mlRes.status === "fulfilled" ? (mlRes.value.data ?? []) : [];
   const comments = cRes.status === "fulfilled" ? (cRes.value.data ?? []) : [];
+  const myBookmarks = bmRes.status === "fulfilled" ? (bmRes.value.data ?? []) : [];
 
   const pm = new Map(profiles.map((p) => [p.id, p]));
   const likeMap = new Map<string, number>();
   const cmtMap = new Map<string, number>();
   const mySet = new Set(myLikes.map((l) => l.post_id));
+  const myBmSet = new Set(myBookmarks.map((b) => b.post_id));
 
   for (const l of likes) likeMap.set(l.post_id, (likeMap.get(l.post_id) ?? 0) + 1);
   for (const c of comments) cmtMap.set(c.post_id, (cmtMap.get(c.post_id) ?? 0) + 1);
@@ -145,6 +149,7 @@ async function fetchEnrichedPosts(
     like_count: likeMap.get(p.id) ?? 0,
     comment_count: cmtMap.get(p.id) ?? 0,
     liked_by_me: mySet.has(p.id),
+    bookmarked_by_me: myBmSet.has(p.id),
   }));
 
   if (opts.sortByLikes) result = result.sort((a, b) => b.like_count - a.like_count);
@@ -593,23 +598,27 @@ function PostCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.content);
-  const [bookmarked, setBookmarked] = useState(() => {
-    try { return (JSON.parse(localStorage.getItem("cofund_bookmarks") ?? "[]") as string[]).includes(post.id); }
-    catch { return false; }
-  });
+  const [bookmarked, setBookmarked] = useState(post.bookmarked_by_me);
 
   const isOwn = post.author_id === userId;
   const authorName = post.profile?.full_name ?? "Member";
   const authorHandle = post.profile?.username;
 
-  function toggleBookmark() {
-    try {
-      const saved: string[] = JSON.parse(localStorage.getItem("cofund_bookmarks") ?? "[]");
-      const next = bookmarked ? saved.filter((id) => id !== post.id) : [...saved, post.id];
-      localStorage.setItem("cofund_bookmarks", JSON.stringify(next));
-      setBookmarked(!bookmarked);
-      toast.success(bookmarked ? "Removed from bookmarks" : "Saved to bookmarks");
-    } catch {}
+  async function toggleBookmark() {
+    const was = bookmarked;
+    setBookmarked(!was);
+    toast.success(was ? "Removed from bookmarks" : "Saved to bookmarks");
+    if (was) {
+      await supabase
+        .from("post_bookmarks")
+        .delete()
+        .eq("post_id", post.id)
+        .eq("user_id", userId);
+    } else {
+      await supabase
+        .from("post_bookmarks")
+        .insert({ post_id: post.id, user_id: userId });
+    }
   }
 
   function sharePost() {
