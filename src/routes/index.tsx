@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { usePlatformStats, fmtInvestors, fmtBusinesses, fmtReturn, fmtCapital } from "@/hooks/use-platform-stats";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import {
@@ -75,12 +76,6 @@ const featuredOpportunities = [
   },
 ];
 
-const stats = [
-  { value: "₦2.1B+", label: "Capital deployed" },
-  { value: "180+", label: "Verified businesses" },
-  { value: "2,400+", label: "Active investors" },
-  { value: "22%", label: "Avg. target return" },
-];
 
 const communityPosts = [
   {
@@ -139,6 +134,7 @@ function PublicHome() {
 }
 
 function Hero() {
+  const { data: s } = usePlatformStats();
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10 gradient-hero" />
@@ -214,8 +210,8 @@ function Hero() {
             </div>
             <div className="absolute -bottom-5 -left-5 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-xl">
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Capital raised</p>
-              <p className="mt-0.5 font-display text-2xl font-bold text-gradient-brand">₦2.1B+</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">across 180+ businesses</p>
+              <p className="mt-0.5 font-display text-2xl font-bold text-gradient-brand">{fmtCapital(s?.capitalDeployed ?? null)}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">across {fmtBusinesses(s?.verifiedBusinessCount ?? null)} businesses</p>
             </div>
             <div className="absolute -right-5 top-10 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-xl">
               <div className="flex items-center gap-2">
@@ -224,7 +220,7 @@ function Hero() {
                 </div>
                 <div>
                   <p className="text-[11px] text-muted-foreground">Avg. return</p>
-                  <p className="font-display text-lg font-bold text-brand-green">22% p.a.</p>
+                  <p className="font-display text-lg font-bold text-brand-green">{fmtReturn(s?.avgTargetReturn ?? null)}</p>
                 </div>
               </div>
             </div>
@@ -407,12 +403,19 @@ function HowItWorks() {
 }
 
 function Stats() {
+  const { data: s } = usePlatformStats();
+  const rows = [
+    { value: fmtCapital(s?.capitalDeployed ?? null), label: "Capital deployed" },
+    { value: fmtBusinesses(s?.verifiedBusinessCount ?? null), label: "Verified businesses" },
+    { value: fmtInvestors(s?.investorCount ?? null), label: "Active investors" },
+    { value: fmtReturn(s?.avgTargetReturn ?? null), label: "Avg. target return" },
+  ];
   return (
     <section className="py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-3xl border border-primary/15 bg-card shadow-brand">
           <div className="grid grid-cols-2 divide-x divide-y divide-border/60 lg:grid-cols-4 lg:divide-y-0">
-            {stats.map((stat) => (
+            {rows.map((stat) => (
               <div key={stat.label} className="flex flex-col items-center justify-center py-12 text-center">
                 <p className="font-display text-4xl font-bold text-gradient-brand sm:text-5xl">{stat.value}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{stat.label}</p>
@@ -501,6 +504,7 @@ function Roles() {
 }
 
 function CommunitySection() {
+  const { data: s } = usePlatformStats();
   return (
     <section className="border-y border-border/60 bg-card/20 py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -515,7 +519,7 @@ function CommunitySection() {
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
               {[
-                { Icon: Users, label: "2,400+ active members" },
+                { Icon: Users, label: `${fmtInvestors(s?.investorCount ?? null)} active members` },
                 { Icon: MessageCircle, label: "Active discussion forums" },
                 { Icon: Star, label: "Verified mentor network" },
                 { Icon: CheckCircle2, label: "Deal syndication tools" },

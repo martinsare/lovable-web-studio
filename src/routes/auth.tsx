@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, Suspense } from "react";
+import { usePlatformStats, fmtInvestors } from "@/hooks/use-platform-stats";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,7 @@ function AuthPage() {
   const { mode } = Route.useSearch();
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
+  const { data: authStats } = usePlatformStats();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -164,7 +166,7 @@ function AuthPage() {
               ))}
             </div>
             <div>
-              <p className="text-sm font-semibold">2,400+ investors active</p>
+              <p className="text-sm font-semibold">{fmtInvestors(authStats?.investorCount ?? null)} investors active</p>
               <p className="text-xs text-muted-foreground">Join Africa's investment community</p>
             </div>
           </div>

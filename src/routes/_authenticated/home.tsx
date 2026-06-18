@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { usePlatformStats, fmtInvestors, fmtBusinesses, fmtReturn } from "@/hooks/use-platform-stats";
 import { AppLayout } from "@/components/app-layout";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchPostsWithAuthors } from "@/lib/post-feed";
@@ -380,17 +381,19 @@ function QuickActions({ roles }: { roles: string[] }) {
 }
 
 function PlatformStats() {
+  const { data: stats } = usePlatformStats();
+  const rows = [
+    { label: "Active investors", value: fmtInvestors(stats?.investorCount ?? null), icon: Users },
+    { label: "Verified businesses", value: fmtBusinesses(stats?.verifiedBusinessCount ?? null), icon: Building2 },
+    { label: "Avg. target return", value: fmtReturn(stats?.avgTargetReturn ?? null), icon: TrendingUp },
+  ];
   return (
     <div className="border-t border-border pt-6">
       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
         Platform
       </p>
       <div className="space-y-3">
-        {[
-          { label: "Active investors", value: "2,400+", icon: Users },
-          { label: "Verified businesses", value: "180+", icon: Building2 },
-          { label: "Avg. target return", value: "22% p.a.", icon: TrendingUp },
-        ].map(({ label, value, icon: Icon }) => (
+        {rows.map(({ label, value, icon: Icon }) => (
           <div key={label} className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
               <Icon className="h-3.5 w-3.5 shrink-0" />
