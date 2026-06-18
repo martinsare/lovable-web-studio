@@ -616,37 +616,63 @@ function UpdatesTab({ posts, bizName, logo }: { posts: any[]; bizName: string; l
 }
 
 function TeamTab({ owner, biz }: { owner: any; biz: any }) {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center">
-        <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-        <p className="font-display text-lg font-bold">Team profiles coming soon</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Business owners will be able to add co-founders, employees, and advisors.
-        </p>
-      </div>
+  const ROLES = ["Co-founder", "CTO", "CFO", "Head of Operations", "Advisor"];
 
+  return (
+    <div className="flex flex-col gap-8">
       {owner && (
         <section>
-          <h2 className="font-display text-base font-bold">Founder</h2>
-          <div className="mt-3 flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">Leadership</p>
+          <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 shadow-card">
             {owner.avatar_url ? (
-              <img src={owner.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
+              <img src={owner.avatar_url} alt="" className="h-14 w-14 rounded-full object-cover" />
             ) : (
-              <div className="gradient-brand flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white text-sm font-bold">
+              <div className="gradient-brand flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white text-base font-bold">
                 {(owner.full_name ?? owner.username ?? "?")[0].toUpperCase()}
               </div>
             )}
-            <div>
-              <p className="font-semibold">{owner.full_name ?? owner.username ?? "Anonymous"}</p>
-              {owner.username && <p className="text-xs text-muted-foreground">@{owner.username}</p>}
-              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                <FileText className="h-3 w-3" /> Founder
-              </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-base font-bold">{owner.full_name ?? owner.username ?? "Anonymous"}</p>
+              {owner.username && (
+                <p className="text-xs text-muted-foreground">@{owner.username}</p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  Founder & CEO
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                  Verified owner
+                </span>
+              </div>
             </div>
           </div>
         </section>
       )}
+
+      <section>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">Team structure</p>
+        <div className="space-y-2">
+          {ROLES.map((role) => (
+            <div
+              key={role}
+              className="flex items-center justify-between rounded-xl border border-border bg-card/60 px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground/60" />
+                </div>
+                <span className="text-sm font-semibold text-muted-foreground">{role}</span>
+              </div>
+              <span className="rounded-full border border-border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground/60">
+                Not listed
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
+          Full team profiles and adviser disclosures are submitted during the KYB review process and verified by CoFund before being published.
+        </p>
+      </section>
     </div>
   );
 }
