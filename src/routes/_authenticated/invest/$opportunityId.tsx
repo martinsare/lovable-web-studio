@@ -1,4 +1,4 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
-import { PageShell } from "@/components/page-shell";
+import { AppLayout } from "@/components/app-layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useSecurity } from "@/hooks/use-security";
@@ -56,7 +56,6 @@ function InvestmentCheckoutPage() {
         .select("id,title,summary,goal_amount,raised_amount,target_return_pct,status,closes_at,businesses(id,name,industry,verified)")
         .eq("id", opportunityId)
         .maybeSingle();
-
       if (error) throw error;
       if (!data) throw notFound();
       return data as any;
@@ -94,7 +93,10 @@ function InvestmentCheckoutPage() {
   const amountNumber = Number(amount || 0);
   const selectedRail = checkoutRails.find((item) => item.id === rail);
   const walletBalance = Number(wallet?.available_balance ?? 0);
-  const openAmount = Number(opportunity?.goal_amount ?? 0) - Number(opportunity?.raised_amount ?? 0);
+  const goalAmount = Number(opportunity?.goal_amount ?? 0);
+  const raisedAmount = Number(opportunity?.raised_amount ?? 0);
+  const openAmount = goalAmount - raisedAmount;
+  const progressPct = goalAmount > 0 ? Math.min(100, Math.round((raisedAmount / goalAmount) * 100)) : 0;
 
   const derivedRails = useMemo(() => {
     return readiness.fundingRails.filter((item) =>
@@ -114,7 +116,6 @@ function InvestmentCheckoutPage() {
         p_disclosures_accepted: acceptTerms,
         p_risk_acknowledged: acceptRisk,
       };
-
       const { data, error } = await (supabase as any).rpc("create_investment_commitment", payload);
       if (error) throw error;
       return (Array.isArray(data) ? data[0] : data) as CheckoutResponse;
@@ -132,12 +133,16 @@ function InvestmentCheckoutPage() {
 
   if (isLoading) {
     return (
-      <PageShell eyebrow="Invest" title="Investment Checkout" description="Preparing the investment room for this opportunity.">
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="h-80 animate-pulse rounded-3xl bg-card" />
-          <div className="h-80 animate-pulse rounded-3xl bg-card" />
+      <AppLayout>
+        <div className="min-h-full bg-background">
+          <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+            <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+              <div className="h-[600px] animate-pulse rounded-3xl bg-card" />
+              <div className="h-80 animate-pulse rounded-3xl bg-card" />
+            </div>
+          </div>
         </div>
-      </PageShell>
+      </AppLayout>
     );
   }
 
@@ -151,284 +156,338 @@ function InvestmentCheckoutPage() {
     amountNumber <= openAmount &&
     acceptRisk &&
     acceptTerms &&
-    (!walletTooLow) &&
+    !walletTooLow &&
     (investingAs === "individual" || Boolean(businessEntityId));
 
   return (
-    <PageShell
-      eyebrow="Invest"
-      title="Investment Checkout"
-      description="Commit capital, choose a funding rail, and move funds into escrow with the right references."
-      actions={
-        <div className="hidden gap-2 sm:flex">
-          <Link to="/offerings/$opportunityId" params={{ opportunityId }} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">
-            Offering room
-          </Link>
-          <Link to="/browse" className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to browse
-          </Link>
-        </div>
-      }
-    >
-      <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="rounded-3xl border border-border bg-card p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary">Opportunity</p>
-              <h2 className="mt-2 font-display text-2xl font-bold">{opportunity.title}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {opportunity.businesses?.name} {opportunity.businesses?.industry ? `- ${opportunity.businesses.industry}` : ""}
-              </p>
-            </div>
-            {opportunity.businesses?.verified && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-brand-green/10 px-3 py-1 text-xs font-semibold text-brand-green">
-                <BadgeCheck className="h-3.5 w-3.5" /> Verified business
-              </span>
-            )}
-          </div>
-
-          {opportunity.summary && (
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{opportunity.summary}</p>
-          )}
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <MetricCard label="Goal" value={formatMoney(Number(opportunity.goal_amount ?? 0))} />
-            <MetricCard label="Raised" value={formatMoney(Number(opportunity.raised_amount ?? 0))} />
-            <MetricCard label="Still open" value={formatMoney(Math.max(openAmount, 0))} />
-          </div>
-
-          {!readiness.canInvestNow && (
-            <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-400" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-100">Funding is still locked on this account.</p>
-                  <div className="mt-2 grid gap-2">
-                    {readiness.checklist
-                      .filter((item) => !item.done)
-                      .map((item) => (
-                        <p key={item.label} className="text-xs text-amber-50/80">
-                          Pending: {item.label}
-                        </p>
-                      ))}
-                  </div>
-                  <Link to="/portfolio" className="mt-3 inline-flex text-sm font-semibold text-white underline underline-offset-4">
-                    Review funding readiness
-                  </Link>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link to="/suitability" className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/90">
-                      Suitability
-                    </Link>
-                    <Link to="/security" className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/90">
-                      Security
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-8 grid gap-6">
-            <div>
-              <p className="text-sm font-semibold">1. Choose who is investing</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <ChoiceCard
-                  active={investingAs === "individual"}
-                  title="Individual investor"
-                  description="Use your approved personal KYC profile."
-                  onClick={() => {
-                    setInvestingAs("individual");
-                    setBusinessEntityId("");
-                  }}
-                />
-                <ChoiceCard
-                  active={investingAs === "business_entity"}
-                  disabled={!businessEntityOptions.length}
-                  title="Business entity"
-                  description={businessEntityOptions.length ? "Invest through an approved company or SPV." : "No approved entity available yet."}
-                  onClick={() => setInvestingAs("business_entity")}
-                />
-              </div>
-              {investingAs === "business_entity" && (
-                <select
-                  value={businessEntityId}
-                  onChange={(event) => setBusinessEntityId(event.target.value)}
-                  className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
-                >
-                  <option value="">Select an approved entity</option>
-                  {businessEntityOptions.map((entity) => (
-                    <option key={entity.id} value={entity.id}>
-                      {entity.legal_name} - {entity.registration_number}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold">2. Set your commitment amount</p>
-              <label className="mt-3 block">
-                <span className="mb-2 block text-xs uppercase tracking-widest text-muted-foreground">Amount in NGN</span>
-                <input
-                  type="number"
-                  min="50000"
-                  step="1000"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-base font-semibold outline-none focus:border-primary"
-                />
-              </label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {[100000, 250000, 500000, 1000000].map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setAmount(String(preset))}
-                    className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
-                  >
-                    {formatMoney(preset)}
-                  </button>
-                ))}
-              </div>
-              {amountNumber > openAmount && (
-                <p className="mt-2 text-sm text-destructive">This amount is higher than the remaining open allocation.</p>
-              )}
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold">3. Pick a funding rail</p>
-              <div className="mt-3 grid gap-3">
-                {checkoutRails.map((item) => {
-                  const readinessRail = derivedRails.find((railItem) => railItem.id === item.id);
-                  const disabled =
-                    !readinessRail ||
-                    readinessRail.status === "disabled" ||
-                    (item.id === "wallet_balance" && walletBalance <= 0);
-
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => setRail(item.id)}
-                      className={`rounded-2xl border p-4 text-left transition ${
-                        rail === item.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border bg-background hover:border-primary/30"
-                      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-semibold">{item.label}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                          <p className="mt-2 text-xs text-muted-foreground">{item.note}</p>
-                        </div>
-                        <RailIcon rail={item.id} />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {rail === "wallet_balance" && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Available wallet balance: <span className="font-semibold text-foreground">{formatMoney(walletBalance)}</span>
-                </p>
-              )}
-              {walletTooLow && (
-                <p className="mt-2 text-sm text-destructive">Your wallet does not have enough available balance for this commitment.</p>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <label className="flex items-start gap-3 text-sm">
-                <input type="checkbox" checked={acceptRisk} onChange={(event) => setAcceptRisk(event.target.checked)} className="mt-1" />
-                <span>I understand private investments are illiquid, can lose value, and remain subject to compliance review and offering-specific risk disclosures.</span>
-              </label>
-              <label className="mt-3 flex items-start gap-3 text-sm">
-                <input type="checkbox" checked={acceptTerms} onChange={(event) => setAcceptTerms(event.target.checked)} className="mt-1" />
-                <span>I accept the instrument summary, escrow process, and payment reconciliation rules for this commitment.</span>
-              </label>
-            </div>
-
-            <button
-              type="button"
-              disabled={!canSubmit || createCommitment.isPending}
-              onClick={() => void createCommitment.mutateAsync()}
-              className="gradient-brand rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-brand transition disabled:cursor-not-allowed disabled:opacity-50"
+    <AppLayout>
+      <div className="min-h-full bg-background pb-16">
+        {/* Breadcrumb */}
+        <div className="border-b border-border/40 bg-background/80 backdrop-blur-md">
+          <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+            <Link
+              to="/offerings/$opportunityId"
+              params={{ opportunityId }}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground transition hover:text-foreground"
             >
-              {createCommitment.isPending ? "Creating commitment..." : `Create ${selectedRail?.label ?? "funding"} instructions`}
-            </button>
+              <ArrowLeft className="h-4 w-4" /> Back to offering
+            </Link>
+            <span className="text-muted-foreground/40">/</span>
+            <span className="text-sm font-semibold text-foreground">Investment Checkout</span>
           </div>
-        </section>
+        </div>
 
-        <section className="space-y-6">
-          <div className="rounded-3xl border border-border bg-card p-6">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-primary" />
-              <h3 className="font-display text-xl font-bold">Checkout summary</h3>
-            </div>
-            <div className="mt-5 grid gap-3 text-sm">
-              <SummaryRow label="Investor" value={investingAs === "individual" ? "Individual" : "Business entity"} />
-              <SummaryRow label="Amount" value={formatMoney(amountNumber || 0)} />
-              <SummaryRow label="Funding rail" value={selectedRail?.label ?? "-"} />
-              <SummaryRow label="Wallet available" value={formatMoney(walletBalance)} />
-              <SummaryRow label="Escrow model" value="Funds move into escrow, not directly to the business." />
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-border bg-card p-6">
-            <p className="text-sm font-semibold">What happens next</p>
-            <div className="mt-4 grid gap-3">
-              {[
-                "Create the commitment and generate a unique reference code.",
-                "Fund it using transfer, wire, or wallet balance.",
-                "Operations reconcile the payment and mark it in escrow.",
-                "The round later closes, releases, or refunds based on the deal terms.",
-              ].map((item, index) => (
-                <div key={item} className="flex gap-3 rounded-2xl border border-border bg-background p-3">
-                  <div className="gradient-brand flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
-                    {index + 1}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+          {/* Success state */}
           {result && (
-            <div className="rounded-3xl border border-brand-green/30 bg-brand-green/5 p-6">
-              <div className="flex items-center gap-2 text-brand-green">
-                <CheckCircle2 className="h-5 w-5" />
-                <p className="font-semibold">Commitment created</p>
+            <SuccessPanel result={result} opportunityId={opportunityId} />
+          )}
+
+          {!result && (
+            <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+              {/* ── Left: form ── */}
+              <div className="space-y-8">
+                {/* Opportunity card */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Opportunity</p>
+                      <h1 className="mt-1.5 font-display text-2xl font-bold">{opportunity.title}</h1>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Building2 className="h-3.5 w-3.5" />
+                          {opportunity.businesses?.name}
+                        </span>
+                        {opportunity.businesses?.industry && (
+                          <>
+                            <span className="text-border">·</span>
+                            <span>{opportunity.businesses.industry}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {opportunity.businesses?.verified && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-green/10 px-3 py-1.5 text-xs font-bold text-brand-green">
+                        <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Progress */}
+                  <div className="mt-5">
+                    <div className="mb-2 flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{progressPct}% funded</span>
+                      <span className="font-semibold">{formatMoney(raisedAmount)} raised</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className="h-full rounded-full gradient-brand transition-all"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                    <div className="mt-3 flex gap-6 text-sm">
+                      <span><span className="font-bold">{formatMoney(goalAmount)}</span> <span className="text-muted-foreground text-xs">goal</span></span>
+                      <span><span className="font-bold text-brand-green">{formatMoney(Math.max(openAmount, 0))}</span> <span className="text-muted-foreground text-xs">still open</span></span>
+                      {opportunity.target_return_pct && (
+                        <span><span className="font-bold">{opportunity.target_return_pct}%</span> <span className="text-muted-foreground text-xs">target return</span></span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Readiness warning */}
+                {!readiness.canInvestNow && (
+                  <div className="rounded-2xl border border-amber-500/30 bg-amber-500/8 px-5 py-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                      <div>
+                        <p className="text-sm font-bold text-amber-300">Your account isn't ready to invest yet</p>
+                        <div className="mt-2 space-y-1">
+                          {readiness.checklist.filter((item) => !item.done).map((item) => (
+                            <p key={item.label} className="text-xs text-amber-200/70">• {item.label}</p>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Link to="/suitability" className="rounded-lg border border-amber-400/30 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-400/10">
+                            Suitability
+                          </Link>
+                          <Link to="/security" className="rounded-lg border border-amber-400/30 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-400/10">
+                            Security
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 1 */}
+                <StepSection number={1} title="Who is investing?">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <InvestorTypeCard
+                      active={investingAs === "individual"}
+                      title="Individual"
+                      description="Use your approved personal KYC profile."
+                      onClick={() => { setInvestingAs("individual"); setBusinessEntityId(""); }}
+                    />
+                    <InvestorTypeCard
+                      active={investingAs === "business_entity"}
+                      disabled={!businessEntityOptions.length}
+                      title="Business entity"
+                      description={businessEntityOptions.length ? "Invest through an approved company or SPV." : "No approved entity on file."}
+                      onClick={() => setInvestingAs("business_entity")}
+                    />
+                  </div>
+                  {investingAs === "business_entity" && (
+                    <select
+                      value={businessEntityId}
+                      onChange={(e) => setBusinessEntityId(e.target.value)}
+                      className="mt-3 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+                    >
+                      <option value="">Select an approved entity</option>
+                      {businessEntityOptions.map((entity) => (
+                        <option key={entity.id} value={entity.id}>
+                          {entity.legal_name} · {entity.registration_number}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </StepSection>
+
+                {/* Step 2 */}
+                <StepSection number={2} title="Commitment amount">
+                  <div className="rounded-xl border border-border bg-background focus-within:border-primary transition-colors">
+                    <div className="flex items-center">
+                      <span className="pl-5 pr-2 text-lg font-bold text-muted-foreground">₦</span>
+                      <input
+                        type="number"
+                        min="50000"
+                        step="1000"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="flex-1 bg-transparent py-4 pr-5 text-xl font-bold outline-none"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[100000, 250000, 500000, 1000000].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setAmount(String(preset))}
+                        className={`rounded-full border px-4 py-1.5 text-xs font-bold transition ${
+                          amountNumber === preset
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                        }`}
+                      >
+                        {formatMoney(preset)}
+                      </button>
+                    ))}
+                  </div>
+                  {amountNumber > openAmount && openAmount > 0 && (
+                    <p className="mt-2 text-xs font-semibold text-destructive">
+                      Exceeds the remaining open allocation of {formatMoney(openAmount)}.
+                    </p>
+                  )}
+                </StepSection>
+
+                {/* Step 3 */}
+                <StepSection number={3} title="Funding rail">
+                  <div className="space-y-2.5">
+                    {checkoutRails.map((item) => {
+                      const readinessRail = derivedRails.find((r) => r.id === item.id);
+                      const disabled =
+                        !readinessRail ||
+                        readinessRail.status === "disabled" ||
+                        (item.id === "wallet_balance" && walletBalance <= 0);
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => setRail(item.id)}
+                          className={`w-full rounded-xl border p-4 text-left transition ${
+                            rail === item.id
+                              ? "border-primary/50 bg-primary/5"
+                              : disabled
+                                ? "cursor-not-allowed border-border opacity-40"
+                                : "border-border bg-background hover:border-primary/30"
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                              rail === item.id ? "border-primary" : "border-muted-foreground/30"
+                            }`}>
+                              {rail === item.id && <div className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <RailIcon rail={item.id} />
+                                <p className="text-sm font-bold">{item.label}</p>
+                                {item.id === "wallet_balance" && wallet && (
+                                  <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                    {formatMoney(walletBalance)} available
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
+                              {item.note && <p className="mt-0.5 text-[11px] text-muted-foreground/70">{item.note}</p>}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {walletTooLow && (
+                    <p className="mt-2 text-xs font-semibold text-destructive">
+                      Insufficient wallet balance for this commitment.
+                    </p>
+                  )}
+                </StepSection>
+
+                {/* Step 4: Disclosures */}
+                <StepSection number={4} title="Risk disclosures">
+                  <div className="space-y-3">
+                    <CustomCheckbox
+                      checked={acceptRisk}
+                      onChange={setAcceptRisk}
+                      label="I understand private investments are illiquid, can lose value, and remain subject to compliance review and offering-specific risk disclosures."
+                    />
+                    <CustomCheckbox
+                      checked={acceptTerms}
+                      onChange={setAcceptTerms}
+                      label="I accept the instrument summary, escrow process, and payment reconciliation rules for this commitment."
+                    />
+                  </div>
+                </StepSection>
               </div>
-              <div className="mt-4 grid gap-3 text-sm">
-                <SummaryRow label="Commitment ID" value={result.commitment_id} />
-                <SummaryRow label="Reference code" value={result.reference_code} />
-                <SummaryRow label="Status" value={result.status.replaceAll("_", " ")} />
-                <SummaryRow label="Rail" value={getRailLabel(result.rail)} />
-              </div>
-              <InstructionPanel instructions={result.instructions} rail={result.rail} />
-              <Link to="/portfolio" className="mt-4 inline-flex text-sm font-semibold text-brand-green underline underline-offset-4">
-                View this in Portfolio
-              </Link>
+
+              {/* ── Right: sticky summary ── */}
+              <aside className="space-y-5 lg:sticky lg:top-4 lg:self-start">
+                {/* Summary card */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-2 mb-5">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <h2 className="text-sm font-bold">Checkout summary</h2>
+                  </div>
+
+                  <div className="divide-y divide-border/60 text-sm">
+                    <SummaryLine label="Opportunity" value={opportunity.title} mono={false} />
+                    <SummaryLine label="Investor" value={investingAs === "individual" ? "Individual" : "Business entity"} />
+                    <SummaryLine label="Amount" value={formatMoney(amountNumber || 0)} highlight />
+                    <SummaryLine label="Rail" value={selectedRail?.label ?? "—"} />
+                    <SummaryLine label="Wallet balance" value={formatMoney(walletBalance)} />
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={!canSubmit || createCommitment.isPending}
+                    onClick={() => void createCommitment.mutateAsync()}
+                    className="mt-6 w-full gradient-brand rounded-xl px-5 py-3.5 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {createCommitment.isPending
+                      ? "Creating commitment…"
+                      : `Confirm ${selectedRail?.label ?? "investment"}`}
+                  </button>
+
+                  {!canSubmit && !createCommitment.isPending && (
+                    <p className="mt-3 text-center text-xs text-muted-foreground">
+                      {!readiness.canInvestNow
+                        ? "Complete account readiness to invest."
+                        : !acceptRisk || !acceptTerms
+                          ? "Accept the disclosures below to continue."
+                          : amountNumber <= 0
+                            ? "Enter a valid investment amount."
+                            : "Review all fields above."}
+                    </p>
+                  )}
+                </div>
+
+                {/* What happens next */}
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">What happens next</p>
+                  <div className="space-y-4">
+                    {[
+                      "We create your commitment and generate a unique reference code.",
+                      "You fund it via bank transfer, wire, or wallet balance.",
+                      "Operations reconcile the payment and lock it in escrow.",
+                      "The round closes — then releases or refunds per deal terms.",
+                    ].map((step, i) => (
+                      <div key={step} className="flex gap-3">
+                        <div className="gradient-brand flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-primary-foreground">
+                          {i + 1}
+                        </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground pt-0.5">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </aside>
             </div>
           )}
-        </section>
+        </div>
       </div>
-    </PageShell>
+    </AppLayout>
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function StepSection({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-background p-4">
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className="mt-2 font-display text-xl font-bold">{value}</p>
+    <div>
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-[11px] font-bold text-background">
+          {number}
+        </div>
+        <h2 className="text-sm font-bold">{title}</h2>
+      </div>
+      {children}
     </div>
   );
 }
 
-function ChoiceCard({
+function InvestorTypeCard({
   active,
   disabled,
   title,
@@ -446,67 +505,175 @@ function ChoiceCard({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-2xl border p-4 text-left transition ${
-        active ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/30"
-      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+      className={`rounded-xl border p-4 text-left transition ${
+        active ? "border-primary/50 bg-primary/5" : "border-border bg-background hover:border-primary/30"
+      } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
     >
-      <p className="text-sm font-semibold">{title}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      <div className="flex items-center gap-3">
+        <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition ${
+          active ? "border-primary" : "border-muted-foreground/30"
+        }`}>
+          {active && <div className="h-2 w-2 rounded-full bg-primary" />}
+        </div>
+        <div>
+          <p className="text-sm font-bold">{title}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+        </div>
+      </div>
     </button>
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function CustomCheckbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-semibold">{value}</span>
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`flex w-full items-start gap-4 rounded-xl border p-4 text-left transition ${
+        checked ? "border-primary/40 bg-primary/5" : "border-border bg-background hover:border-primary/20"
+      }`}
+    >
+      <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition ${
+        checked ? "border-primary bg-primary" : "border-muted-foreground/40"
+      }`}>
+        {checked && (
+          <svg viewBox="0 0 12 10" className="h-3 w-3 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="1,5 4,9 11,1" />
+          </svg>
+        )}
+      </div>
+      <p className="text-xs leading-relaxed text-muted-foreground">{label}</p>
+    </button>
+  );
+}
+
+function SummaryLine({
+  label,
+  value,
+  highlight,
+  mono = true,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-2.5">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className={`text-right text-sm ${highlight ? "font-bold text-foreground" : "font-semibold"} ${mono ? "font-mono" : ""}`}>
+        {value}
+      </span>
     </div>
   );
 }
 
 function RailIcon({ rail }: { rail: CheckoutRail }) {
-  if (rail === "bank_transfer") return <Landmark className="h-5 w-5 text-primary" />;
-  if (rail === "wire") return <RadioTower className="h-5 w-5 text-primary" />;
-  return <Wallet className="h-5 w-5 text-primary" />;
+  if (rail === "bank_transfer") return <Landmark className="h-4 w-4 text-primary shrink-0" />;
+  if (rail === "wire") return <RadioTower className="h-4 w-4 text-primary shrink-0" />;
+  return <Wallet className="h-4 w-4 text-primary shrink-0" />;
+}
+
+function SuccessPanel({ result, opportunityId }: { result: CheckoutResponse; opportunityId: string }) {
+  return (
+    <div className="mx-auto max-w-2xl">
+      <div className="rounded-2xl border border-brand-green/30 bg-brand-green/5 p-8">
+        <div className="flex items-center gap-3 text-brand-green">
+          <CheckCircle2 className="h-6 w-6" />
+          <h2 className="font-display text-xl font-bold">Commitment created</h2>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Your investment commitment is live. Use the reference code below when making your transfer.
+        </p>
+
+        <div className="mt-6 divide-y divide-border/60 rounded-xl border border-brand-green/20 bg-background text-sm">
+          {[
+            { label: "Commitment ID", value: result.commitment_id },
+            { label: "Reference code", value: result.reference_code },
+            { label: "Status", value: result.status.replaceAll("_", " ") },
+            { label: "Rail", value: getRailLabel(result.rail) },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex items-center justify-between gap-4 px-5 py-3.5">
+              <span className="text-muted-foreground">{label}</span>
+              <span className="font-mono font-bold">{value}</span>
+            </div>
+          ))}
+        </div>
+
+        {result.instructions && (
+          <InstructionPanel instructions={result.instructions} rail={result.rail} />
+        )}
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            to="/portfolio"
+            className="gradient-brand inline-flex items-center rounded-xl px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-brand"
+          >
+            View in Portfolio
+          </Link>
+          <Link
+            to="/offerings/$opportunityId"
+            params={{ opportunityId }}
+            className="inline-flex items-center rounded-xl border border-border px-5 py-2.5 text-sm font-semibold text-muted-foreground transition hover:text-foreground"
+          >
+            Back to offering
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function InstructionPanel({ instructions, rail }: { instructions: Record<string, any> | null; rail: CheckoutRail }) {
   if (!instructions) return null;
 
+  const rows: { label: string; value: string }[] = [];
+  if (rail === "bank_transfer") {
+    rows.push(
+      { label: "Account name", value: instructions.account_name ?? "—" },
+      { label: "Bank", value: instructions.bank_name ?? "—" },
+      { label: "Account number", value: instructions.account_number ?? "—" },
+      { label: "Reference", value: instructions.reference_code ?? "—" },
+    );
+  } else if (rail === "wire") {
+    rows.push(
+      { label: "Beneficiary", value: instructions.beneficiary_name ?? "—" },
+      { label: "Bank", value: instructions.bank_name ?? "—" },
+      { label: "SWIFT", value: instructions.swift_code ?? "—" },
+      { label: "IBAN", value: instructions.iban ?? "—" },
+      { label: "Reference", value: instructions.reference_code ?? "—" },
+    );
+  } else if (rail === "wallet_balance") {
+    rows.push(
+      { label: "Wallet hold", value: formatMoney(Number(instructions.wallet_hold_amount ?? 0)) },
+      { label: "Reference", value: instructions.reference_code ?? "—" },
+      { label: "Settlement status", value: instructions.status ?? "—" },
+    );
+  }
+
   return (
-    <div className="mt-5 rounded-2xl border border-brand-green/20 bg-background p-4 text-sm">
-      <p className="font-semibold">Funding instructions</p>
-      {rail === "bank_transfer" && (
-        <div className="mt-3 grid gap-2">
-          <SummaryRow label="Account name" value={instructions.account_name ?? "-"} />
-          <SummaryRow label="Bank" value={instructions.bank_name ?? "-"} />
-          <SummaryRow label="Account number" value={instructions.account_number ?? "-"} />
-          <SummaryRow label="Reference" value={instructions.reference_code ?? "-"} />
-        </div>
-      )}
-      {rail === "wire" && (
-        <div className="mt-3 grid gap-2">
-          <SummaryRow label="Beneficiary" value={instructions.beneficiary_name ?? "-"} />
-          <SummaryRow label="Bank" value={instructions.bank_name ?? "-"} />
-          <SummaryRow label="SWIFT" value={instructions.swift_code ?? "-"} />
-          <SummaryRow label="IBAN" value={instructions.iban ?? "-"} />
-          <SummaryRow label="Reference" value={instructions.reference_code ?? "-"} />
-        </div>
-      )}
-      {rail === "wallet_balance" && (
-        <div className="mt-3 grid gap-2">
-          <SummaryRow label="Wallet hold" value={formatMoney(Number(instructions.wallet_hold_amount ?? 0))} />
-          <SummaryRow label="Reference" value={instructions.reference_code ?? "-"} />
-          <SummaryRow label="Settlement status" value={instructions.status ?? "-"} />
-        </div>
-      )}
+    <div className="mt-5">
+      <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-brand-green/70">Funding instructions</p>
+      <div className="divide-y divide-border/60 rounded-xl border border-brand-green/20 bg-background text-sm">
+        {rows.map(({ label, value }) => (
+          <div key={label} className="flex items-center justify-between gap-4 px-5 py-3.5">
+            <span className="text-muted-foreground">{label}</span>
+            <span className="font-mono font-bold">{value}</span>
+          </div>
+        ))}
+      </div>
       {Array.isArray(instructions.metadata?.steps) && (
-        <div className="mt-4 grid gap-2">
+        <div className="mt-4 space-y-1.5">
           {instructions.metadata.steps.map((step: string) => (
-            <p key={step} className="text-muted-foreground">
-              - {step}
-            </p>
+            <p key={step} className="text-xs text-muted-foreground">• {step}</p>
           ))}
         </div>
       )}
