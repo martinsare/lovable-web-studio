@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
+  Camera,
   CheckCircle2,
   Circle,
   ClipboardList,
@@ -63,6 +65,44 @@ const REPORTING_ITEMS = [
 function MyBusiness() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  async function uploadBusinessImage(
+    file: File,
+    businessId: string,
+    field: "logo_url" | "cover_url",
+    setUploading: (v: boolean) => void,
+  ) {
+    if (file.size > 10 * 1024 * 1024) { toast.error("Image must be under 10 MB."); return; }
+    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Upload a JPG, PNG, or WebP image.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${businessId}/${field.replace("_url", "")}-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("business-media")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadErr) throw uploadErr;
+      const { data: { publicUrl } } = supabase.storage.from("business-media").getPublicUrl(path);
+      const { error: updateErr } = await supabase
+        .from("businesses")
+        .update({ [field]: publicUrl })
+        .eq("id", businessId);
+      if (updateErr) throw updateErr;
+      await queryClient.invalidateQueries({ queryKey: ["my-business", user?.id] });
+      toast.success(`${field === "logo_url" ? "Logo" : "Cover image"} updated.`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Could not upload image.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const { data: businesses, isLoading } = useQuery({
     enabled: !!user,
@@ -260,6 +300,30 @@ function MyBusiness() {
         {/* Business passport header */}
         {businesses.map((business: any) => (
           <div key={business.id} className="relative">
+            {/* Hidden file inputs */}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadBusinessImage(f, business.id, "cover_url", setUploadingCover);
+                if (coverInputRef.current) coverInputRef.current.value = "";
+              }}
+            />
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadBusinessImage(f, business.id, "logo_url", setUploadingLogo);
+                if (logoInputRef.current) logoInputRef.current.value = "";
+              }}
+            />
+
             {/* Cover image */}
             <div className="relative h-48 overflow-hidden sm:h-64">
               {business.cover_url ? (
@@ -268,23 +332,47 @@ function MyBusiness() {
                 <div className="h-full w-full gradient-mesh" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingCover}
+                className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/60 disabled:opacity-60"
+              >
+                <Camera className="h-3.5 w-3.5" />
+                {uploadingCover ? "Uploading…" : "Change cover"}
+              </button>
             </div>
 
             {/* Business identity bar */}
             <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
               <div className="relative -mt-12 flex flex-wrap items-end gap-5 pb-6 border-b border-border">
-                {/* Logo */}
-                {business.logo_url ? (
-                  <img
-                    src={business.logo_url}
-                    alt=""
-                    className="h-20 w-20 shrink-0 rounded-2xl border-4 border-background object-cover shadow-elevated"
-                  />
-                ) : (
-                  <div className="gradient-brand flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-4 border-background shadow-elevated text-primary-foreground">
-                    <Building2 className="h-9 w-9" />
-                  </div>
-                )}
+                {/* Logo with upload overlay */}
+                <div className="relative shrink-0">
+                  {business.logo_url ? (
+                    <img
+                      src={business.logo_url}
+                      alt=""
+                      className="h-20 w-20 rounded-2xl border-4 border-background object-cover shadow-elevated"
+                    />
+                  ) : (
+                    <div className="gradient-brand flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-background shadow-elevated text-primary-foreground">
+                      <Building2 className="h-9 w-9" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-foreground text-background shadow-elevated transition hover:bg-foreground/80 disabled:opacity-60"
+                    title="Change logo"
+                  >
+                    {uploadingLogo ? (
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                    ) : (
+                      <Camera className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-3">

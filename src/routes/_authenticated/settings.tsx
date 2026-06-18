@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReferenceData, useRefValues } from "@/hooks/use-reference-data";
 import { toast } from "sonner";
 import {
   Bell,
+  Camera,
   ChevronRight,
   Globe,
   Lock,
@@ -56,8 +57,15 @@ function SettingsPage() {
   // Account form
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [username, setUsername] = useState(profile?.username ?? "");
-  const [bio, setBio] = useState(profile?.bio ?? "");
-  const [country, setCountry] = useState(profile?.country ?? "Nigeria");
+  const [bio, setBio] = useState((profile as any)?.bio ?? "");
+  const [country, setCountry] = useState((profile as any)?.country ?? "Nigeria");
+  const [occupation, setOccupation] = useState((profile as any)?.occupation ?? "");
+  const [city, setCity] = useState((profile as any)?.city ?? "");
+  const [websiteUrl, setWebsiteUrl] = useState((profile as any)?.website_url ?? "");
+  const [linkedinUrl, setLinkedinUrl] = useState((profile as any)?.linkedin_url ?? "");
+  const [avatarUrl, setAvatarUrl] = useState((profile as any)?.avatar_url ?? "");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
@@ -65,8 +73,49 @@ function SettingsPage() {
       setUsername(profile.username ?? "");
       setBio((profile as any).bio ?? "");
       setCountry((profile as any).country ?? "Nigeria");
+      setOccupation((profile as any).occupation ?? "");
+      setCity((profile as any).city ?? "");
+      setWebsiteUrl((profile as any).website_url ?? "");
+      setLinkedinUrl((profile as any).linkedin_url ?? "");
+      setAvatarUrl((profile as any).avatar_url ?? "");
     }
   }, [profile]);
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB.");
+      return;
+    }
+    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Upload a JPG, PNG, or WebP image.");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadErr) throw uploadErr;
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+      if (updateErr) throw updateErr;
+      setAvatarUrl(publicUrl);
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("Profile picture updated.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Could not upload image.");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
 
   // ── Notification preferences ──────────────────────────────────────────────
   const [notifs, setNotifs] = useState({
@@ -182,12 +231,18 @@ function SettingsPage() {
         .update({
           full_name: fullName.trim() || null,
           username: username.trim() || null,
-        })
+          bio: bio.trim() || null,
+          occupation: occupation.trim() || null,
+          city: city.trim() || null,
+          country: country || null,
+          website_url: websiteUrl.trim() || null,
+          linkedin_url: linkedinUrl.trim() || null,
+        } as any)
         .eq("id", user.id);
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success("Account details saved.");
+      toast.success("Profile saved.");
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Could not save."),
@@ -241,8 +296,59 @@ function SettingsPage() {
               {/* ── Account ── */}
               {section === "account" && (
                 <div className="space-y-6">
-                  <SectionHeading title="Account" desc="Your public display name, username, and region." />
+                  <SectionHeading title="Profile" desc="Your public identity on CoFund." />
 
+                  {/* Avatar upload */}
+                  <div className="flex items-center gap-5 rounded-2xl border border-border bg-card px-5 py-5">
+                    <div className="relative shrink-0">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt="Avatar"
+                          className="h-20 w-20 rounded-2xl object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="gradient-brand flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-bold text-primary-foreground">
+                          {(fullName || user?.email || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                        className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-foreground text-background shadow-elevated transition hover:bg-foreground/80 disabled:opacity-60"
+                        title="Change photo"
+                      >
+                        {uploadingAvatar ? (
+                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                        ) : (
+                          <Camera className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleAvatarUpload}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Profile picture</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">JPG, PNG or WebP · max 5 MB</p>
+                      <button
+                        type="button"
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                        className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold transition hover:bg-secondary disabled:opacity-60"
+                      >
+                        <Camera className="h-3.5 w-3.5" />
+                        {uploadingAvatar ? "Uploading…" : "Change photo"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Identity fields */}
                   <div className="divide-y divide-border rounded-2xl border border-border bg-card overflow-hidden">
                     <SettingRow label="Email" desc="Your sign-in email cannot be changed here.">
                       <span className="text-sm font-mono text-muted-foreground">{user?.email}</span>
@@ -269,6 +375,24 @@ function SettingsPage() {
                       </div>
                     </SettingRow>
 
+                    <SettingRow label="Occupation" desc="Your role or job title.">
+                      <input
+                        value={occupation}
+                        onChange={(e) => setOccupation(e.target.value)}
+                        placeholder="e.g. Angel investor"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary w-52 text-right"
+                      />
+                    </SettingRow>
+
+                    <SettingRow label="City" desc="Where you're based.">
+                      <input
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="e.g. Lagos"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary w-44 text-right"
+                      />
+                    </SettingRow>
+
                     <SettingRow label="Country" desc="Your primary investing jurisdiction.">
                       <select
                         value={country}
@@ -280,6 +404,45 @@ function SettingsPage() {
                         ))}
                       </select>
                     </SettingRow>
+
+                    <SettingRow label="Website" desc="Your personal or company website.">
+                      <input
+                        value={websiteUrl}
+                        onChange={(e) => setWebsiteUrl(e.target.value)}
+                        placeholder="https://yoursite.com"
+                        type="url"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary w-52 text-right"
+                      />
+                    </SettingRow>
+
+                    <SettingRow label="LinkedIn" desc="Your LinkedIn profile URL.">
+                      <input
+                        value={linkedinUrl}
+                        onChange={(e) => setLinkedinUrl(e.target.value)}
+                        placeholder="https://linkedin.com/in/…"
+                        type="url"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary w-52 text-right"
+                      />
+                    </SettingRow>
+                  </div>
+
+                  {/* Bio */}
+                  <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                    <div className="px-5 py-4 border-b border-border">
+                      <p className="text-sm font-semibold">Bio</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">A short description visible on your public profile.</p>
+                    </div>
+                    <div className="px-5 py-4">
+                      <textarea
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        rows={4}
+                        maxLength={500}
+                        placeholder="Tell the community about yourself — your background, investment interests, or what you're building…"
+                        className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary leading-relaxed"
+                      />
+                      <p className="mt-1.5 text-right text-xs text-muted-foreground">{bio.length}/500</p>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -289,7 +452,7 @@ function SettingsPage() {
                       disabled={saveAccount.isPending}
                       className="gradient-brand rounded-xl px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-brand disabled:opacity-50"
                     >
-                      {saveAccount.isPending ? "Saving…" : "Save changes"}
+                      {saveAccount.isPending ? "Saving…" : "Save profile"}
                     </button>
                     <Link
                       to="/profile"
