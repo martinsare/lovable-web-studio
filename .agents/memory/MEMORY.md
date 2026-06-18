@@ -1,3 +1,0 @@
-- [Follow counter RLS pattern](follow-counter-rls.md) — client cannot update another user's profile row; use SECURITY DEFINER triggers on the junction table instead.
-- [TanStack route JSX constraint](tanstack-route-jsx.md) — never define JSX variables before return in route files; always use sub-components.
-- [New tables not in types.ts](new-tables-cast.md) — user_follows, reference_data etc. are not in generated types; use (supabase as any) cast throughout.

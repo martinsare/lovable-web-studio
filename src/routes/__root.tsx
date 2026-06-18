@@ -10,7 +10,7 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportError } from "../lib/error-reporting";
 import logo from "../assets/icon.png";
 import { AuthProvider } from "../hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
@@ -54,7 +54,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     if (!isRedirectLike(error)) {
-      reportLovableError(error, { boundary: "tanstack_root_error_component" });
+      reportError(error, { boundary: "tanstack_root_error_component" });
     }
   }, [error]);
 
