@@ -1,14 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Calendar, ExternalLink, MapPin, ShieldCheck } from "lucide-react";
+import {
+  BadgeCheck,
+  CheckCircle2,
+  Circle,
+  ExternalLink,
+  ShieldCheck,
+  Star,
+  TrendingUp,
+  Users,
+  FileText,
+  Upload,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
-import { PageShell } from "@/components/page-shell";
+import { AppLayout } from "@/components/app-layout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { DOCUMENT_BUCKETS, formatDocumentSize, getDocumentSignedUrl, uploadDocumentFile } from "@/lib/document-storage";
+import {
+  DOCUMENT_BUCKETS,
+  formatDocumentSize,
+  getDocumentSignedUrl,
+  uploadDocumentFile,
+} from "@/lib/document-storage";
 import { createNotification } from "@/lib/notifications";
 import { buildMentorEligibility, formatCurrency } from "@/lib/mentor";
 
@@ -17,16 +34,24 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
 
+const TABS = ["Overview", "Mentor program", "Verification"] as const;
+type Tab = (typeof TABS)[number];
+
 function ProfilePage() {
   const { profile, roles, user } = useAuth();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<Tab>("Overview");
+
   const initials = (profile?.full_name ?? user?.email ?? "U").charAt(0).toUpperCase();
 
   const { data: commitments = [] } = useQuery({
     queryKey: ["mentor-eligibility", user?.id, "commitments"],
     enabled: Boolean(user?.id),
     queryFn: async () => {
-      const { data, error } = await supabase.from("investment_commitments").select("amount,created_at,status").eq("user_id", user!.id);
+      const { data, error } = await supabase
+        .from("investment_commitments")
+        .select("amount,created_at,status")
+        .eq("user_id", user!.id);
       if (error) throw error;
       return (data ?? []) as Array<{ amount: number | null; created_at: string; status: string }>;
     },
@@ -36,24 +61,30 @@ function ProfilePage() {
     queryKey: ["mentor-application", user?.id],
     enabled: Boolean(user?.id),
     queryFn: async () => {
-      const { data, error } = await supabase.from("mentor_applications").select("*").eq("user_id", user!.id).maybeSingle();
+      const { data, error } = await supabase
+        .from("mentor_applications")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
       if (error) throw error;
       return data as any;
     },
   });
 
   const completedCommitments = useMemo(
-    () => commitments.filter((item) => ["funded", "in_escrow", "released"].includes(item.status)),
+    () =>
+      commitments.filter((c) => ["funded", "in_escrow", "released"].includes(c.status)),
     [commitments],
   );
   const totalInvestedAmount = useMemo(
-    () => completedCommitments.reduce((sum, item) => sum + Number(item.amount ?? 0), 0),
+    () => completedCommitments.reduce((sum, c) => sum + Number(c.amount ?? 0), 0),
     [completedCommitments],
   );
   const lastInvestmentAt = useMemo(() => {
-    const timestamps = completedCommitments.map((item) => new Date(item.created_at).getTime()).filter((item) => !Number.isNaN(item));
-    if (!timestamps.length) return null;
-    return new Date(Math.max(...timestamps)).toISOString();
+    const ts = completedCommitments
+      .map((c) => new Date(c.created_at).getTime())
+      .filter((t) => !Number.isNaN(t));
+    return ts.length ? new Date(Math.max(...ts)).toISOString() : null;
   }, [completedCommitments]);
 
   const eligibility = useMemo(
@@ -67,7 +98,16 @@ function ProfilePage() {
         totalInvestedAmount,
         applicationStatus: mentorApplication?.status ?? null,
       }),
-    [completedCommitments.length, lastInvestmentAt, mentorApplication?.status, profile, roles, totalInvestedAmount, user?.created_at, user?.last_sign_in_at],
+    [
+      completedCommitments.length,
+      lastInvestmentAt,
+      mentorApplication?.status,
+      profile,
+      roles,
+      totalInvestedAmount,
+      user?.created_at,
+      user?.last_sign_in_at,
+    ],
   );
 
   const [focus, setFocus] = useState("");
@@ -87,15 +127,13 @@ function ProfilePage() {
   const submitMentorApplication = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("You need to be signed in.");
-      if (!eligibility.canApply) throw new Error("You do not meet the current mentor requirements yet.");
+      if (!eligibility.canApply) throw new Error("You do not meet the mentor requirements yet.");
       if (!proofFile) throw new Error("Please upload proof of experience or qualifications.");
-
       const uploaded = await uploadDocumentFile({
         bucket: DOCUMENT_BUCKETS.mentorApplication,
         scopeId: user.id,
         file: proofFile,
       });
-
       const { error } = await supabase.from("mentor_applications").upsert(
         {
           user_id: user.id,
@@ -118,9 +156,7 @@ function ProfilePage() {
         },
         { onConflict: "user_id" },
       );
-
       if (error) throw error;
-
       await createNotification({
         userId: user.id,
         category: "mentor_application",
@@ -144,195 +180,539 @@ function ProfilePage() {
   const openProof = async () => {
     if (!mentorApplication?.proof_storage_bucket || !mentorApplication?.proof_storage_path) return;
     try {
-      const signedUrl = await getDocumentSignedUrl(
+      const url = await getDocumentSignedUrl(
         mentorApplication.proof_storage_bucket,
         mentorApplication.proof_storage_path,
         mentorApplication.proof_original_filename ?? undefined,
       );
-      window.open(signedUrl, "_blank", "noopener,noreferrer");
-    } catch (error: any) {
-      toast.error(error?.message ?? "Unable to open proof file.");
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Unable to open proof file.");
     }
   };
 
   const currentStatus = mentorApplication?.status ?? "not_started";
-
-  const memberSince = new Date(profile?.created_at ?? user?.created_at ?? Date.now()).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const memberSince = new Date(
+    profile?.created_at ?? user?.created_at ?? Date.now(),
+  ).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
   return (
-    <PageShell eyebrow="Account" title={profile?.full_name ?? "Your profile"} description={`Member since ${memberSince} · ${user?.email ?? ""}`}>
-      <div className="grid gap-6 md:grid-cols-3">
-        <section className="space-y-5 md:col-span-2">
-            <Card title="Active roles">
-              <div className="flex flex-wrap gap-2">
-                {roles.length === 0 ? (
-                  <span className="text-sm text-muted-foreground">No roles selected yet.</span>
-                ) : (
-                  roles.map((r) => (
-                    <span key={r} className="rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-xs font-semibold capitalize text-primary">
-                      {r.replace("_", " ")}
-                    </span>
-                  ))
-                )}
+    <AppLayout>
+      <div className="min-h-full bg-background pb-16">
+        <div className="relative overflow-hidden border-b border-border/40">
+          <div className="absolute inset-0 gradient-hero opacity-80" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_top_right,oklch(0.65_0.18_160/0.10),transparent)]" />
+          <div className="relative mx-auto max-w-5xl px-4 pt-10 pb-0 sm:px-6 lg:px-8">
+            <div className="flex items-end gap-5">
+              <div className="relative shrink-0">
+                <div className="h-20 w-20 rounded-2xl gradient-brand flex items-center justify-center text-3xl font-bold text-primary-foreground shadow-brand sm:h-24 sm:w-24 sm:text-4xl">
+                  {initials}
+                </div>
+                <div className="absolute -bottom-1 -right-1 rounded-full bg-brand-green p-0.5 shadow-sm">
+                  <BadgeCheck className="h-4 w-4 text-white" />
+                </div>
               </div>
-            </Card>
-
-            <Card title="About">
-              <p className="text-sm text-muted-foreground">Add a short bio so members know what you're working on and what you're looking for.</p>
-            </Card>
-
-            <Card title="Mentor application">
-              <div className="space-y-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge status={currentStatus} />
-                  {eligibility.isApproved && <span className="rounded-full border border-brand-green/20 bg-brand-green/10 px-3 py-1 text-xs font-semibold text-brand-green">Approved mentor</span>}
+              <div className="pb-1 min-w-0">
+                <h1 className="font-display text-2xl font-bold sm:text-3xl truncate">
+                  {profile?.full_name ?? "Your profile"}
+                </h1>
+                <p className="mt-0.5 text-sm text-muted-foreground truncate">{user?.email}</p>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>🇳🇬 Nigeria</span>
+                  <span>Member since {memberSince}</span>
+                  <span className="flex items-center gap-1 text-brand-green">
+                    <ShieldCheck className="h-3 w-3" /> Email verified
+                  </span>
                 </div>
+              </div>
+            </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Metric label="Member since" value={profile?.created_at ?? user?.created_at ?? null} />
-                  <Metric label="Investments" value={String(eligibility.investmentCount)} />
-                  <Metric label="Total invested" value={formatCurrency(eligibility.totalInvestedAmount)} />
-                  <Metric label="Last active" value={eligibility.lastActiveAt} />
+            <div className="mt-8 flex gap-0 border-b border-border/60">
+              {TABS.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                    activeTab === tab
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+          {activeTab === "Overview" && (
+            <OverviewTab roles={roles} investmentCount={completedCommitments.length} totalInvested={totalInvestedAmount} />
+          )}
+          {activeTab === "Mentor program" && (
+            <MentorTab
+              currentStatus={currentStatus}
+              eligibility={eligibility}
+              mentorApplication={mentorApplication}
+              focus={focus}
+              setFocus={setFocus}
+              experienceSummary={experienceSummary}
+              setExperienceSummary={setExperienceSummary}
+              qualificationSummary={qualificationSummary}
+              setQualificationSummary={setQualificationSummary}
+              applicationNote={applicationNote}
+              setApplicationNote={setApplicationNote}
+              proofFile={proofFile}
+              setProofFile={setProofFile}
+              submitMentorApplication={submitMentorApplication}
+              openProof={openProof}
+            />
+          )}
+          {activeTab === "Verification" && (
+            <VerificationTab
+              investmentCount={completedCommitments.length}
+              totalInvested={totalInvestedAmount}
+            />
+          )}
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
+
+function OverviewTab({
+  roles,
+  investmentCount,
+  totalInvested,
+}: {
+  roles: string[];
+  investmentCount: number;
+  totalInvested: number;
+}) {
+  return (
+    <div className="grid gap-10 md:grid-cols-[1fr_280px]">
+      <div className="space-y-10">
+        <section>
+          <SectionLabel>Your identity</SectionLabel>
+          {roles.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No roles selected yet. Complete onboarding to set your roles.
+            </p>
+          ) : (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {roles.map((r) => (
+                <span
+                  key={r}
+                  className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-4 py-1.5 text-sm font-semibold capitalize text-primary"
+                >
+                  {r.replace(/_/g, " ")}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <SectionLabel>About you</SectionLabel>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Add a short bio so other CoFund members know what you're working on and what you're
+            looking for. A strong bio helps you connect with the right investors and founders.
+          </p>
+          <button className="mt-3 text-sm font-semibold text-primary hover:text-foreground transition-colors">
+            + Add bio
+          </button>
+        </section>
+
+        <section>
+          <SectionLabel>Activity</SectionLabel>
+          <div className="mt-4 grid grid-cols-3 divide-x divide-border border border-border rounded-2xl overflow-hidden">
+            {[
+              { label: "Investments", value: String(investmentCount) },
+              { label: "Total deployed", value: totalInvested > 0 ? formatCurrency(totalInvested) : "₦0" },
+              { label: "Community posts", value: "0" },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-card px-5 py-4 text-center">
+                <p className="font-display text-2xl font-bold">{value}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Your posts, comments, and investment history will appear here as you participate.
+          </p>
+        </section>
+      </div>
+
+      <aside className="space-y-8">
+        <section>
+          <SectionLabel>Status</SectionLabel>
+          <div className="mt-3 space-y-2.5">
+            {[
+              { label: "Account verified", done: true },
+              { label: "Email confirmed", done: true },
+              { label: "BVN verified", done: false },
+              { label: "Phone number", done: false },
+              { label: "First investment", done: investmentCount > 0 },
+            ].map(({ label, done }) => (
+              <div key={label} className="flex items-center gap-2.5 text-sm">
+                {done ? (
+                  <CheckCircle2 className="h-4 w-4 text-brand-green shrink-0" />
+                ) : (
+                  <Circle className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                )}
+                <span className={done ? "text-foreground" : "text-muted-foreground"}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </aside>
+    </div>
+  );
+}
+
+function MentorTab({
+  currentStatus,
+  eligibility,
+  mentorApplication,
+  focus,
+  setFocus,
+  experienceSummary,
+  setExperienceSummary,
+  qualificationSummary,
+  setQualificationSummary,
+  applicationNote,
+  setApplicationNote,
+  proofFile,
+  setProofFile,
+  submitMentorApplication,
+  openProof,
+}: any) {
+  const statusConfig: Record<string, { label: string; color: string; bg: string; desc: string }> = {
+    not_started: {
+      label: "Not applied",
+      color: "text-muted-foreground",
+      bg: "bg-secondary",
+      desc: "Complete the checklist below to unlock your mentor application.",
+    },
+    pending_review: {
+      label: "Under review",
+      color: "text-amber-400",
+      bg: "bg-amber-500/10",
+      desc: "Your application is with the CoFund team. We'll notify you within 5–7 business days.",
+    },
+    approved: {
+      label: "Approved mentor",
+      color: "text-brand-green",
+      bg: "bg-brand-green/10",
+      desc: "You're a verified CoFund mentor. Thank you for giving back to the community.",
+    },
+    rejected: {
+      label: "Not approved",
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      desc: "Your application wasn't approved this time. You may reapply after 90 days.",
+    },
+    draft: {
+      label: "Draft saved",
+      color: "text-muted-foreground",
+      bg: "bg-secondary",
+      desc: "Your draft is saved. Complete and submit when you're ready.",
+    },
+    needs_action: {
+      label: "Action needed",
+      color: "text-amber-400",
+      bg: "bg-amber-500/10",
+      desc: "The review team has requested additional information from you.",
+    },
+  };
+
+  const cfg = statusConfig[currentStatus] ?? statusConfig.not_started;
+
+  return (
+    <div className="space-y-10">
+      <div className={`rounded-2xl ${cfg.bg} px-6 py-5`}>
+        <div className="flex items-center gap-3 mb-2">
+          <Star className={`h-5 w-5 ${cfg.color}`} />
+          <p className={`font-display text-base font-bold ${cfg.color}`}>{cfg.label}</p>
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">{cfg.desc}</p>
+      </div>
+
+      <div className="grid gap-8 md:grid-cols-2">
+        <section>
+          <SectionLabel>Your metrics</SectionLabel>
+          <div className="mt-4 space-y-4">
+            {[
+              { label: "Investments made", value: String(eligibility.investmentCount), target: "≥ 1" },
+              { label: "Total deployed", value: formatCurrency(eligibility.totalInvestedAmount), target: "≥ ₦500,000" },
+              { label: "Member tenure", value: eligibility.checklist.find((c: any) => c.label === "Member for 3+ months")?.done ? "3+ months" : "< 3 months", target: "3 months" },
+            ].map(({ label, value, target }) => (
+              <div key={label} className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="mt-0.5 font-display text-xl font-bold">{value}</p>
                 </div>
+                <span className="mt-1 rounded-full border border-border px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                  target {target}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
 
-                <div className="rounded-2xl border border-border bg-background p-4">
-                  <h3 className="font-display text-sm font-bold">Eligibility checklist</h3>
-                  <div className="mt-3 space-y-2">
-                    {eligibility.checklist.map((item) => (
-                      <div key={item.label} className="flex items-start gap-3 text-sm">
-                        <span className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${item.done ? "bg-brand-green text-white" : "bg-muted text-muted-foreground"}`}>
-                          {item.done ? "✓" : "•"}
-                        </span>
-                        <div>
-                          <p className="font-medium">{item.label}</p>
-                          <p className="text-xs text-muted-foreground">{item.detail}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+        <section>
+          <SectionLabel>Eligibility checklist</SectionLabel>
+          <div className="mt-4 space-y-3">
+            {eligibility.checklist.map((item: any, i: number) => (
+              <div key={item.label} className="flex items-start gap-3">
+                <div
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                    item.done ? "bg-brand-green text-white" : "border border-border bg-card text-muted-foreground"
+                  }`}
+                >
+                  {item.done ? "✓" : i + 1}
                 </div>
+                <div>
+                  <p className={`text-sm font-medium ${item.done ? "text-foreground" : "text-muted-foreground"}`}>
+                    {item.label}
+                  </p>
+                  {!item.done && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">{item.detail}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
 
-                <div className="rounded-2xl border border-border bg-card/60 p-4">
-                  <h3 className="font-display text-sm font-bold">Application details</h3>
-                  <div className="mt-4 space-y-4">
-                    <Field label="Mentorship focus">
-                      <Input value={focus} onChange={(event) => setFocus(event.target.value)} placeholder="What founders should come to you for" />
-                    </Field>
-                    <Field label="Experience summary">
-                      <Textarea value={experienceSummary} onChange={(event) => setExperienceSummary(event.target.value)} placeholder="Summarize your investment and operating experience." rows={4} />
-                    </Field>
-                    <Field label="Qualifications and proof">
-                      <Textarea value={qualificationSummary} onChange={(event) => setQualificationSummary(event.target.value)} placeholder="List qualifications, certificates, licenses, or notable experience." rows={4} />
-                    </Field>
-                    <Field label="Additional note">
-                      <Textarea value={applicationNote} onChange={(event) => setApplicationNote(event.target.value)} placeholder="Anything else the admin reviewer should know?" rows={3} />
-                    </Field>
-                    <Field label="Proof file">
-                      <Input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx" onChange={(event) => setProofFile(event.target.files?.[0] ?? null)} />
-                    </Field>
-                    <button
-                      type="button"
-                      onClick={() => void submitMentorApplication.mutateAsync()}
-                      disabled={!eligibility.canApply || submitMentorApplication.isPending}
-                      className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-                    >
-                      {submitMentorApplication.isPending ? "Submitting..." : currentStatus === "pending_review" ? "Update application" : "Submit application"}
-                    </button>
-                    {!eligibility.canApply && !eligibility.isAlreadyApplied && !eligibility.isApproved && (
-                      <p className="text-xs text-muted-foreground">Finish the checklist above before applying. Mentor access is only granted after admin review.</p>
+      {(eligibility.canApply || eligibility.isAlreadyApplied || currentStatus === "pending_review") && (
+        <section>
+          <SectionLabel>Application</SectionLabel>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tell us about your investment experience and what you'd offer as a mentor.
+          </p>
+          <div className="mt-5 space-y-5">
+            <FormField label="What will you mentor on?">
+              <Input
+                value={focus}
+                onChange={(e) => setFocus(e.target.value)}
+                placeholder="e.g. Early-stage fundraising, agritech, financial modelling"
+              />
+            </FormField>
+            <FormField label="Investment & operating experience">
+              <Textarea
+                value={experienceSummary}
+                onChange={(e) => setExperienceSummary(e.target.value)}
+                placeholder="Summarize your background — deals you've made, sectors you know, companies you've built."
+                rows={4}
+              />
+            </FormField>
+            <FormField label="Qualifications & proof">
+              <Textarea
+                value={qualificationSummary}
+                onChange={(e) => setQualificationSummary(e.target.value)}
+                placeholder="List any certifications, notable exits, board roles, or professional licenses."
+                rows={3}
+              />
+            </FormField>
+            <FormField label="Additional note (optional)">
+              <Textarea
+                value={applicationNote}
+                onChange={(e) => setApplicationNote(e.target.value)}
+                placeholder="Anything else the review team should know?"
+                rows={2}
+              />
+            </FormField>
+
+            <FormField label="Supporting document">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-card/60 px-4 py-4 transition hover:border-primary/40 hover:bg-card">
+                <Upload className="h-5 w-5 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  {proofFile ? (
+                    <p className="text-sm font-medium truncate">{proofFile.name}</p>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium">Upload proof of experience</p>
+                      <p className="text-xs text-muted-foreground">PDF, image, or Word · max 10 MB</p>
+                    </>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.docx"
+                  className="hidden"
+                  onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            </FormField>
+
+            {mentorApplication?.proof_storage_bucket && (
+              <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {mentorApplication.proof_original_filename ?? "Uploaded document"}
+                    </p>
+                    {mentorApplication.proof_file_size && (
+                      <p className="text-xs text-muted-foreground">
+                        {formatDocumentSize(Number(mentorApplication.proof_file_size))}
+                      </p>
                     )}
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void openProof()}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Open
+                </button>
+              </div>
+            )}
 
-                {mentorApplication?.proof_storage_bucket && mentorApplication?.proof_storage_path && (
-                  <div className="rounded-2xl border border-border bg-background p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">Uploaded proof</p>
-                        <p className="text-xs text-muted-foreground">
-                          {mentorApplication.proof_original_filename ?? "Supporting document"}
-                          {mentorApplication.proof_file_size ? ` · ${formatDocumentSize(Number(mentorApplication.proof_file_size))}` : ""}
-                        </p>
-                      </div>
-                      <button type="button" onClick={() => void openProof()} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Open proof
-                      </button>
-                    </div>
+            <button
+              type="button"
+              onClick={() => void submitMentorApplication.mutateAsync()}
+              disabled={!eligibility.canApply || submitMentorApplication.isPending}
+              className="w-full rounded-xl gradient-brand py-3 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {submitMentorApplication.isPending
+                ? "Submitting…"
+                : currentStatus === "pending_review"
+                  ? "Update application"
+                  : "Submit application"}
+            </button>
+            {!eligibility.canApply && !eligibility.isAlreadyApplied && !eligibility.isApproved && (
+              <p className="text-center text-xs text-muted-foreground">
+                Complete the eligibility checklist above before you can apply.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function VerificationTab({
+  investmentCount,
+  totalInvested,
+}: {
+  investmentCount: number;
+  totalInvested: number;
+}) {
+  const checksDone = [investmentCount > 0].filter(Boolean).length + 2;
+  const totalChecks = 5;
+  const trustPct = Math.round((checksDone / totalChecks) * 100);
+
+  return (
+    <div className="grid gap-10 md:grid-cols-[1fr_260px]">
+      <div className="space-y-10">
+        <section>
+          <SectionLabel>Trust score</SectionLabel>
+          <div className="mt-6 flex items-end gap-6">
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-4 border-primary/20 bg-card">
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: `conic-gradient(oklch(0.7 0.18 160) ${trustPct * 3.6}deg, transparent 0deg)`,
+                  borderRadius: "50%",
+                  padding: "4px",
+                }}
+              />
+              <div className="relative z-10 flex flex-col items-center bg-card rounded-full w-[calc(100%-8px)] h-[calc(100%-8px)] justify-center">
+                <p className="font-display text-2xl font-bold">{trustPct}</p>
+                <p className="text-[10px] text-muted-foreground">/ 100</p>
+              </div>
+            </div>
+            <div>
+              <p className="font-display text-base font-bold">
+                {trustPct < 40 ? "Getting started" : trustPct < 70 ? "Building trust" : "Trusted member"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground max-w-xs leading-relaxed">
+                Complete more verifications to increase your trust score and unlock higher investment limits.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <SectionLabel>Verifications</SectionLabel>
+          <div className="mt-4 divide-y divide-border/60">
+            {[
+              { label: "Email address", desc: "Your email has been confirmed", done: true },
+              { label: "Account created", desc: "Profile set up on CoFund", done: true },
+              { label: "Phone number", desc: "Add a verified mobile number", done: false },
+              { label: "BVN verification", desc: "Link your Bank Verification Number (Nigeria)", done: false },
+              { label: "First investment", desc: "Make your first funded commitment", done: investmentCount > 0 },
+            ].map(({ label, desc, done }) => (
+              <div key={label} className="flex items-center justify-between gap-4 py-4">
+                <div className="flex items-center gap-3.5">
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                      done ? "bg-brand-green/10 text-brand-green" : "bg-secondary text-muted-foreground"
+                    }`}
+                  >
+                    {done ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
                   </div>
+                  <div>
+                    <p className="text-sm font-semibold">{label}</p>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
+                  </div>
+                </div>
+                {!done && (
+                  <button className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-primary transition">
+                    Add
+                  </button>
                 )}
               </div>
-            </Card>
+            ))}
+          </div>
+        </section>
+      </div>
 
-            <Card title="Activity">
-              <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground">Your posts, comments and investments will appear here.</div>
-            </Card>
-          </section>
-
-          <aside className="space-y-5">
-            <Card title="Trust score">
-              <p className="font-display text-4xl font-bold text-gradient-brand">—</p>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Complete BVN, phone, address and email verification to unlock your trust score.</p>
-            </Card>
-            <Card title="Reputation">
-              <div className="space-y-3">
-                <Row label="Helpful answers" value="0" />
-                <Row label="Mentor sessions" value="0" />
-                <Row label="Investments" value={String(eligibility.investmentCount)} />
+      <aside className="space-y-8">
+        <section>
+          <SectionLabel>Reputation</SectionLabel>
+          <div className="mt-4 space-y-4">
+            {[
+              { label: "Mentor sessions", value: "0", icon: Users },
+              { label: "Helpful answers", value: "0", icon: Star },
+              { label: "Investments made", value: String(investmentCount), icon: TrendingUp },
+            ].map(({ label, value, icon: Icon }) => (
+              <div key={label} className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  {label}
+                </div>
+                <span className="font-display text-lg font-bold">{value}</span>
               </div>
-            </Card>
-          </aside>
-        </div>
-    </PageShell>
-  );
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
-      <h2 className="font-display text-base font-bold">{title}</h2>
-      <div className="mt-4">{children}</div>
+            ))}
+          </div>
+        </section>
+      </aside>
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-foreground">{label}</span>
+    <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
       {children}
-    </label>
+    </p>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold">{value}</span>
+    <div>
+      <label className="mb-1.5 block text-sm font-semibold text-foreground">{label}</label>
+      {children}
     </div>
   );
-}
-
-function Metric({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="rounded-xl border border-border bg-background p-4">
-      <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-2 text-sm font-semibold">{formatMetricValue(label, value)}</p>
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const className =
-    status === "approved"
-      ? "bg-brand-green/10 text-brand-green"
-      : status === "pending_review" || status === "needs_action" || status === "draft"
-        ? "bg-amber-500/10 text-amber-400"
-        : status === "rejected"
-          ? "bg-destructive/10 text-destructive"
-          : "bg-secondary text-muted-foreground";
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${className}`}>{status.replaceAll("_", " ")}</span>;
 }
 
 function formatMetricValue(label: string, value: string | null) {

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/app-layout";
@@ -15,6 +16,8 @@ import {
   Clock,
   Users,
   ChevronRight,
+  Flame,
+  Send,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/home")({
@@ -32,24 +35,20 @@ function greeting() {
 function Dashboard() {
   const { profile, loading, roles } = useAuth();
   if (!loading && profile && !profile.onboarded) throw redirect({ to: "/onboarding" });
-
   const name = profile?.full_name?.split(" ")[0] ?? "there";
 
   return (
     <AppLayout>
-      <div className="min-h-full">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-          <WelcomeHeader greeting={greeting()} name={name} roles={roles} />
-          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-            <div className="space-y-8 min-w-0">
-              <QuickStats />
-              <CommunityFeed />
-            </div>
-            <div className="space-y-5">
+      <div className="min-h-full bg-background">
+        <PortfolioHero greeting={greeting()} name={name} />
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
+            <CommunityFeed />
+            <aside className="space-y-8">
               <FeaturedOpportunity />
               <QuickActions roles={roles} />
-              <ActivityItem />
-            </div>
+              <PlatformStats />
+            </aside>
           </div>
         </div>
       </div>
@@ -57,61 +56,174 @@ function Dashboard() {
   );
 }
 
-function WelcomeHeader({ greeting: g, name, roles }: { greeting: string; name: string; roles: string[] }) {
+function PortfolioHero({ greeting: g, name }: { greeting: string; name: string }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-7 shadow-card">
-      <div className="absolute inset-0 -z-10 gradient-hero opacity-80" />
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{g}</p>
-          <h1 className="mt-1 font-display text-3xl font-bold">{name} 👋</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Here's what's happening in your CoFund world today.
-          </p>
-          {roles.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {roles.map((r) => (
-                <span
-                  key={r}
-                  className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-xs font-semibold capitalize text-primary"
-                >
-                  {r.replace(/_/g, " ")}
-                </span>
-              ))}
+    <div className="relative overflow-hidden border-b border-border/40">
+      <div className="absolute inset-0 gradient-hero" />
+      <div className="absolute right-0 top-0 h-64 w-96 bg-[radial-gradient(ellipse_at_top_right,oklch(0.65_0.18_160/0.10)_0%,transparent_70%)]" />
+      <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-0 sm:px-6 lg:px-8">
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-muted-foreground">
+              {g},{" "}
+              <span className="font-semibold text-foreground">{name}</span>
+            </p>
+            <div className="mt-6">
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                Total portfolio value
+              </p>
+              <p className="mt-2 font-display text-6xl font-bold tracking-tight sm:text-7xl">
+                ₦0
+              </p>
+              <p className="mt-2.5 text-sm text-muted-foreground max-w-xs">
+                Invest in your first deal to start building your African portfolio.
+              </p>
             </div>
-          )}
+          </div>
+          <Link
+            to="/browse"
+            className="hidden sm:inline-flex shrink-0 items-center gap-2 rounded-xl gradient-brand px-6 py-3 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90 mt-2"
+          >
+            Explore deals <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
-        <Link
-          to="/browse"
-          className="hidden shrink-0 items-center gap-2 rounded-xl gradient-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-brand transition hover:opacity-90 sm:flex"
-        >
-          Browse deals <ArrowRight className="h-4 w-4" />
-        </Link>
+
+        <div className="mt-10 grid grid-cols-3 border-t border-border divide-x divide-border">
+          {[
+            { label: "Active positions", value: "0", icon: TrendingUp },
+            { label: "Wallet balance", value: "₦0", icon: Wallet },
+            { label: "Pending actions", value: "0", icon: Clock },
+          ].map(({ label, value, icon: Icon }) => (
+            <div key={label} className="flex items-center gap-3 px-5 py-4 first:pl-0">
+              <Icon className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {label}
+                </p>
+                <p className="mt-0.5 font-display text-xl font-bold">{value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
-function QuickStats() {
-  const stats = [
-    { icon: BarChart3, label: "Portfolio value", value: "₦0", color: "text-primary bg-primary/10" },
-    { icon: TrendingUp, label: "Active positions", value: "0", color: "text-brand-green bg-brand-green/10" },
-    { icon: Wallet, label: "Wallet balance", value: "₦0", color: "text-gold bg-gold/10" },
-    { icon: Clock, label: "Pending actions", value: "0", color: "text-muted-foreground bg-secondary" },
-  ];
+function CommunityFeed() {
+  const [draft, setDraft] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["dash", "feed"],
+    queryFn: async () => {
+      try {
+        return await fetchPostsWithAuthors(12);
+      } catch {
+        return [];
+      }
+    },
+  });
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {stats.map((stat) => (
-        <div key={stat.label} className="rounded-2xl border border-border bg-card p-4 shadow-card">
-          <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl ${stat.color}`}>
-            <stat.icon className="h-4.5 w-4.5" />
-          </div>
-          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">{stat.label}</p>
-          <p className="mt-1 font-display text-xl font-bold">{stat.value}</p>
+    <section>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-display text-lg font-bold">Community</h2>
+        <Link
+          to="/community"
+          className="flex items-center gap-1 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+        >
+          See all <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      <div className="mb-8 flex items-start gap-3">
+        <div className="h-8 w-8 shrink-0 rounded-full gradient-brand flex items-center justify-center text-xs font-bold text-primary-foreground">
+          Y
         </div>
-      ))}
-    </div>
+        <div className="flex-1 rounded-2xl border border-border bg-card px-4 py-3">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Share something with the community…"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+          />
+          {draft.length > 0 && (
+            <div className="mt-3 flex justify-end">
+              <Link
+                to="/community"
+                className="inline-flex items-center gap-1.5 rounded-lg gradient-brand px-3 py-1.5 text-xs font-bold text-primary-foreground"
+              >
+                <Send className="h-3 w-3" /> Post
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-start gap-3.5">
+              <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-secondary" />
+              <div className="flex-1 space-y-2 pt-1">
+                <div className="h-3 w-28 animate-pulse rounded bg-secondary" />
+                <div className="h-3 w-full animate-pulse rounded bg-secondary" />
+                <div className="h-3 w-4/5 animate-pulse rounded bg-secondary" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : !data || data.length === 0 ? (
+        <div className="py-12 text-center">
+          <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-secondary flex items-center justify-center">
+            <MessageCircle className="h-6 w-6 text-muted-foreground/50" />
+          </div>
+          <p className="font-display text-base font-semibold">Nothing here yet</p>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Be the first to post something to the CoFund community.
+          </p>
+          <Link
+            to="/community"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary"
+          >
+            Go to community <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      ) : (
+        <div className="divide-y divide-border/60">
+          {data.map((p: any) => (
+            <div key={p.id} className="flex items-start gap-3.5 py-5 first:pt-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full gradient-brand text-xs font-bold text-primary-foreground">
+                {(p.profile?.full_name ?? "U").charAt(0)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2.5">
+                  <p className="text-sm font-semibold leading-none">
+                    {p.profile?.full_name ?? "Member"}
+                  </p>
+                  {p.created_at && (
+                    <span className="text-[11px] text-muted-foreground">
+                      {new Date(p.created_at).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-3">
+                  {p.content}
+                </p>
+                <div className="mt-3 flex items-center gap-4">
+                  <button className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition">
+                    <MessageCircle className="h-3.5 w-3.5" /> Reply
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -132,55 +244,94 @@ function FeaturedOpportunity() {
     },
   });
 
+  const raised = (data as any)?.raised_amount ?? 0;
+  const goal = (data as any)?.goal_amount ?? 1;
+  const progress = Math.min((raised / goal) * 100, 100);
+
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-primary">
-          <Sparkles className="h-3.5 w-3.5" />
+    <div>
+      <div className="flex items-center gap-1.5 mb-4">
+        <Flame className="h-3.5 w-3.5 text-gold" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
           Featured round
         </p>
-        {data && (
-          <span className="rounded-full bg-brand-green/10 px-2.5 py-1 text-[10px] font-semibold text-brand-green">
-            LIVE
-          </span>
-        )}
       </div>
 
       {data ? (
-        <>
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 shrink-0 rounded-lg gradient-brand" />
-            <div className="min-w-0">
-              <p className="truncate text-[11px] text-muted-foreground">{(data as any).businesses?.industry}</p>
-              <p className="truncate text-sm font-semibold">{(data as any).businesses?.name}</p>
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card">
+          <div className="absolute top-0 inset-x-0 h-px gradient-brand" />
+          <div className="p-5">
+            <div className="flex items-center gap-1.5 mb-4">
+              <div className="h-2 w-2 rounded-full bg-brand-green animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-green">
+                Live
+              </span>
             </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 shrink-0 rounded-xl gradient-brand" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                  {(data as any).businesses?.industry}
+                </p>
+                <p className="text-sm font-bold truncate">{(data as any).businesses?.name}</p>
+              </div>
+            </div>
+            <h3 className="font-display text-sm font-bold leading-snug text-foreground">
+              {(data as any).title}
+            </h3>
+            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-background/60 p-3.5">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-0.5">Target return</p>
+                <p className="font-display text-2xl font-bold text-brand-green">
+                  {(data as any).target_return_pct ?? "—"}%
+                </p>
+                <p className="text-[10px] text-muted-foreground">per annum</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-0.5">Funding goal</p>
+                <p className="font-display text-xl font-bold">
+                  {goal >= 1_000_000
+                    ? `₦${(goal / 1_000_000).toFixed(0)}M`
+                    : `₦${goal.toLocaleString()}`}
+                </p>
+                <p className="text-[10px] text-muted-foreground">this round</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex justify-between text-[10px] text-muted-foreground mb-1.5">
+                <span>{progress.toFixed(0)}% funded</span>
+                <span>
+                  {raised >= 1_000_000
+                    ? `₦${(raised / 1_000_000).toFixed(1)}M`
+                    : `₦${raised.toLocaleString()}`}{" "}
+                  raised
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-brand-green transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+            <Link
+              to="/browse"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl gradient-brand py-3 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90"
+            >
+              View opportunity <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <h3 className="mt-3.5 font-display text-base font-bold leading-snug">{(data as any).title}</h3>
-          {(data as any).target_return_pct && (
-            <div className="mt-3 flex items-center justify-between rounded-xl bg-brand-green/8 px-3.5 py-2.5">
-              <span className="text-xs text-muted-foreground">Target return</span>
-              <span className="font-display text-lg font-bold text-brand-green">{(data as any).target_return_pct}%</span>
-            </div>
-          )}
-          <Link
-            to="/browse"
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl gradient-brand py-2.5 text-sm font-semibold text-primary-foreground shadow-brand transition hover:opacity-90"
-          >
-            View opportunity <ArrowRight className="h-4 w-4" />
-          </Link>
-        </>
+        </div>
       ) : (
-        <div className="text-center py-4">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <p className="text-sm font-medium">No featured round right now</p>
-          <p className="mt-1 text-xs text-muted-foreground">New opportunities are added weekly</p>
+        <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center">
+          <Sparkles className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
+          <p className="text-sm font-semibold">No featured round yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">New opportunities drop weekly</p>
           <Link
             to="/browse"
-            className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition hover:text-foreground"
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-primary"
           >
-            Browse all <ArrowRight className="h-3.5 w-3.5" />
+            Browse all deals <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       )}
@@ -190,12 +341,12 @@ function FeaturedOpportunity() {
 
 function QuickActions({ roles }: { roles: string[] }) {
   const actions = [
-    { to: "/browse", icon: TrendingUp, label: "Browse opportunities", desc: "Find your next investment" },
+    { to: "/browse", icon: TrendingUp, label: "Browse deals", desc: "Verified African opportunities" },
     { to: "/community", icon: MessageCircle, label: "Community", desc: "See what's trending" },
     ...(roles.includes("investor")
       ? [
-          { to: "/portfolio", icon: BarChart3, label: "My portfolio", desc: "Track investments" },
-          { to: "/wallet", icon: Wallet, label: "Wallet", desc: "Manage your balance" },
+          { to: "/portfolio", icon: BarChart3, label: "My portfolio", desc: "Track your investments" },
+          { to: "/wallet", icon: Wallet, label: "Wallet", desc: "Fund or withdraw" },
         ]
       : []),
     ...(roles.includes("business_owner")
@@ -204,23 +355,23 @@ function QuickActions({ roles }: { roles: string[] }) {
   ].slice(0, 4);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-      <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Quick actions</p>
-      <div className="space-y-1.5">
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+        Quick access
+      </p>
+      <div className="space-y-0.5">
         {actions.map(({ to, icon: Icon, label, desc }) => (
           <Link
             key={to}
             to={to as never}
-            className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition hover:bg-secondary/60"
+            className="group flex items-center gap-3.5 rounded-xl px-3 py-2.5 transition hover:bg-secondary/60 -mx-3"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition">
-              <Icon className="h-4 w-4" />
-            </div>
+            <Icon className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{label}</p>
-              <p className="truncate text-xs text-muted-foreground">{desc}</p>
+              <p className="text-sm font-semibold leading-none">{label}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>
             </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground transition" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
           </Link>
         ))}
       </div>
@@ -228,12 +379,12 @@ function QuickActions({ roles }: { roles: string[] }) {
   );
 }
 
-function ActivityItem() {
+function PlatformStats() {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Platform stats</p>
-      </div>
+    <div className="border-t border-border pt-6">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+        Platform
+      </p>
       <div className="space-y-3">
         {[
           { label: "Active investors", value: "2,400+", icon: Users },
@@ -242,87 +393,12 @@ function ActivityItem() {
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className="h-3.5 w-3.5 shrink-0" />
               {label}
             </div>
-            <span className="text-sm font-semibold text-foreground">{value}</span>
+            <span className="text-sm font-bold text-foreground">{value}</span>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function CommunityFeed() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["dash", "feed"],
-    queryFn: async () => {
-      try {
-        return await fetchPostsWithAuthors(10);
-      } catch {
-        return [];
-      }
-    },
-  });
-
-  return (
-    <div className="rounded-2xl border border-border bg-card shadow-card">
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <p className="flex items-center gap-2 text-sm font-semibold">
-          <MessageCircle className="h-4 w-4 text-primary" />
-          Community feed
-        </p>
-        <Link
-          to="/community"
-          className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-        >
-          See all <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-      <div className="divide-y divide-border">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-start gap-3 p-5">
-              <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-secondary" />
-              <div className="flex-1 space-y-2">
-                <div className="h-3.5 w-24 animate-pulse rounded bg-secondary" />
-                <div className="h-3 w-full animate-pulse rounded bg-secondary" />
-                <div className="h-3 w-3/4 animate-pulse rounded bg-secondary" />
-              </div>
-            </div>
-          ))
-        ) : !data || data.length === 0 ? (
-          <div className="p-10 text-center">
-            <MessageCircle className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
-            <p className="text-sm font-medium">No posts yet</p>
-            <p className="mt-1 text-xs text-muted-foreground">Be the first to share something with the community.</p>
-            <Link
-              to="/community"
-              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary"
-            >
-              Go to community <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        ) : (
-          data.map((p: any) => (
-            <div key={p.id} className="flex items-start gap-4 px-6 py-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full gradient-brand text-xs font-bold text-primary-foreground">
-                {(p.profile?.full_name ?? "U").charAt(0)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold">{p.profile?.full_name ?? "Member"}</p>
-                  {p.created_at && (
-                    <span className="text-[11px] text-muted-foreground">
-                      {new Date(p.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground line-clamp-2">{p.content}</p>
-              </div>
-            </div>
-          ))
-        )}
       </div>
     </div>
   );

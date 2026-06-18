@@ -1,0 +1,2 @@
+- [Design system](design-system.md) — premium ultra-dark design with oklch tokens; key utilities and fonts documented
+- [Router generator JSX quirk](router-generator-jsx.md) — TanStack router-generator fails on JSX variables defined before the return statement in route files
