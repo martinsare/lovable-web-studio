@@ -1,0 +1,39 @@
+5:08:00 PM [vite] (client) [Unhandled error] Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <AuthProvider>
+      <OutletImpl>
+        <Suspense fallback={null}>
+          <MatchImpl matchId="/auth/auth">
+            <MatchView router={{...}} matchId="/auth/auth" resetKey={1781802479666} matchState={{routeId:"/...", ...}}>
+              <SafeFragment>
+                <SafeFragment fallback={null}>
+                  <SafeFragment getResetKey={function getResetKey} errorComponent={function ErrorComponent} ...>
+                    <SafeFragment fallback={function fallback}>
+                      <MatchInnerImpl matchId="/auth/auth">
+                        <Lazy>
+                          <AuthPage>
++                           <div className="min-h-screen bg-background">
+-                           <Suspense>
+                ...
+      ...
+
+ > throwOnHydrationMismatch node_modules/react-dom/cjs/react-dom-client.development.js:5238:10
+ > beginWork node_modules/react-dom/cjs/react-dom-client.development.js:12027:16
+ > runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+ > performUnitOfWork node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+ > workLoopSync node_modules/react-dom/cjs/react-dom-client.development.js:17469:40
+ > renderRootSync node_modules/react-dom/cjs/react-dom-client.development.js:17450:10
+ > performWorkOnRoot node_modules/react-dom/cjs/react-dom-client.development.js:16504:10
+ > performWorkOnRootViaSchedulerTask node_modules/react-dom/cjs/react-dom-client.development.js:18957:6
+ > MessagePort.performWorkUntilDeadline node_modules/scheduler/cjs/scheduler.development.js:45:47

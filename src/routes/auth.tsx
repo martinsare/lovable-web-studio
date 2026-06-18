@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,6 +110,7 @@ function AuthPage() {
   }
 
   return (
+    <Suspense fallback={null}>
     <div className="min-h-screen bg-background">
       <div className="grid min-h-screen lg:grid-cols-[0.9fr_1fr]">
         {/* Left panel */}
@@ -310,6 +311,7 @@ function AuthPage() {
         </div>
       </div>
     </div>
+    </Suspense>
   );
 }
 
