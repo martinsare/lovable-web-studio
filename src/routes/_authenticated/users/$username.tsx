@@ -9,14 +9,13 @@ import {
   MapPin,
   Calendar,
   Users,
-  TrendingUp,
-  ArrowLeft,
   UserPlus,
   UserCheck,
   MessageCircle,
   Briefcase,
   Globe,
   Link2,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,7 +53,6 @@ function UserProfilePage() {
     },
   });
 
-  // Follower/following counts — queried from user_follows (graceful 0 if table absent)
   const { data: followerCount = 0 } = useQuery({
     enabled: !!profile?.id,
     queryKey: ["follower-count", profile?.id],
@@ -105,7 +103,6 @@ function UserProfilePage() {
     },
   });
 
-  // Investment count — graceful 0 if table doesn't exist yet
   const { data: investmentCount = 0 } = useQuery({
     enabled: !!profile?.id,
     queryKey: ["user-investment-count", profile?.id],
@@ -139,18 +136,16 @@ function UserProfilePage() {
       const followerCountQK = ["follower-count", profile?.id];
       await qc.cancelQueries({ queryKey: followQK });
       await qc.cancelQueries({ queryKey: followerCountQK });
-
       const prevFollow = qc.getQueryData(followQK);
       const prevCount = qc.getQueryData<number>(followerCountQK) ?? 0;
-
       qc.setQueryData(followQK, shouldFollow);
       qc.setQueryData(followerCountQK, Math.max(0, prevCount + (shouldFollow ? 1 : -1)));
-
       return { prevFollow, prevCount };
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prevFollow !== undefined) qc.setQueryData(followQK, ctx.prevFollow);
-      if (ctx?.prevCount !== undefined) qc.setQueryData(["follower-count", profile?.id], ctx.prevCount);
+      if (ctx?.prevCount !== undefined)
+        qc.setQueryData(["follower-count", profile?.id], ctx.prevCount);
       toast.error("Could not update follow status.");
     },
     onSettled: () => {
@@ -165,7 +160,9 @@ function UserProfilePage() {
   const isOwnProfile = user?.id === profile.id;
   const displayName = profile.full_name ?? profile.username ?? "Anonymous";
   const initial = displayName.charAt(0).toUpperCase();
-  const locationStr = [profile.city, profile.country, profile.location].filter(Boolean).join(", ");
+  const locationStr = [profile.city, profile.country, profile.location]
+    .filter(Boolean)
+    .join(", ");
   const memberSince = new Date(profile.created_at).toLocaleDateString("en-NG", {
     month: "long",
     year: "numeric",
@@ -173,65 +170,115 @@ function UserProfilePage() {
 
   const TABS: { key: ProfileTab; label: string }[] = [
     { key: "overview", label: "Overview" },
-    { key: "followers", label: followerCount > 0 ? `Followers (${followerCount})` : "Followers" },
-    { key: "following", label: followingCount > 0 ? `Following (${followingCount})` : "Following" },
+    { key: "followers", label: `Followers${followerCount > 0 ? ` · ${followerCount}` : ""}` },
+    { key: "following", label: `Following${followingCount > 0 ? ` · ${followingCount}` : ""}` },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      {/* Hero */}
-      <div className="relative">
-        <div className="gradient-mesh h-40 w-full sm:h-52" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
-        <div className="absolute left-4 top-4 sm:left-6">
-          <button
-            onClick={() => window.history.back()}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-background/80 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm transition hover:bg-background"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back
-          </button>
-        </div>
+      {/* ── Banner ── */}
+      <div className="relative h-36 w-full overflow-hidden sm:h-48">
+        <div className="gradient-mesh h-full w-full" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
       </div>
 
-      {/* Identity bar */}
+      {/* ── Identity ── */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="-mt-12 relative z-10 flex flex-col gap-4 pb-6 sm:flex-row sm:items-end sm:gap-6">
+        <div className="-mt-14 flex flex-col gap-5 sm:flex-row sm:items-end sm:gap-6 pb-6">
+          {/* Avatar */}
           {profile.avatar_url ? (
             <img
               src={profile.avatar_url}
               alt={displayName}
-              className="h-24 w-24 rounded-2xl border-4 border-background object-cover shadow-soft"
+              className="h-24 w-24 shrink-0 rounded-2xl border-4 border-background object-cover shadow-elevated"
             />
           ) : (
-            <div className="gradient-brand flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-background text-3xl font-bold text-primary-foreground shadow-soft">
+            <div className="gradient-brand flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-background text-3xl font-bold text-primary-foreground shadow-elevated">
               {initial}
             </div>
           )}
 
-          <div className="min-w-0 flex-1">
-            <h1 className="font-display text-2xl font-extrabold sm:text-3xl">{displayName}</h1>
+          {/* Name + meta */}
+          <div className="min-w-0 flex-1 pb-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-2xl font-extrabold sm:text-3xl">{displayName}</h1>
+              {roles.map((r) => (
+                <RoleChip key={r} role={r} />
+              ))}
+            </div>
             {profile.username && (
               <p className="mt-0.5 text-sm text-muted-foreground">@{profile.username}</p>
             )}
-            <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {locationStr && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5" /> {locationStr}
+                </span>
+              )}
+              {profile.occupation && (
+                <span className="flex items-center gap-1">
+                  <Briefcase className="h-3.5 w-3.5" /> {profile.occupation}
                 </span>
               )}
               <span className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" /> Joined {memberSince}
               </span>
             </div>
+
+            {/* Inline stats + links */}
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
+              <button
+                type="button"
+                onClick={() => setTab("followers")}
+                className="font-semibold hover:text-primary transition-colors"
+              >
+                <span className="font-bold">{followerCount}</span>{" "}
+                <span className="text-muted-foreground font-normal">followers</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("following")}
+                className="font-semibold hover:text-primary transition-colors"
+              >
+                <span className="font-bold">{followingCount}</span>{" "}
+                <span className="text-muted-foreground font-normal">following</span>
+              </button>
+              <span>
+                <span className="font-bold">{investmentCount}</span>{" "}
+                <span className="text-sm text-muted-foreground font-normal">investments</span>
+              </span>
+              {profile.website_url && (
+                <a
+                  href={profile.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-primary hover:underline"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  {profile.website_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                </a>
+              )}
+              {profile.linkedin_url && (
+                <a
+                  href={profile.linkedin_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-primary hover:underline"
+                >
+                  <Link2 className="h-3.5 w-3.5" /> LinkedIn
+                </a>
+              )}
+            </div>
           </div>
 
-          <div className="flex gap-2 sm:self-center">
+          {/* CTA */}
+          <div className="sm:self-end sm:pb-1">
             {isOwnProfile ? (
               <Link
                 to="/profile"
-                className="flex items-center gap-1.5 rounded-xl border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/5"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold transition hover:bg-secondary"
               >
                 Edit profile
               </Link>
@@ -239,57 +286,35 @@ function UserProfilePage() {
               <button
                 onClick={() => followMutation.mutate(!isFollowing)}
                 disabled={followMutation.isPending}
-                className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${
                   isFollowing
                     ? "border-brand-green bg-brand-green/10 text-brand-green"
-                    : "border-border bg-card hover:bg-secondary"
+                    : "gradient-brand border-transparent text-primary-foreground shadow-brand hover:opacity-90"
                 }`}
               >
                 {isFollowing ? (
-                  <>
-                    <UserCheck className="h-4 w-4" /> Following
-                  </>
+                  <><UserCheck className="h-4 w-4" /> Following</>
                 ) : (
-                  <>
-                    <UserPlus className="h-4 w-4" /> Follow
-                  </>
+                  <><UserPlus className="h-4 w-4" /> Follow</>
                 )}
               </button>
             )}
           </div>
         </div>
-
-        {/* Stats row */}
-        <div className="mb-6 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card">
-          {[
-            { label: "Followers", value: followerCount, tab: "followers" as ProfileTab },
-            { label: "Following", value: followingCount, tab: "following" as ProfileTab },
-            { label: "Investments", value: investmentCount, tab: null as ProfileTab | null },
-          ].map(({ label, value, tab: t }) => (
-            <button
-              key={label}
-              onClick={() => t && setTab(t)}
-              className={`py-4 text-center transition ${t ? "hover:bg-secondary/40 cursor-pointer" : "cursor-default"}`}
-            >
-              <p className="font-display text-2xl font-bold">{value}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Tab bar */}
+      {/* ── Tab bar ── */}
       <div className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur-md">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1 overflow-x-auto py-2 scrollbar-hide">
+          <div className="flex gap-0 overflow-x-auto scrollbar-hide">
             {TABS.map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                className={`flex shrink-0 items-center border-b-2 px-5 py-3.5 text-sm font-semibold transition-colors ${
                   tab === key
-                    ? "gradient-brand text-white shadow-soft"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {label}
@@ -299,32 +324,17 @@ function UserProfilePage() {
         </div>
       </div>
 
-      {/* Body */}
+      {/* ── Body ── */}
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
-          <div className="min-w-0">
-            {tab === "overview" && (
-              <OverviewTab profile={profile} roles={roles} followerCount={followerCount} followingCount={followingCount} />
-            )}
-            {tab === "followers" && (
-              <FollowersList
-                profileId={profile.id}
-                currentUserId={user?.id}
-                type="followers"
-              />
-            )}
-            {tab === "following" && (
-              <FollowersList
-                profileId={profile.id}
-                currentUserId={user?.id}
-                type="following"
-              />
-            )}
-          </div>
-          <aside className="hidden lg:block">
-            <ProfileSidebar profile={profile} roles={roles} />
-          </aside>
-        </div>
+        {tab === "overview" && (
+          <OverviewTab profile={profile} />
+        )}
+        {tab === "followers" && (
+          <FollowersList profileId={profile.id} currentUserId={user?.id} type="followers" />
+        )}
+        {tab === "following" && (
+          <FollowersList profileId={profile.id} currentUserId={user?.id} type="following" />
+        )}
       </div>
 
       <SiteFooter />
@@ -334,13 +344,13 @@ function UserProfilePage() {
 
 function RoleChip({ role }: { role: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-2.5 py-0.5 text-[10px] font-semibold capitalize text-primary">
+    <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
       {role.replace(/_/g, " ")}
     </span>
   );
 }
 
-function OverviewTab({ profile, roles, followerCount, followingCount }: { profile: any; roles: string[]; followerCount: number; followingCount: number }) {
+function OverviewTab({ profile }: { profile: any }) {
   const { data: recentPosts = [] } = useQuery({
     queryKey: ["user-posts", profile.id],
     queryFn: async () => {
@@ -355,88 +365,61 @@ function OverviewTab({ profile, roles, followerCount, followingCount }: { profil
     },
   });
 
+  const isEmpty = !profile.bio && recentPosts.length === 0;
+
+  if (isEmpty) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground/40">
+          <Users className="h-6 w-6" />
+        </div>
+        <p className="font-display text-base font-semibold">Nothing shared yet</p>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          This member hasn't posted anything yet.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Bio */}
+    <div className="space-y-10 max-w-2xl">
       {profile.bio && (
         <section>
-          <h2 className="mb-3 font-display text-lg font-bold">About</h2>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
             {profile.bio}
           </p>
         </section>
       )}
 
-      {/* Roles */}
-      {roles.length > 0 && (
-        <section>
-          <h2 className="mb-3 font-display text-lg font-bold">Roles</h2>
-          <div className="flex flex-wrap gap-2">
-            {roles.map((r) => (
-              <RoleChip key={r} role={r} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Activity stats */}
-      <section>
-        <h2 className="mb-3 font-display text-lg font-bold">Activity</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {[
-            { icon: Users, label: "Followers", value: followerCount },
-            { icon: TrendingUp, label: "Following", value: followingCount },
-            { icon: MessageCircle, label: "Posts", value: recentPosts.length },
-          ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="rounded-2xl border border-border bg-card p-4 shadow-card">
-              <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="h-4 w-4" />
-              </div>
-              <p className="font-display text-2xl font-extrabold">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Recent posts */}
       {recentPosts.length > 0 && (
         <section>
-          <h2 className="mb-4 font-display text-lg font-bold">Recent posts</h2>
-          <div className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border bg-card">
+          <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Recent posts
+          </p>
+          <div className="divide-y divide-border/60">
             {recentPosts.map((post: any) => (
-              <div key={post.id} className="px-5 py-4">
-                <p className="line-clamp-3 text-sm leading-relaxed text-foreground">
+              <div key={post.id} className="py-5 first:pt-0 last:pb-0">
+                <p className="text-sm leading-relaxed text-foreground line-clamp-4">
                   {post.content}
                 </p>
-                <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="mt-3 flex items-center gap-3">
                   {post.category && (
-                    <span className="rounded-full border border-border px-2 py-0.5 capitalize">
+                    <span className="rounded-full border border-border px-2.5 py-0.5 text-[11px] font-semibold capitalize text-muted-foreground">
                       {post.category}
                     </span>
                   )}
-                  <span>
+                  <time className="text-xs text-muted-foreground">
                     {new Date(post.created_at).toLocaleDateString("en-NG", {
                       day: "numeric",
                       month: "short",
                       year: "numeric",
                     })}
-                  </span>
+                  </time>
                 </div>
               </div>
             ))}
           </div>
         </section>
-      )}
-
-      {recentPosts.length === 0 && !profile.bio && roles.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center">
-          <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-          <p className="text-sm font-semibold">Nothing here yet</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            This user hasn't shared anything yet.
-          </p>
-        </div>
       )}
     </div>
   );
@@ -454,8 +437,6 @@ function FollowersList({
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["user-follows-list", profileId, type],
     queryFn: async () => {
-      // Step 1: fetch the user IDs from the junction table
-      // (user_follows FKs point to auth.users, not profiles, so we cannot embed profiles directly)
       const idCol = type === "followers" ? "follower_id" : "following_id";
       const filterCol = type === "followers" ? "following_id" : "follower_id";
 
@@ -469,13 +450,11 @@ function FollowersList({
       const ids: string[] = (followRows ?? []).map((r: any) => r[idCol]).filter(Boolean);
       if (!ids.length) return [];
 
-      // Step 2: fetch profile data for those IDs
       const { data: profileRows } = await db
         .from("profiles")
         .select("id,full_name,username,avatar_url,bio,followers_count")
         .in("id", ids);
 
-      // Step 3: batch-fetch roles
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("user_id,role")
@@ -488,7 +467,6 @@ function FollowersList({
         rolesMap.set(r.user_id, list);
       }
 
-      // Preserve follow order
       const profileMap = new Map((profileRows ?? []).map((p: any) => [p.id, p]));
       return ids
         .map((id) => profileMap.get(id))
@@ -499,16 +477,13 @@ function FollowersList({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
-          >
-            <div className="h-12 w-12 animate-pulse rounded-full bg-secondary" />
+      <div className="divide-y divide-border/60">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-5 first:pt-0">
+            <div className="h-11 w-11 animate-pulse rounded-full bg-secondary" />
             <div className="flex-1 space-y-2">
-              <div className="h-3 w-32 animate-pulse rounded bg-secondary" />
-              <div className="h-2.5 w-48 animate-pulse rounded bg-secondary" />
+              <div className="h-3 w-36 animate-pulse rounded bg-secondary" />
+              <div className="h-2.5 w-52 animate-pulse rounded bg-secondary" />
             </div>
           </div>
         ))}
@@ -518,12 +493,14 @@ function FollowersList({
 
   if (users.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center">
-        <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-        <p className="text-sm font-semibold">
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground/40">
+          <Users className="h-6 w-6" />
+        </div>
+        <p className="font-display text-base font-semibold">
           {type === "followers" ? "No followers yet" : "Not following anyone yet"}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1.5 text-sm text-muted-foreground">
           {type === "followers"
             ? "Be the first to follow this user."
             : "They haven't followed anyone yet."}
@@ -533,19 +510,27 @@ function FollowersList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="divide-y divide-border/60 max-w-2xl">
       {users.map((u: any) => (
-        <UserCard key={u.id} user={u} currentUserId={currentUserId} />
+        <UserRow key={u.id} user={u} currentUserId={currentUserId} />
       ))}
     </div>
   );
 }
 
-function UserCard({
+function UserRow({
   user,
   currentUserId,
 }: {
-  user: { id: string; full_name: string | null; username: string | null; avatar_url: string | null; bio: string | null; followers_count: number; roles: string[] };
+  user: {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+    followers_count: number;
+    roles: string[];
+  };
   currentUserId: string | undefined;
 }) {
   const qc = useQueryClient();
@@ -601,47 +586,49 @@ function UserCard({
   const isOwnCard = currentUserId === user.id;
 
   return (
-    <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-4 shadow-card">
-      {user.avatar_url ? (
-        <img
-          src={user.avatar_url}
-          alt=""
-          className="h-12 w-12 shrink-0 rounded-full object-cover"
-        />
+    <div className="flex items-center gap-4 py-4 first:pt-0">
+      {user.username ? (
+        <Link to="/users/$username" params={{ username: user.username }} className="shrink-0">
+          {user.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt=""
+              className="h-11 w-11 rounded-full object-cover transition hover:opacity-80"
+            />
+          ) : (
+            <div className="gradient-brand flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-primary-foreground transition hover:opacity-80">
+              {initial}
+            </div>
+          )}
+        </Link>
       ) : (
-        <div className="gradient-brand flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
+        <div className="gradient-brand flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
           {initial}
         </div>
       )}
 
       <div className="min-w-0 flex-1">
-        {user.username ? (
-          <Link
-            to="/users/$username"
-            params={{ username: user.username }}
-            className="font-semibold transition-colors hover:text-primary"
-          >
-            {displayName}
-          </Link>
-        ) : (
-          <p className="font-semibold">{displayName}</p>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {user.username ? (
+            <Link
+              to="/users/$username"
+              params={{ username: user.username }}
+              className="font-semibold transition-colors hover:text-primary"
+            >
+              {displayName}
+            </Link>
+          ) : (
+            <p className="font-semibold">{displayName}</p>
+          )}
+          {user.roles.slice(0, 2).map((r) => (
+            <RoleChip key={r} role={r} />
+          ))}
+        </div>
         {user.username && (
           <p className="text-xs text-muted-foreground">@{user.username}</p>
         )}
-        {/* Role chips */}
-        {user.roles.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {user.roles.slice(0, 3).map((r) => (
-              <RoleChip key={r} role={r} />
-            ))}
-          </div>
-        )}
         {user.bio && (
-          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{user.bio}</p>
-        )}
-        {user.followers_count > 0 && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{user.followers_count} followers</p>
+          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{user.bio}</p>
         )}
       </div>
 
@@ -649,89 +636,18 @@ function UserCard({
         <button
           onClick={() => followMutation.mutate(!isFollowing)}
           disabled={followMutation.isPending}
-          className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+          className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
             isFollowing
               ? "border-brand-green bg-brand-green/10 text-brand-green"
-              : "border-border bg-background hover:bg-secondary"
+              : "border-border bg-card hover:bg-secondary"
           }`}
         >
           {isFollowing ? (
-            <>
-              <UserCheck className="h-3.5 w-3.5" /> Following
-            </>
+            <><UserCheck className="h-3.5 w-3.5" /> Following</>
           ) : (
-            <>
-              <UserPlus className="h-3.5 w-3.5" /> Follow
-            </>
+            <><UserPlus className="h-3.5 w-3.5" /> Follow</>
           )}
         </button>
-      )}
-    </div>
-  );
-}
-
-function ProfileSidebar({ profile, roles }: { profile: any; roles: string[] }) {
-  return (
-    <div className="sticky top-24 space-y-4">
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          About
-        </p>
-        <dl className="flex flex-col gap-3">
-          {profile.occupation && (
-            <div className="flex items-start gap-2.5">
-              <Briefcase className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm">{profile.occupation}</span>
-            </div>
-          )}
-          {(profile.city || profile.country || profile.location) && (
-            <div className="flex items-start gap-2.5">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm">
-                {[profile.city, profile.country, profile.location].filter(Boolean).join(", ")}
-              </span>
-            </div>
-          )}
-          {profile.website_url && (
-            <div className="flex items-start gap-2.5">
-              <Globe className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <a
-                href={profile.website_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="truncate text-sm text-primary hover:underline"
-              >
-                {profile.website_url.replace(/^https?:\/\//, "")}
-              </a>
-            </div>
-          )}
-          {profile.linkedin_url && (
-            <div className="flex items-start gap-2.5">
-              <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <a
-                href={profile.linkedin_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline"
-              >
-                LinkedIn
-              </a>
-            </div>
-          )}
-        </dl>
-      </div>
-
-      {roles.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Roles
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {roles.map((r) => (
-              <RoleChip key={r} role={r} />
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
@@ -741,16 +657,16 @@ function ProfileSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <div className="gradient-mesh h-40 w-full animate-pulse sm:h-52" />
-      <div className="relative z-10 mx-auto -mt-12 max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end gap-4 pb-6">
-          <div className="h-24 w-24 animate-pulse rounded-2xl border-4 border-background bg-secondary" />
-          <div className="flex-1 space-y-2 pb-2">
-            <div className="h-7 w-48 animate-pulse rounded bg-secondary" />
-            <div className="h-4 w-32 animate-pulse rounded bg-secondary" />
+      <div className="h-36 w-full animate-pulse gradient-mesh sm:h-48" />
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="-mt-14 flex items-end gap-5 pb-6">
+          <div className="h-24 w-24 animate-pulse shrink-0 rounded-2xl border-4 border-background bg-secondary" />
+          <div className="flex-1 space-y-2.5 pb-1">
+            <div className="h-7 w-44 animate-pulse rounded bg-secondary" />
+            <div className="h-4 w-28 animate-pulse rounded bg-secondary" />
+            <div className="h-3 w-64 animate-pulse rounded bg-secondary" />
           </div>
         </div>
-        <div className="mb-6 h-20 animate-pulse rounded-2xl bg-secondary" />
       </div>
     </div>
   );
