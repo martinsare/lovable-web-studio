@@ -13,7 +13,7 @@ const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).default("sign
 
 export const Route = createFileRoute("/auth")({
   validateSearch: zodValidator(searchSchema),
-  head: () => ({ meta: [{ title: "Sign in · CoFund" }] }),
+  head: () => ({ meta: [{ title: "Sign in - CoFund" }] }),
   component: AuthPage,
 });
 
@@ -36,7 +36,8 @@ function AuthPage() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
+          email,
+          password,
           options: {
             emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
             data: { full_name: fullName },
@@ -61,30 +62,43 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="grid min-h-screen lg:grid-cols-2">
-        <div className="hidden lg:flex flex-col justify-between relative overflow-hidden p-12">
+        <div className="hidden relative overflow-hidden p-12 lg:flex">
           <div className="absolute inset-0 -z-10">
-              <img src={authHero} alt="" className="h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-background/75 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
             <div className="absolute inset-0 gradient-mesh opacity-60" />
           </div>
-          <Link to="/" className="flex items-center gap-2.5">
-            <img src={logo} alt="CoFund" className="h-10 w-10 object-contain" />
-            <span className="font-display text-xl font-bold">CoFund</span>
-          </Link>
-          <div>
-            <blockquote className="font-display text-2xl font-bold leading-snug">
-              "The platform where Africa's next great businesses get funded — and investors find real opportunities."
-            </blockquote>
-            <div className="mt-8 space-y-3">
-              {[
-                { Icon: ShieldCheck, text: "Escrow-protected investments" },
-                { Icon: BadgeCheck, text: "Every business KYC verified" },
-                { Icon: TrendingUp, text: "Track returns & milestones live" },
-              ].map(({ Icon, text }) => (
-                <div key={text} className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Icon className="h-4 w-4 text-brand-green" /> {text}
+
+          <div className="relative z-10 flex min-h-full w-full flex-col justify-between">
+            <Link to="/" className="flex items-center gap-2.5">
+              <img src={logo} alt="CoFund" className="h-10 w-10 object-contain" />
+              <span className="font-display text-xl font-bold">CoFund</span>
+            </Link>
+
+            <div className="mx-auto w-full max-w-xl">
+              <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-card/40 shadow-soft backdrop-blur-sm">
+                <img
+                  src={authHero}
+                  alt="Investors collaborating"
+                  className="h-[28rem] w-full object-cover object-center"
+                />
+              </div>
+
+              <div className="mt-8">
+                <blockquote className="font-display text-2xl font-bold leading-snug">
+                  "The platform where Africa's next great businesses get funded - and investors find real opportunities."
+                </blockquote>
+                <div className="mt-8 space-y-3">
+                  {[
+                    { Icon: ShieldCheck, text: "Escrow-protected investments" },
+                    { Icon: BadgeCheck, text: "Every business KYC verified" },
+                    { Icon: TrendingUp, text: "Track returns & milestones live" },
+                  ].map(({ Icon, text }) => (
+                    <div key={text} className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Icon className="h-4 w-4 text-brand-green" /> {text}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </div>
@@ -114,15 +128,25 @@ function AuthPage() {
                 disabled={busy}
                 className="gradient-brand mt-2 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-brand transition hover:opacity-90 disabled:opacity-50"
               >
-                {busy ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
+                {busy ? "Please wait..." : mode === "signup" ? "Create account" : "Sign in"}
               </button>
             </form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               {mode === "signup" ? (
-                <>Already a member?{" "}<Link to="/auth" search={{ mode: "signin" }} className="font-semibold text-primary hover:text-foreground">Sign in</Link></>
+                <>
+                  Already a member?{" "}
+                  <Link to="/auth" search={{ mode: "signin" }} className="font-semibold text-primary hover:text-foreground">
+                    Sign in
+                  </Link>
+                </>
               ) : (
-                <>New to CoFund?{" "}<Link to="/auth" search={{ mode: "signup" }} className="font-semibold text-primary hover:text-foreground">Create an account</Link></>
+                <>
+                  New to CoFund?{" "}
+                  <Link to="/auth" search={{ mode: "signup" }} className="font-semibold text-primary hover:text-foreground">
+                    Create an account
+                  </Link>
+                </>
               )}
             </p>
           </div>
@@ -132,9 +156,20 @@ function AuthPage() {
   );
 }
 
-function Field({ label, type, value, onChange, required, minLength }: {
-  label: string; type: string; value: string;
-  onChange: (v: string) => void; required?: boolean; minLength?: number;
+function Field({
+  label,
+  type,
+  value,
+  onChange,
+  required,
+  minLength,
+}: {
+  label: string;
+  type: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  minLength?: number;
 }) {
   return (
     <label className="block">
