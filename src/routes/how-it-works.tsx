@@ -58,7 +58,7 @@ function HowItWorks() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <section className="relative overflow-hidden border-b border-white/[0.06]">
+      <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 -z-10 gradient-mesh" />
         <div className="mx-auto max-w-5xl px-4 py-24 text-center sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">How it works</p>
@@ -75,7 +75,7 @@ function HowItWorks() {
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="space-y-6">
           {tracks.map((t, i) => (
-            <div key={t.title} className={`grid gap-8 rounded-3xl border border-white/[0.06] bg-card overflow-hidden md:grid-cols-2 ${i % 2 === 1 ? "md:[&>*:first-child]:order-last" : ""}`}>
+            <div key={t.title} className={`grid gap-8 rounded-3xl border border-border bg-card overflow-hidden md:grid-cols-2 ${i % 2 === 1 ? "md:[&>*:first-child]:order-last" : ""}`}>
               <div className="relative overflow-hidden aspect-[16/10]">
                 <img src={t.img} alt={t.title} className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-r from-card/50 to-transparent" />

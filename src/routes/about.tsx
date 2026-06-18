@@ -19,7 +19,7 @@ function AboutPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <section className="relative overflow-hidden border-b border-white/[0.06]">
+      <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 -z-10 gradient-mesh" />
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
           <div className="grid gap-12 lg:grid-cols-2 items-center">
@@ -62,7 +62,7 @@ function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-card/40 border-y border-white/[0.06] py-20">
+      <section className="bg-card/40 border-y border-border py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12 text-center">
             <h2 className="font-display text-3xl font-bold">What we believe</h2>
@@ -73,7 +73,7 @@ function AboutPage() {
               { icon: BadgeCheck, color: "text-brand-green bg-brand-green/10", t: "Verification beats hype", d: "Real businesses, real founders, real numbers. We do the homework so investors don't have to." },
               { icon: BarChart3, color: "text-gold bg-gold/10", t: "Community compounds", d: "Investors, founders and mentors growing together create value that no single actor can unlock alone." },
             ].map((v) => (
-              <div key={v.t} className="rounded-2xl border border-white/[0.06] bg-card p-7">
+              <div key={v.t} className="rounded-2xl border border-border bg-card p-7">
                 <div className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl ${v.color}`}>
                   <v.icon className="h-6 w-6" />
                 </div>

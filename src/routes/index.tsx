@@ -14,7 +14,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import {
   TrendingUp, Briefcase, Rocket, ShieldCheck, BadgeCheck, BarChart3,
-  ArrowRight, Sparkles, MessageCircle, Users, Coins
+  ArrowRight, MessageCircle, Users, Coins
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -59,10 +59,6 @@ function Hero() {
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-16 sm:px-6 sm:pt-28 lg:px-8 lg:pb-32">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              Africa's private investment platform
-            </div>
             <h1 className="font-display text-5xl font-bold leading-[1.06] sm:text-6xl lg:text-[3.75rem]">
               Invest in Africa's{" "}
               <span className="text-gradient-brand">next great businesses</span>
@@ -78,7 +74,7 @@ function Hero() {
               >
                 Start investing <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/how-it-works" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-semibold text-muted-foreground transition hover:border-white/20 hover:text-foreground">
+              <Link to="/how-it-works" className="inline-flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-semibold text-muted-foreground transition hover:text-foreground">
                 How it works
               </Link>
             </div>
@@ -94,11 +90,11 @@ function Hero() {
               <img src={homeHero} alt="African entrepreneurs" className="aspect-[4/3] w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
             </div>
-            <div className="absolute -bottom-4 -left-4 rounded-2xl border border-white/10 bg-card/90 p-4 backdrop-blur shadow-soft">
+            <div className="absolute -bottom-4 -left-4 rounded-2xl border border-border bg-card/90 p-4 backdrop-blur shadow-soft">
               <p className="text-xs text-muted-foreground">Active investors</p>
               <p className="font-display text-2xl font-bold text-gradient-brand">2,400+</p>
             </div>
-            <div className="absolute -right-4 top-8 rounded-2xl border border-white/10 bg-card/90 p-4 backdrop-blur shadow-soft">
+            <div className="absolute -right-4 top-8 rounded-2xl border border-border bg-card/90 p-4 backdrop-blur shadow-soft">
               <p className="text-xs text-muted-foreground">Businesses verified</p>
               <p className="font-display text-2xl font-bold text-gradient-brand">180+</p>
             </div>
@@ -111,7 +107,7 @@ function Hero() {
 
 function TrustBanner() {
   return (
-    <section className="border-y border-white/[0.06] bg-card/40">
+    <section className="border-y border-border bg-card/40">
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-muted-foreground">
           {[
@@ -159,7 +155,7 @@ function PrimaryActions() {
       </div>
       <div className="grid gap-6 md:grid-cols-3">
         {actions.map((a) => (
-          <div key={a.title} className="group overflow-hidden rounded-3xl border border-white/[0.06] bg-card transition hover:-translate-y-1 hover:shadow-brand">
+          <div key={a.title} className="group overflow-hidden rounded-3xl border border-border bg-card transition hover:-translate-y-1 hover:shadow-brand">
             <div className="relative overflow-hidden aspect-[16/9]">
               <img src={a.img} alt={a.title} className="h-full w-full object-cover transition group-hover:scale-105 duration-700" />
               <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
@@ -205,7 +201,7 @@ function FeaturedOpportunities() {
   if (!isLoading && (!data || data.length === 0)) return null;
 
   return (
-    <section className="bg-card/30 py-20 border-y border-white/[0.06]">
+    <section className="bg-card/30 py-20 border-y border-border">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 flex items-end justify-between gap-4">
           <div>
@@ -225,7 +221,7 @@ function FeaturedOpportunities() {
             {(data ?? []).map((o: any) => {
               const pct = o.goal_amount ? Math.min(100, Math.round((Number(o.raised_amount) / Number(o.goal_amount)) * 100)) : 0;
               return (
-                <div key={o.id} className="flex flex-col rounded-2xl border border-white/[0.06] bg-card p-5">
+                <div key={o.id} className="flex flex-col rounded-2xl border border-border bg-card p-5">
                   <div className="flex items-center gap-3">
                     {o.businesses?.logo_url
                       ? <img src={o.businesses.logo_url} alt="" className="h-10 w-10 rounded-lg object-cover" />
@@ -282,7 +278,7 @@ function ImageBanner() {
               { Icon: BarChart3, label: "Live Monitoring", desc: "Track milestones in real time" },
               { Icon: Coins, label: "Structured Returns", desc: "Clear terms, no surprises" },
             ].map(({ Icon, label, desc }) => (
-              <div key={label} className="rounded-2xl border border-white/[0.06] bg-card p-4">
+              <div key={label} className="rounded-2xl border border-border bg-card p-4">
                 <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Icon className="h-4 w-4" />
                 </div>
@@ -321,7 +317,7 @@ function Stats() {
   const stats = (data && data.length > 0) ? data : fallback;
 
   return (
-    <section className="bg-card/30 border-y border-white/[0.06] py-16">
+    <section className="bg-card/30 border-y border-border py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
           {stats.map((s: any) => (
@@ -362,12 +358,12 @@ function CommunityPreview() {
         </div>
         <div className="space-y-3">
           {!data || data.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-card/40 p-8 text-center text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center text-sm text-muted-foreground">
               Be the first to start a discussion.
             </div>
           ) : (
             data.map((p: any) => (
-              <div key={p.id} className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-card p-4">
+              <div key={p.id} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
                 <div className="gradient-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
                   {(p.profiles?.full_name ?? "U").charAt(0)}
                 </div>
