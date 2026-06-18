@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePlatformStats, fmtInvestors } from "@/hooks/use-platform-stats";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
@@ -8,6 +9,10 @@ import { toast } from "sonner";
 import logo from "@/assets/icon.png";
 import { useAuth } from "@/hooks/use-auth";
 import { ShieldCheck, BadgeCheck, TrendingUp, ArrowRight, Eye, EyeOff, CheckCircle2, Circle } from "lucide-react";
+
+const EASE = [0.25, 0.46, 0.45, 0.94] as const;
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
+const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
 const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).default("signin") });
 
@@ -116,7 +121,12 @@ function AuthPage() {
     <div className="min-h-screen bg-background">
       <div className="grid min-h-screen lg:grid-cols-[0.9fr_1fr]">
         {/* Left panel */}
-        <div className="relative hidden flex-col justify-between overflow-hidden p-10 lg:flex">
+        <motion.div
+          initial={{ opacity: 0, x: -32 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.65, ease: EASE }}
+          className="relative hidden flex-col justify-between overflow-hidden p-10 lg:flex"
+        >
           <div className="absolute inset-0 -z-10">
             <div className="absolute inset-0 gradient-hero" />
             <div
@@ -134,17 +144,30 @@ function AuthPage() {
             <span className="font-display text-xl font-bold">CoFund</span>
           </Link>
 
-          <div>
-            <blockquote className="font-display text-3xl font-bold leading-snug text-foreground">
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.blockquote
+              variants={fadeUp}
+              transition={{ duration: 0.55, ease: EASE }}
+              className="font-display text-3xl font-bold leading-snug text-foreground"
+            >
               "Where Africa's next great businesses get funded — and investors find real opportunity."
-            </blockquote>
-            <div className="mt-10 space-y-4">
+            </motion.blockquote>
+            <motion.div variants={stagger} className="mt-10 space-y-4">
               {[
                 { Icon: ShieldCheck, label: "Escrow-protected", desc: "Funds held by regulated banking partners" },
                 { Icon: BadgeCheck, label: "Fully verified", desc: "Every business passes KYC/KYB screening" },
                 { Icon: TrendingUp, label: "Real returns", desc: "Track milestones and returns in real time" },
               ].map(({ Icon, label, desc }) => (
-                <div key={label} className="flex items-center gap-4">
+                <motion.div
+                  key={label}
+                  variants={fadeUp}
+                  transition={{ duration: 0.45, ease: EASE }}
+                  className="flex items-center gap-4"
+                >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
                     <Icon className="h-5 w-5" />
                   </div>
@@ -152,12 +175,17 @@ function AuthPage() {
                     <p className="text-sm font-semibold text-foreground">{label}</p>
                     <p className="text-xs text-muted-foreground">{desc}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5, ease: EASE }}
+            className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm"
+          >
             <div className="flex -space-x-2">
               {["A", "K", "D", "Z"].map((l) => (
                 <div key={l} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background gradient-brand text-xs font-bold text-primary-foreground">
@@ -169,29 +197,51 @@ function AuthPage() {
               <p className="text-sm font-semibold">{fmtInvestors(authStats?.investorCount ?? null)} investors active</p>
               <p className="text-xs text-muted-foreground">Join Africa's investment community</p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Right panel */}
         <div className="flex flex-col items-center justify-center px-5 py-12 sm:px-10">
-          <div className="w-full max-w-[400px]">
-            <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden">
-              <img src={logo} alt="CoFund" className="h-8 w-8 object-contain" />
-              <span className="font-display text-lg font-bold">CoFund</span>
-            </Link>
+          <motion.div
+            className="w-full max-w-[400px]"
+            variants={stagger}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div variants={fadeUp} transition={{ duration: 0.4, ease: EASE }}>
+              <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden">
+                <img src={logo} alt="CoFund" className="h-8 w-8 object-contain" />
+                <span className="font-display text-lg font-bold">CoFund</span>
+              </Link>
+            </motion.div>
 
-            <div>
-              <h1 className="font-display text-2xl font-bold tracking-tight">
-                {mode === "signup" ? "Create your account" : "Welcome back"}
-              </h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                {mode === "signup"
-                  ? "Join Africa's leading investment platform."
-                  : "Sign in to continue your journey."}
-              </p>
-            </div>
+            <motion.div variants={fadeUp} transition={{ duration: 0.45, ease: EASE }}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={mode}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <h1 className="font-display text-2xl font-bold tracking-tight">
+                    {mode === "signup" ? "Create your account" : "Welcome back"}
+                  </h1>
+                  <p className="mt-1.5 text-sm text-muted-foreground">
+                    {mode === "signup"
+                      ? "Join Africa's leading investment platform."
+                      : "Sign in to continue your journey."}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
 
-            <form onSubmit={onSubmit} className="mt-8 space-y-4">
+            <motion.form
+              variants={fadeUp}
+              transition={{ duration: 0.45, ease: EASE }}
+              onSubmit={onSubmit}
+              className="mt-8 space-y-4"
+            >
               {mode === "signup" && (
                 <Field
                   label="Full name"
@@ -258,7 +308,7 @@ function AuthPage() {
                   ? "Create account"
                   : "Sign in"}
               </button>
-            </form>
+            </motion.form>
 
             {mode === "signin" && (
               <div className="mt-4 grid gap-2">
@@ -302,14 +352,18 @@ function AuthPage() {
               )}
             </div>
 
-            <p className="mt-8 text-center text-[11px] text-muted-foreground/60">
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.4, ease: EASE }}
+              className="mt-8 text-center text-[11px] text-muted-foreground/60"
+            >
               By continuing, you agree to our{" "}
               <Link to="/terms" className="underline underline-offset-2 hover:text-muted-foreground">Terms</Link>{" "}
               and{" "}
               <Link to="/privacy" className="underline underline-offset-2 hover:text-muted-foreground">Privacy Policy</Link>.
               Investing involves risk.
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 import { usePlatformStats, fmtInvestors, fmtBusinesses, fmtReturn, fmtCapital } from "@/hooks/use-platform-stats";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -40,6 +41,43 @@ export const Route = createFileRoute("/")({
   component: PublicHome,
 });
 
+// ─── Animation variants ───────────────────────────────────────────────────────
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+
+const fadeRight = {
+  hidden: { opacity: 0, x: -24 },
+  visible: { opacity: 1, x: 0 },
+};
+
+const fadeLeft = {
+  hidden: { opacity: 0, x: 24 },
+  visible: { opacity: 1, x: 0 },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
+
+const staggerFast = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+
+const VIEW_OPTS = { once: true, margin: "-80px" } as const;
+const EASE = [0.25, 0.46, 0.45, 0.94] as const;
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
 const featuredOpportunities = [
   {
     id: "opp-1",
@@ -76,7 +114,6 @@ const featuredOpportunities = [
   },
 ];
 
-
 const communityPosts = [
   {
     id: "p1",
@@ -107,6 +144,8 @@ function fmtCompact(n: number) {
   return `₦${(n / 1_000).toFixed(0)}K`;
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 function PublicHome() {
   const { user, loading, profile } = useAuth();
   const navigate = useNavigate();
@@ -133,6 +172,8 @@ function PublicHome() {
   );
 }
 
+// ─── Hero ─────────────────────────────────────────────────────────────────────
+
 function Hero() {
   const { data: s } = usePlatformStats();
   return (
@@ -149,27 +190,50 @@ function Hero() {
 
       <div className="mx-auto max-w-7xl px-4 pb-28 pt-20 sm:px-6 lg:px-8 lg:pb-36">
         <div className="grid items-center gap-16 lg:grid-cols-[1fr_0.9fr]">
-          <div className="max-w-2xl">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3.5 py-1.5 text-xs font-semibold text-primary">
+
+          {/* Left: text content */}
+          <motion.div
+            className="max-w-2xl"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div
+              variants={fadeUp}
+              transition={{ duration: 0.5, ease: EASE }}
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3.5 py-1.5 text-xs font-semibold text-primary"
+            >
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
               Live opportunities available now
-            </div>
+            </motion.div>
 
-            <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-[4rem]">
+            <motion.h1
+              variants={fadeUp}
+              transition={{ duration: 0.6, ease: EASE }}
+              className="font-display text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-[4rem]"
+            >
               Where Africa's{" "}
               <span className="text-gradient-brand">serious capital</span>{" "}
               meets{" "}
               <span className="text-gradient-brand">verified growth</span>
-            </h1>
+            </motion.h1>
 
-            <p className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg max-w-xl">
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.6, ease: EASE }}
+              className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg max-w-xl"
+            >
               CoFund connects verified African businesses with institutional-grade investors through escrow-backed funding rounds, KYC verification, and real-time milestone tracking.
-            </p>
+            </motion.p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <motion.div
+              variants={fadeUp}
+              transition={{ duration: 0.6, ease: EASE }}
+              className="mt-8 flex flex-wrap items-center gap-3"
+            >
               <Link
                 to="/auth"
                 search={{ mode: "signup" }}
@@ -183,37 +247,63 @@ function Hero() {
               >
                 See how it works
               </Link>
-            </div>
+            </motion.div>
 
-            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
+            <motion.div
+              variants={staggerFast}
+              className="mt-10 flex flex-wrap gap-x-8 gap-y-3"
+            >
               {[
                 { Icon: ShieldCheck, text: "Escrow protected" },
                 { Icon: BadgeCheck, text: "KYC/KYB verified" },
                 { Icon: BarChart3, text: "Real-time monitoring" },
               ].map(({ Icon, text }) => (
-                <span key={text} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <motion.span
+                  key={text}
+                  variants={fadeUp}
+                  transition={{ duration: 0.5, ease: EASE }}
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                >
                   <Icon className="h-4 w-4 text-brand-green" />
                   {text}
-                </span>
+                </motion.span>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
+          {/* Right: image + floating cards */}
           <div className="relative hidden lg:block">
-            <div className="relative overflow-hidden rounded-3xl border border-border/50 shadow-elevated">
+            <motion.div
+              initial={{ opacity: 0, x: 40, scale: 0.96 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
+              className="relative overflow-hidden rounded-3xl border border-border/50 shadow-elevated"
+            >
               <img
                 src={homeHero}
                 alt="African entrepreneurs"
                 className="aspect-[4/3] w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent" />
-            </div>
-            <div className="absolute -bottom-5 -left-5 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-xl">
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
+              className="absolute -bottom-5 -left-5 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-xl"
+            >
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Capital raised</p>
               <p className="mt-0.5 font-display text-2xl font-bold text-gradient-brand">{fmtCapital(s?.capitalDeployed ?? null)}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">across {fmtBusinesses(s?.verifiedBusinessCount ?? null)} businesses</p>
-            </div>
-            <div className="absolute -right-5 top-10 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-xl">
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7, ease: EASE }}
+              className="absolute -right-5 top-10 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-xl"
+            >
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-green/15">
                   <TrendingUp className="h-4 w-4 text-brand-green" />
@@ -223,7 +313,7 @@ function Hero() {
                   <p className="font-display text-lg font-bold text-brand-green">{fmtReturn(s?.avgTargetReturn ?? null)}</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -231,55 +321,86 @@ function Hero() {
   );
 }
 
+// ─── Trust bar ────────────────────────────────────────────────────────────────
+
 function TrustBar() {
   return (
     <div className="border-y border-border/60 bg-card/30">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-muted-foreground">
+        <motion.div
+          variants={staggerFast}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEW_OPTS}
+          className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-muted-foreground"
+        >
           {[
             { Icon: ShieldCheck, text: "Escrow-protected transactions" },
             { Icon: BadgeCheck, text: "Every business KYC/KYB verified" },
             { Icon: BarChart3, text: "Real-time milestone tracking" },
             { Icon: Globe, text: "Pan-African coverage" },
           ].map(({ Icon, text }) => (
-            <span key={text} className="flex items-center gap-2">
+            <motion.span
+              key={text}
+              variants={fadeUp}
+              transition={{ duration: 0.45, ease: EASE }}
+              className="flex items-center gap-2"
+            >
               <Icon className="h-4 w-4 text-primary" />
               {text}
-            </span>
+            </motion.span>
           ))}
-        </div>
+        </motion.div>
       </div>
     </div>
   );
 }
 
+// ─── Featured opportunities ───────────────────────────────────────────────────
+
 function FeaturedOpportunities() {
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 flex items-end justify-between gap-4">
-          <div>
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEW_OPTS}
+          className="mb-12 flex items-end justify-between gap-4"
+        >
+          <motion.div variants={fadeUp} transition={{ duration: 0.55, ease: EASE }}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Live now</p>
             <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">Featured opportunities</h2>
             <p className="mt-2 text-muted-foreground max-w-md">
               Verified businesses actively raising capital. Backed by escrow and full due diligence.
             </p>
-          </div>
-          <Link
-            to="/auth"
-            search={{ mode: "signup" }}
-            className="hidden shrink-0 items-center gap-1.5 text-sm font-semibold text-primary transition hover:text-foreground sm:flex"
-          >
-            View all <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+          </motion.div>
+          <motion.div variants={fadeIn} transition={{ duration: 0.5, ease: EASE }}>
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
+              className="hidden shrink-0 items-center gap-1.5 text-sm font-semibold text-primary transition hover:text-foreground sm:flex"
+            >
+              View all <ArrowRight className="h-4 w-4" />
+            </Link>
+          </motion.div>
+        </motion.div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEW_OPTS}
+          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {featuredOpportunities.map((opp) => {
             const pct = Math.min(100, Math.round((opp.raisedAmount / opp.goalAmount) * 100));
             return (
-              <article
+              <motion.article
                 key={opp.id}
+                variants={fadeUp}
+                transition={{ duration: 0.55, ease: EASE }}
                 className="group flex flex-col rounded-2xl border border-border bg-card p-6 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-brand"
               >
                 <div className="flex items-center justify-between gap-3">
@@ -323,12 +444,18 @@ function FeaturedOpportunities() {
                     </div>
                   </div>
                 </div>
-              </article>
+              </motion.article>
             );
           })}
-        </div>
+        </motion.div>
 
-        <div className="mt-8 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEW_OPTS}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="mt-8 text-center"
+        >
           <Link
             to="/auth"
             search={{ mode: "signup" }}
@@ -336,11 +463,13 @@ function FeaturedOpportunities() {
           >
             Sign up to see all live opportunities <ArrowRight className="h-4 w-4" />
           </Link>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 }
+
+// ─── How it works ─────────────────────────────────────────────────────────────
 
 function HowItWorks() {
   const steps = [
@@ -373,17 +502,34 @@ function HowItWorks() {
   return (
     <section className="border-y border-border/60 bg-card/20 py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-14 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEW_OPTS}
+          transition={{ duration: 0.55, ease: EASE }}
+          className="mb-14 text-center"
+        >
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Process</p>
           <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">How CoFund works</h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
             A structured, secure process from account creation to receiving returns.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEW_OPTS}
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        >
           {steps.map((step) => (
-            <div key={step.n} className="relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-card">
+            <motion.div
+              key={step.n}
+              variants={fadeUp}
+              transition={{ duration: 0.5, ease: EASE }}
+              className="relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-card"
+            >
               <div className="flex items-center justify-between">
                 <span className="font-display text-4xl font-bold text-primary/15">{step.n}</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -394,13 +540,15 @@ function HowItWorks() {
                 <h3 className="font-display text-base font-bold">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 }
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
 
 function Stats() {
   const { data: s } = usePlatformStats();
@@ -413,20 +561,39 @@ function Stats() {
   return (
     <section className="py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-3xl border border-primary/15 bg-card shadow-brand">
-          <div className="grid grid-cols-2 divide-x divide-y divide-border/60 lg:grid-cols-4 lg:divide-y-0">
+        <motion.div
+          initial={{ opacity: 0, y: 32, scale: 0.98 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={VIEW_OPTS}
+          transition={{ duration: 0.6, ease: EASE }}
+          className="overflow-hidden rounded-3xl border border-primary/15 bg-card shadow-brand"
+        >
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={VIEW_OPTS}
+            className="grid grid-cols-2 divide-x divide-y divide-border/60 lg:grid-cols-4 lg:divide-y-0"
+          >
             {rows.map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center justify-center py-12 text-center">
+              <motion.div
+                key={stat.label}
+                variants={fadeUp}
+                transition={{ duration: 0.5, ease: EASE }}
+                className="flex flex-col items-center justify-center py-12 text-center"
+              >
                 <p className="font-display text-4xl font-bold text-gradient-brand sm:text-5xl">{stat.value}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{stat.label}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );
 }
+
+// ─── Roles ────────────────────────────────────────────────────────────────────
 
 function Roles() {
   const roles = [
@@ -459,18 +626,32 @@ function Roles() {
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-14 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEW_OPTS}
+          transition={{ duration: 0.55, ease: EASE }}
+          className="mb-14 text-center"
+        >
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Three paths</p>
           <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">Your role on CoFund</h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
             Whether you're deploying capital, raising it, or building from scratch — CoFund has a home for you.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEW_OPTS}
+          className="grid gap-6 md:grid-cols-3"
+        >
           {roles.map((role) => (
-            <div
+            <motion.div
               key={role.title}
+              variants={fadeUp}
+              transition={{ duration: 0.55, ease: EASE }}
               className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-card transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated"
             >
               <div className="relative aspect-[4/3] overflow-hidden">
@@ -495,13 +676,15 @@ function Roles() {
                   {role.cta} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 }
+
+// ─── Community section ────────────────────────────────────────────────────────
 
 function CommunitySection() {
   const { data: s } = usePlatformStats();
@@ -509,40 +692,80 @@ function CommunitySection() {
     <section className="border-y border-border/60 bg-card/20 py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-16 lg:grid-cols-2">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Community</p>
-            <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={VIEW_OPTS}
+          >
+            <motion.p
+              variants={fadeRight}
+              transition={{ duration: 0.5, ease: EASE }}
+              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary"
+            >
+              Community
+            </motion.p>
+            <motion.h2
+              variants={fadeRight}
+              transition={{ duration: 0.55, ease: EASE }}
+              className="mt-2 font-display text-3xl font-bold sm:text-4xl"
+            >
               Founders and investors, building Africa together
-            </h2>
-            <p className="mt-4 leading-relaxed text-muted-foreground">
+            </motion.h2>
+            <motion.p
+              variants={fadeRight}
+              transition={{ duration: 0.55, ease: EASE }}
+              className="mt-4 leading-relaxed text-muted-foreground"
+            >
               The CoFund community is where deals get discovered, knowledge gets shared, and partnerships form. Join thousands of operators across Africa.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            </motion.p>
+            <motion.div
+              variants={staggerFast}
+              className="mt-6 grid grid-cols-2 gap-3"
+            >
               {[
                 { Icon: Users, label: `${fmtInvestors(s?.investorCount ?? null)} active members` },
                 { Icon: MessageCircle, label: "Active discussion forums" },
                 { Icon: Star, label: "Verified mentor network" },
                 { Icon: CheckCircle2, label: "Deal syndication tools" },
               ].map(({ Icon, label }) => (
-                <div key={label} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                <motion.div
+                  key={label}
+                  variants={fadeRight}
+                  transition={{ duration: 0.45, ease: EASE }}
+                  className="flex items-center gap-2.5 text-sm text-muted-foreground"
+                >
                   <Icon className="h-4 w-4 shrink-0 text-primary" />
                   {label}
-                </div>
+                </motion.div>
               ))}
-            </div>
-            <Link
-              to="/auth"
-              search={{ mode: "signup" }}
-              className="mt-8 inline-flex items-center gap-2 rounded-xl gradient-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-brand transition hover:opacity-90"
+            </motion.div>
+            <motion.div
+              variants={fadeRight}
+              transition={{ duration: 0.5, ease: EASE }}
             >
-              Join the community <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="mt-8 inline-flex items-center gap-2 rounded-xl gradient-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-brand transition hover:opacity-90"
+              >
+                Join the community <ArrowRight className="h-4 w-4" />
+              </Link>
+            </motion.div>
+          </motion.div>
 
-          <div className="space-y-3">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={VIEW_OPTS}
+            className="space-y-3"
+          >
             {communityPosts.map((post) => (
-              <div
+              <motion.div
                 key={post.id}
+                variants={fadeLeft}
+                transition={{ duration: 0.5, ease: EASE }}
                 className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-card"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-brand text-sm font-bold text-primary-foreground">
@@ -557,20 +780,28 @@ function CommunitySection() {
                   </div>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{post.content}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
   );
 }
 
+// ─── CTA ──────────────────────────────────────────────────────────────────────
+
 function CTA() {
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl px-8 py-20 text-center gradient-brand shadow-brand">
+        <motion.div
+          initial={{ opacity: 0, y: 36, scale: 0.97 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={VIEW_OPTS}
+          transition={{ duration: 0.65, ease: EASE }}
+          className="relative overflow-hidden rounded-3xl px-8 py-20 text-center gradient-brand shadow-brand"
+        >
           <div
             className="absolute inset-0"
             style={{
@@ -579,15 +810,39 @@ function CTA() {
               backgroundSize: "48px 48px",
             }}
           />
-          <div className="relative">
-            <p className="text-sm font-semibold uppercase tracking-widest text-white/70">Ready to start?</p>
-            <h2 className="mt-3 font-display text-4xl font-bold text-white sm:text-5xl">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={VIEW_OPTS}
+            className="relative"
+          >
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.5, ease: EASE }}
+              className="text-sm font-semibold uppercase tracking-widest text-white/70"
+            >
+              Ready to start?
+            </motion.p>
+            <motion.h2
+              variants={fadeUp}
+              transition={{ duration: 0.55, ease: EASE }}
+              className="mt-3 font-display text-4xl font-bold text-white sm:text-5xl"
+            >
               Together, we grow.
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-lg text-white/80">
+            </motion.h2>
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.55, ease: EASE }}
+              className="mx-auto mt-4 max-w-lg text-lg text-white/80"
+            >
               Join Africa's business ecosystem and start your CoFund journey — as an investor, founder, or builder.
-            </p>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+            </motion.p>
+            <motion.div
+              variants={fadeUp}
+              transition={{ duration: 0.5, ease: EASE }}
+              className="mt-10 flex flex-wrap items-center justify-center gap-3"
+            >
               <Link
                 to="/auth"
                 search={{ mode: "signup" }}
@@ -601,9 +856,9 @@ function CTA() {
               >
                 Learn more
               </Link>
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );
