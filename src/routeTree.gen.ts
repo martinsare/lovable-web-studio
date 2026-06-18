@@ -32,8 +32,10 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
 import { Route as AuthenticatedBrowseRouteImport } from './routes/_authenticated/browse'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedLearnIndexRouteImport } from './routes/_authenticated/learn/index'
 import { Route as AuthenticatedUsersUsernameRouteImport } from './routes/_authenticated/users/$username'
 import { Route as AuthenticatedOfferingsOpportunityIdRouteImport } from './routes/_authenticated/offerings/$opportunityId'
+import { Route as AuthenticatedLearnSlugRouteImport } from './routes/_authenticated/learn/$slug'
 import { Route as AuthenticatedInvestOpportunityIdRouteImport } from './routes/_authenticated/invest/$opportunityId'
 import { Route as AuthenticatedBusinessSlugRouteImport } from './routes/_authenticated/business/$slug'
 
@@ -153,6 +155,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLearnIndexRoute = AuthenticatedLearnIndexRouteImport.update({
+  id: '/learn/',
+  path: '/learn/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedUsersUsernameRoute =
   AuthenticatedUsersUsernameRouteImport.update({
     id: '/users/$username',
@@ -165,6 +172,11 @@ const AuthenticatedOfferingsOpportunityIdRoute =
     path: '/offerings/$opportunityId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLearnSlugRoute = AuthenticatedLearnSlugRouteImport.update({
+  id: '/learn/$slug',
+  path: '/learn/$slug',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedInvestOpportunityIdRoute =
   AuthenticatedInvestOpportunityIdRouteImport.update({
     id: '/invest/$opportunityId',
@@ -203,8 +215,10 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/business/$slug': typeof AuthenticatedBusinessSlugRoute
   '/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
+  '/learn/$slug': typeof AuthenticatedLearnSlugRoute
   '/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
   '/users/$username': typeof AuthenticatedUsersUsernameRoute
+  '/learn/': typeof AuthenticatedLearnIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -231,8 +245,10 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/business/$slug': typeof AuthenticatedBusinessSlugRoute
   '/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
+  '/learn/$slug': typeof AuthenticatedLearnSlugRoute
   '/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
   '/users/$username': typeof AuthenticatedUsersUsernameRoute
+  '/learn': typeof AuthenticatedLearnIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -261,8 +277,10 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/business/$slug': typeof AuthenticatedBusinessSlugRoute
   '/_authenticated/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
+  '/_authenticated/learn/$slug': typeof AuthenticatedLearnSlugRoute
   '/_authenticated/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
   '/_authenticated/users/$username': typeof AuthenticatedUsersUsernameRoute
+  '/_authenticated/learn/': typeof AuthenticatedLearnIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -291,8 +309,10 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/business/$slug'
     | '/invest/$opportunityId'
+    | '/learn/$slug'
     | '/offerings/$opportunityId'
     | '/users/$username'
+    | '/learn/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -319,8 +339,10 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/business/$slug'
     | '/invest/$opportunityId'
+    | '/learn/$slug'
     | '/offerings/$opportunityId'
     | '/users/$username'
+    | '/learn'
   id:
     | '__root__'
     | '/'
@@ -348,8 +370,10 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/business/$slug'
     | '/_authenticated/invest/$opportunityId'
+    | '/_authenticated/learn/$slug'
     | '/_authenticated/offerings/$opportunityId'
     | '/_authenticated/users/$username'
+    | '/_authenticated/learn/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -529,6 +553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/learn/': {
+      id: '/_authenticated/learn/'
+      path: '/learn'
+      fullPath: '/learn/'
+      preLoaderRoute: typeof AuthenticatedLearnIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/$username': {
       id: '/_authenticated/users/$username'
       path: '/users/$username'
@@ -541,6 +572,13 @@ declare module '@tanstack/react-router' {
       path: '/offerings/$opportunityId'
       fullPath: '/offerings/$opportunityId'
       preLoaderRoute: typeof AuthenticatedOfferingsOpportunityIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/learn/$slug': {
+      id: '/_authenticated/learn/$slug'
+      path: '/learn/$slug'
+      fullPath: '/learn/$slug'
+      preLoaderRoute: typeof AuthenticatedLearnSlugRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/invest/$opportunityId': {
@@ -575,8 +613,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedBusinessSlugRoute: typeof AuthenticatedBusinessSlugRoute
   AuthenticatedInvestOpportunityIdRoute: typeof AuthenticatedInvestOpportunityIdRoute
+  AuthenticatedLearnSlugRoute: typeof AuthenticatedLearnSlugRoute
   AuthenticatedOfferingsOpportunityIdRoute: typeof AuthenticatedOfferingsOpportunityIdRoute
   AuthenticatedUsersUsernameRoute: typeof AuthenticatedUsersUsernameRoute
+  AuthenticatedLearnIndexRoute: typeof AuthenticatedLearnIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -594,9 +634,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedBusinessSlugRoute: AuthenticatedBusinessSlugRoute,
   AuthenticatedInvestOpportunityIdRoute: AuthenticatedInvestOpportunityIdRoute,
+  AuthenticatedLearnSlugRoute: AuthenticatedLearnSlugRoute,
   AuthenticatedOfferingsOpportunityIdRoute:
     AuthenticatedOfferingsOpportunityIdRoute,
   AuthenticatedUsersUsernameRoute: AuthenticatedUsersUsernameRoute,
+  AuthenticatedLearnIndexRoute: AuthenticatedLearnIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
