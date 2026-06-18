@@ -14,8 +14,11 @@ export default defineConfig({
   },
   vite: {
     define: {
-      // TanStack Start client code checks NODE_ENV in the browser bundle.
+      // TanStack Start and some bundled dependencies expect a browser-safe process shim.
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "development"),
+      "process.env": JSON.stringify({
+        NODE_ENV: process.env.NODE_ENV ?? "development",
+      }),
     },
     server: {
       host: "0.0.0.0",

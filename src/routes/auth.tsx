@@ -25,6 +25,10 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [otpBusy, setOtpBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const passwordChecks = getPasswordChecks(password);
+  const passwordStrong = passwordChecks.every((item) => item.valid);
 
   if (!loading && user) {
     throw redirect({ to: profile?.onboarded ? "/home" : "/onboarding" });
@@ -35,6 +39,7 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
+        if (!passwordStrong) throw new Error("Use a stronger password to protect investment access");
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -44,8 +49,8 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Welcome to CoFund!");
-        navigate({ to: "/onboarding" });
+        toast.success("Check your email to verify and activate your account");
+        navigate({ to: "/auth", search: { mode: "signin" } });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -56,6 +61,48 @@ function AuthPage() {
       toast.error(err.message ?? "Authentication failed");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function sendMagicLink() {
+    if (!email) {
+      toast.error("Enter your email first");
+      return;
+    }
+    setOtpBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+        },
+      });
+      if (error) throw error;
+      toast.success("Magic link sent to your email");
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not send magic link");
+    } finally {
+      setOtpBusy(false);
+    }
+  }
+
+  async function sendResetLink() {
+    if (!email) {
+      toast.error("Enter your email first");
+      return;
+    }
+    setResetBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+      });
+      if (error) throw error;
+      toast.success("Password reset link sent");
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not send reset email");
+    } finally {
+      setResetBusy(false);
     }
   }
 
@@ -116,13 +163,28 @@ function AuthPage() {
             <p className="mt-1.5 text-sm text-muted-foreground">
               {mode === "signup" ? "Join Africa's business ecosystem." : "Sign in to continue your journey."}
             </p>
+            <div className="mt-4 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-muted-foreground">
+              Investment actions should require verified email, MFA, and approved KYC/KYB before money can move.
+            </div>
 
             <form onSubmit={onSubmit} className="mt-8 space-y-4">
               {mode === "signup" && (
                 <Field label="Full name" type="text" value={fullName} onChange={setFullName} required />
               )}
               <Field label="Email address" type="email" value={email} onChange={setEmail} required />
-              <Field label="Password" type="password" value={password} onChange={setPassword} required minLength={6} />
+              <Field label="Password" type="password" value={password} onChange={setPassword} required minLength={mode === "signup" ? 12 : 6} />
+              {mode === "signup" && (
+                <div className="rounded-xl border border-border bg-card/60 p-3 text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground">Password standard</p>
+                  <div className="mt-2 grid gap-1">
+                    {passwordChecks.map((item) => (
+                      <p key={item.label} className={item.valid ? "text-brand-green" : ""}>
+                        {item.valid ? "Passed" : "Pending"}: {item.label}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={busy}
@@ -131,6 +193,27 @@ function AuthPage() {
                 {busy ? "Please wait..." : mode === "signup" ? "Create account" : "Sign in"}
               </button>
             </form>
+
+            {mode === "signin" && (
+              <div className="mt-4 grid gap-2">
+                <button
+                  type="button"
+                  onClick={sendMagicLink}
+                  disabled={otpBusy}
+                  className="w-full rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary disabled:opacity-50"
+                >
+                  {otpBusy ? "Sending magic link..." : "Email me a magic link"}
+                </button>
+                <button
+                  type="button"
+                  onClick={sendResetLink}
+                  disabled={resetBusy}
+                  className="w-full text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                >
+                  {resetBusy ? "Sending reset link..." : "Forgot password?"}
+                </button>
+              </div>
+            )}
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               {mode === "signup" ? (
@@ -154,6 +237,15 @@ function AuthPage() {
       </div>
     </div>
   );
+}
+
+function getPasswordChecks(password: string) {
+  return [
+    { label: "At least 12 characters", valid: password.length >= 12 },
+    { label: "Uppercase and lowercase letters", valid: /[A-Z]/.test(password) && /[a-z]/.test(password) },
+    { label: "At least one number", valid: /\d/.test(password) },
+    { label: "At least one symbol", valid: /[^A-Za-z0-9]/.test(password) },
+  ];
 }
 
 function Field({

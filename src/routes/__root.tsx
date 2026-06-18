@@ -113,11 +113,6 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('cofund-theme')||'dark';document.documentElement.className=t;})();`,
-          }}
-        />
       </head>
       <body>
         {children}
@@ -129,6 +124,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    const theme = localStorage.getItem("cofund-theme") || "dark";
+    document.documentElement.className = theme;
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

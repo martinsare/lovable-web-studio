@@ -1,142 +1,68 @@
-import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+﻿import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  Briefcase,
+  Building2,
+  FileText,
+  GraduationCap,
+  Link2,
+  MapPin,
+  Phone,
+  Rocket,
+  ShieldCheck,
+  TrendingUp,
+  User,
+  Users,
+  Wrench,
+} from "lucide-react";
+import {
+  ACCREDITATION_BASIS_OPTIONS,
+  ACCREDITATION_STATUS_OPTIONS,
+  ANNUAL_INCOME_OPTIONS,
+  buildComplianceMetadata,
+  ID_DOCUMENT_OPTIONS,
+  NET_WORTH_OPTIONS,
+  VERIFICATION_PROVIDER_OPTIONS,
+  type VerificationProvider,
+} from "@/lib/compliance";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import logo from "@/assets/icon.png";
-import {
-  TrendingUp, Briefcase, Rocket, GraduationCap, Wrench, Users, Check,
-  ChevronRight, ChevronLeft, Building2, Globe, Phone, Link2,
-  MapPin, User, FileText, AlertCircle,
-} from "lucide-react";
 
-export const Route = createFileRoute("/onboarding")({
-  ssr: false,
-  head: () => ({ meta: [{ title: "Get started · CoFund" }] }),
-  component: Onboarding,
-});
+export const Route = createFileRoute("/onboarding")({ ssr: false, head: () => ({ meta: [{ title: "Get started · CoFund" }] }), component: Onboarding });
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const AFRICAN_COUNTRIES = [
-  "Nigeria", "South Africa", "Kenya", "Ghana", "Ethiopia", "Tanzania",
-  "Uganda", "Rwanda", "Senegal", "Ivory Coast", "Cameroon", "Angola",
-  "Mozambique", "Zambia", "Zimbabwe", "Botswana", "Namibia", "Mauritius",
-  "Morocco", "Egypt", "Tunisia", "Algeria", "Libya", "Sudan", "Somalia",
-  "DRC", "Gabon", "Congo", "Mali", "Burkina Faso", "Niger", "Chad",
-  "Sierra Leone", "Liberia", "Guinea", "Benin", "Togo", "Malawi",
-  "Lesotho", "Eswatini", "Eritrea", "Djibouti", "Comoros", "Cape Verde",
-  "São Tomé and Príncipe", "Equatorial Guinea", "South Sudan", "Madagascar",
-  "Seychelles", "Gambia", "Guinea-Bissau",
-];
-
-const DIASPORA_COUNTRIES = [
-  "United Kingdom", "United States", "Canada", "United Arab Emirates",
-  "France", "Germany", "Netherlands", "Belgium", "Portugal", "Italy",
-  "Saudi Arabia", "Qatar", "Australia", "Other",
-];
-
+const AFRICAN_COUNTRIES = ["Nigeria","South Africa","Kenya","Ghana","Ethiopia","Tanzania","Uganda","Rwanda","Senegal","Ivory Coast","Cameroon","Angola","Mozambique","Zambia","Zimbabwe","Botswana","Namibia","Mauritius","Morocco","Egypt","Tunisia","Algeria","Libya","Sudan","Somalia","DRC","Gabon","Congo","Mali","Burkina Faso","Niger","Chad","Sierra Leone","Liberia","Guinea","Benin","Togo","Malawi","Lesotho","Eswatini","Eritrea","Djibouti","Comoros","Cape Verde","São Tomé and Príncipe","Equatorial Guinea","South Sudan","Madagascar","Seychelles","Gambia","Guinea-Bissau"];
+const DIASPORA_COUNTRIES = ["United Kingdom","United States","Canada","United Arab Emirates","France","Germany","Netherlands","Belgium","Portugal","Italy","Saudi Arabia","Qatar","Australia","Other"];
 const ALL_COUNTRIES = [...AFRICAN_COUNTRIES, ...DIASPORA_COUNTRIES];
+const SECTORS = ["Fintech & Payments","Agritech & Food Systems","Healthtech & Biotech","Edtech & Skills","Clean Energy & Climate","Logistics & Transport","E-commerce & Retail","Real Estate & Construction","Media & Entertainment","Manufacturing & Industry","Mining & Resources","Fashion & Beauty","Travel & Hospitality","SaaS & Enterprise Tech","Telecom","Government & Civic Tech","Security & Defence","Other"];
+const CAPITAL_RANGES = ["Under $10,000","$10,000 - $50,000","$50,000 - $250,000","$250,000 - $1M","$1M - $5M","Over $5M"];
+const TICKET_SIZES = ["Under $1,000","$1,000 - $5,000","$5,000 - $25,000","$25,000 - $100,000","$100,000 - $500,000","Over $500,000"];
+const BUSINESS_STAGES = ["Idea stage","Pre-revenue","Revenue-generating","Profitable","Scaling"];
+const REVENUE_RANGES = ["Pre-revenue","Under $10,000 / yr","$10,000 - $100,000 / yr","$100,000 - $500,000 / yr","$500,000 - $2M / yr","$2M - $10M / yr","Over $10M / yr"];
+const TEAM_SIZES = ["Just me","2-5 people","6-20 people","21-50 people","50+ people"];
+const SEEKING_OPTIONS = ["Funding / Investment","Mentorship & Advisory","Strategic Partnerships","Customers & Distribution","Team Members","Technical Co-founder"];
+const BUSINESS_CAPITAL = ["Under $50,000","$50,000 - $250,000","$250,000 - $1M","$1M - $5M","$5M - $20M","Over $20M"];
+const STARTUP_STAGES = ["Idea / Concept","Prototype / MVP built","Beta / Early users","Launched / Live product"];
+const COFOUND_STATUS = ["I have a team","Looking for co-founders","Going solo for now"];
+const EXPERTISE_AREAS = ["Strategy & Leadership","Finance & Fundraising","Sales & Marketing","Product & Tech","Operations & Logistics","Legal & Compliance","HR & Talent","Agritech","Fintech","Healthtech","Edtech","Manufacturing","Real Estate","Media & Comms","Import / Export"];
+const EXPERIENCE_YEARS = ["Less than 2 years","2-5 years","5-10 years","10-20 years","20+ years"];
+const PROFESSIONAL_SERVICES = ["Legal & Compliance","Accounting & Finance","Software Development","Product Design & UX","Marketing & Growth","Business Development","HR & Recruitment","Project Management","Data & Analytics","Cybersecurity","Investor Relations","Other"];
+const ENGAGEMENT_TYPES = ["Project-based","Monthly retainer","Full-time contract","Advisory / Board role","Any"];
+const COMMUNITY_INTERESTS = ["Investing","Startup Building","Business Growth","Fintech","Agritech","Real Estate","Healthtech","Clean Energy","African Markets","Diaspora Investment","Mentorship","Networking"];
+const REFERRAL_SOURCES = ["Friend or colleague","LinkedIn","Twitter / X","Instagram","Google search","News article","Podcast / YouTube","Event or conference","Other"];
+const INTENTS = [
+  { id: "invest", label: "I want to invest", desc: "Browse verified opportunities and build a portfolio.", roles: ["investor"], icon: TrendingUp },
+  { id: "business", label: "I own a business", desc: "Raise capital, track milestones, and grow.", roles: ["business_owner"], icon: Building2 },
+  { id: "idea", label: "I'm building an idea", desc: "Find co-founders, mentors, and strategic help.", roles: ["startup_builder", "community_member"], icon: Rocket },
+  { id: "community", label: "I'm joining the community", desc: "Follow businesses, discuss, and network.", roles: ["community_member"], icon: Users },
+] as const;
 
-const SECTORS = [
-  "Fintech & Payments", "Agritech & Food Systems", "Healthtech & Biotech",
-  "Edtech & Skills", "Clean Energy & Climate", "Logistics & Transport",
-  "E-commerce & Retail", "Real Estate & Construction", "Media & Entertainment",
-  "Manufacturing & Industry", "Mining & Resources", "Fashion & Beauty",
-  "Travel & Hospitality", "SaaS & Enterprise Tech", "Telecom",
-  "Government & Civic Tech", "Security & Defence", "Other",
-];
-
-const INVESTOR_TYPES = [
-  { id: "individual", label: "Individual investor", desc: "Investing personal funds" },
-  { id: "family_office", label: "Family office", desc: "Managing family wealth" },
-  { id: "fund", label: "Fund / VC", desc: "Investment fund or VC firm" },
-  { id: "corporate", label: "Corporate investor", desc: "Company strategic investment" },
-];
-
-const CAPITAL_RANGES = [
-  "Under $10,000", "$10,000 – $50,000", "$50,000 – $250,000",
-  "$250,000 – $1M", "$1M – $5M", "Over $5M",
-];
-
-const TICKET_SIZES = [
-  "Under $1,000", "$1,000 – $5,000", "$5,000 – $25,000",
-  "$25,000 – $100,000", "$100,000 – $500,000", "Over $500,000",
-];
-
-const BUSINESS_STAGES = [
-  { id: "idea", label: "Idea stage", desc: "Still validating the concept" },
-  { id: "pre_revenue", label: "Pre-revenue", desc: "Building product / MVP" },
-  { id: "revenue", label: "Revenue-generating", desc: "Early sales and customers" },
-  { id: "profitable", label: "Profitable", desc: "Sustainable positive cash flow" },
-  { id: "scaling", label: "Scaling", desc: "Growing rapidly, seeking capital" },
-];
-
-const REVENUE_RANGES = [
-  "Pre-revenue", "Under $10,000 / yr", "$10,000 – $100,000 / yr",
-  "$100,000 – $500,000 / yr", "$500,000 – $2M / yr",
-  "$2M – $10M / yr", "Over $10M / yr",
-];
-
-const TEAM_SIZES = ["Just me", "2–5 people", "6–20 people", "21–50 people", "50+ people"];
-
-const SEEKING_OPTIONS = [
-  "Funding / Investment", "Mentorship & Advisory", "Strategic Partnerships",
-  "Customers & Distribution", "Team Members", "Technical Co-founder",
-];
-
-const BUSINESS_CAPITAL = [
-  "Under $50,000", "$50,000 – $250,000", "$250,000 – $1M",
-  "$1M – $5M", "$5M – $20M", "Over $20M",
-];
-
-const STARTUP_STAGES = [
-  { id: "idea", label: "Idea / Concept" },
-  { id: "prototype", label: "Prototype / MVP built" },
-  { id: "beta", label: "Beta / Early users" },
-  { id: "launched", label: "Launched / Live product" },
-];
-
-const COFOUND_STATUS = [
-  { id: "have_team", label: "I have a team", desc: "Co-founders already onboard" },
-  { id: "looking", label: "Looking for co-founders", desc: "Need technical or business partners" },
-  { id: "solo", label: "Going solo for now", desc: "Working alone, open to partners later" },
-];
-
-const EXPERTISE_AREAS = [
-  "Strategy & Leadership", "Finance & Fundraising", "Sales & Marketing",
-  "Product & Tech", "Operations & Logistics", "Legal & Compliance",
-  "HR & Talent", "Agritech", "Fintech", "Healthtech", "Edtech",
-  "Manufacturing", "Real Estate", "Media & Comms", "Import / Export",
-];
-
-const EXPERIENCE_YEARS = [
-  "Less than 2 years", "2–5 years", "5–10 years", "10–20 years", "20+ years",
-];
-
-const PROFESSIONAL_SERVICES = [
-  "Legal & Compliance", "Accounting & Finance", "Software Development",
-  "Product Design & UX", "Marketing & Growth", "Business Development",
-  "HR & Recruitment", "Project Management", "Data & Analytics",
-  "Cybersecurity", "Investor Relations", "Other",
-];
-
-const ENGAGEMENT_TYPES = [
-  "Project-based", "Monthly retainer", "Full-time contract", "Advisory / Board role", "Any",
-];
-
-const COMMUNITY_INTERESTS = [
-  "Investing", "Startup Building", "Business Growth", "Fintech",
-  "Agritech", "Real Estate", "Healthtech", "Clean Energy",
-  "African Markets", "Diaspora Investment", "Mentorship", "Networking",
-];
-
-const REFERRAL_SOURCES = [
-  "Friend or colleague", "LinkedIn", "Twitter / X", "Instagram",
-  "Google search", "News article", "Podcast / YouTube", "Event or conference", "Other",
-];
-
-const ROLES: { id: AppRole; title: string; desc: string; icon: any }[] = [
+const ROLES: { id: AppRole; title: string; desc: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "investor", title: "Investor", desc: "Discover and back verified African businesses.", icon: TrendingUp },
   { id: "business_owner", title: "Business Owner", desc: "List your business, raise capital, and grow.", icon: Briefcase },
   { id: "startup_builder", title: "Startup Builder", desc: "Share your idea and find co-founders & mentors.", icon: Rocket },
@@ -145,158 +71,212 @@ const ROLES: { id: AppRole; title: string; desc: string; icon: any }[] = [
   { id: "community_member", title: "Community Member", desc: "Learn, follow African businesses, and network.", icon: Users },
 ];
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface OBData {
-  fullName: string; phone: string; country: string; city: string;
-  bio: string; occupation: string; linkedinUrl: string; websiteUrl: string;
+type OBData = {
+  intent: string;
+  fullName: string;
+  phone: string;
+  country: string;
+  city: string;
+  bio: string;
+  occupation: string;
+  linkedinUrl: string;
+  websiteUrl: string;
   roles: AppRole[];
-  investorType: string; investorExperience: string; investorCapitalRange: string;
-  investorMinTicket: string; investorMaxTicket: string; investorSectors: string[];
+  investorType: string;
+  investorExperience: string;
+  investorCapitalRange: string;
+  investorMinTicket: string;
+  investorMaxTicket: string;
+  investorSectors: string[];
   investorAccredited: string;
-  businessName: string; businessIndustry: string; businessCountry: string;
-  businessStage: string; businessRevenueRange: string; businessTeamSize: string;
-  businessSeeking: string[]; businessCapitalNeeded: string;
-  startupName: string; startupIndustry: string; startupStage: string;
-  startupCofounderStatus: string; startupSeeking: string[];
-  mentorExpertise: string[]; mentorExperience: string; mentorIndustry: string;
-  mentorAvailability: string; mentorHours: string;
-  professionalService: string; professionalExperience: string;
-  professionalOpenToStartups: boolean; professionalEngagement: string;
-  communityInterests: string[]; communityReferral: string;
-  agreedAge: boolean; agreedTerms: boolean; agreedRisk: boolean;
-}
+  businessName: string;
+  businessIndustry: string;
+  businessCountry: string;
+  businessStage: string;
+  businessRevenueRange: string;
+  businessTeamSize: string;
+  businessSeeking: string[];
+  businessCapitalNeeded: string;
+  startupName: string;
+  startupIndustry: string;
+  startupStage: string;
+  startupCofounderStatus: string;
+  startupSeeking: string[];
+  mentorExpertise: string[];
+  mentorExperience: string;
+  mentorIndustry: string;
+  mentorAvailability: string;
+  mentorHours: string;
+  professionalService: string;
+  professionalExperience: string;
+  professionalOpenToStartups: boolean;
+  professionalEngagement: string;
+  communityInterests: string[];
+  communityReferral: string;
+  verificationProviderPreference: VerificationProvider;
+  dateOfBirth: string;
+  nationality: string;
+  residentialAddress: string;
+  kycIdType: string;
+  kycIdNumber: string;
+  nin: string;
+  bvn: string;
+  pepConsent: boolean;
+  sanctionsConsent: boolean;
+  investorAccreditationStatus: string;
+  investorAccreditationBasis: string;
+  investorAnnualIncomeRange: string;
+  investorNetWorthRange: string;
+  businessRegistrationNumber: string;
+  businessTaxId: string;
+  businessAddress: string;
+  representativeName: string;
+  representativeRole: string;
+  representativeEmail: string;
+  directorsCount: string;
+  beneficialOwnersCount: string;
+  agreedAge: boolean;
+  agreedTerms: boolean;
+  agreedRisk: boolean;
+};
+
+type OnboardingTrack = "investor" | "founder" | "community";
 
 const INITIAL: OBData = {
-  fullName: "", phone: "", country: "", city: "", bio: "", occupation: "",
-  linkedinUrl: "", websiteUrl: "", roles: [],
-  investorType: "", investorExperience: "", investorCapitalRange: "",
-  investorMinTicket: "", investorMaxTicket: "", investorSectors: [],
-  investorAccredited: "",
-  businessName: "", businessIndustry: "", businessCountry: "", businessStage: "",
-  businessRevenueRange: "", businessTeamSize: "", businessSeeking: [],
-  businessCapitalNeeded: "",
-  startupName: "", startupIndustry: "", startupStage: "",
-  startupCofounderStatus: "", startupSeeking: [],
-  mentorExpertise: [], mentorExperience: "", mentorIndustry: "",
-  mentorAvailability: "", mentorHours: "",
-  professionalService: "", professionalExperience: "",
-  professionalOpenToStartups: true, professionalEngagement: "",
+  intent: "", fullName: "", phone: "", country: "", city: "", bio: "", occupation: "", linkedinUrl: "", websiteUrl: "", roles: [],
+  investorType: "", investorExperience: "", investorCapitalRange: "", investorMinTicket: "", investorMaxTicket: "", investorSectors: [], investorAccredited: "",
+  businessName: "", businessIndustry: "", businessCountry: "", businessStage: "", businessRevenueRange: "", businessTeamSize: "", businessSeeking: [], businessCapitalNeeded: "",
+  startupName: "", startupIndustry: "", startupStage: "", startupCofounderStatus: "", startupSeeking: [], mentorExpertise: [], mentorExperience: "", mentorIndustry: "", mentorAvailability: "", mentorHours: "",
+  professionalService: "", professionalExperience: "", professionalOpenToStartups: true, professionalEngagement: "",
   communityInterests: [], communityReferral: "",
+  verificationProviderPreference: "undecided", dateOfBirth: "", nationality: "", residentialAddress: "", kycIdType: "", kycIdNumber: "", nin: "", bvn: "", pepConsent: false, sanctionsConsent: false,
+  investorAccreditationStatus: "", investorAccreditationBasis: "", investorAnnualIncomeRange: "", investorNetWorthRange: "",
+  businessRegistrationNumber: "", businessTaxId: "", businessAddress: "", representativeName: "", representativeRole: "", representativeEmail: "", directorsCount: "", beneficialOwnersCount: "",
   agreedAge: false, agreedTerms: false, agreedRisk: false,
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+function getTrackFromIntent(intent: string): OnboardingTrack {
+  if (intent === "invest") return "investor";
+  if (intent === "business" || intent === "idea") return "founder";
+  return "community";
+}
+
+function getTrackRoleOptions(track: OnboardingTrack) {
+  if (track === "investor") return ["investor", "mentor", "professional", "community_member"] as AppRole[];
+  if (track === "founder") return ["business_owner", "startup_builder", "mentor", "professional", "community_member"] as AppRole[];
+  return ["community_member", "startup_builder", "mentor", "professional"] as AppRole[];
+}
 
 function Onboarding() {
   const navigate = useNavigate();
   const { user, loading, profile, refresh } = useAuth();
-  const [step, setStep] = useState(1);
-  const [data, setData] = useState<OBData>(() => ({
-    ...INITIAL,
-    fullName: typeof window !== "undefined"
-      ? (user?.user_metadata?.full_name ?? "")
-      : "",
-  }));
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [busy, setBusy] = useState(false);
+  const [data, setData] = useState<OBData>(() => ({ ...INITIAL, fullName: typeof window !== "undefined" ? (user?.user_metadata?.full_name ?? "") : "" }));
+
+  useEffect(() => {
+    const nextFullName = user?.user_metadata?.full_name;
+    if (typeof nextFullName === "string" && nextFullName.trim() && !data.fullName.trim()) {
+      setData((current) => ({ ...current, fullName: nextFullName }));
+    }
+  }, [data.fullName, user?.user_metadata?.full_name]);
 
   if (!loading && !user) throw redirect({ to: "/auth", search: { mode: "signin" } });
   if (!loading && profile?.onboarded) throw redirect({ to: "/home" });
 
-  function set<K extends keyof OBData>(key: K, val: OBData[K]) {
-    setData((d) => ({ ...d, [key]: val }));
-  }
+  const set = <K extends keyof OBData>(key: K, value: OBData[K]) => setData((current) => ({ ...current, [key]: value }));
+  const toggleChip = <K extends keyof OBData>(key: K, value: string) => setData((current) => ({ ...current, [key]: ((current[key] as string[]).includes(value) ? (current[key] as string[]).filter((item) => item !== value) : [...(current[key] as string[]), value]) }));
+  const chooseIntent = (intent: string) => {
+    const selected = INTENTS.find((item) => item.id === intent);
+    setData((current) => ({ ...current, intent, roles: selected ? [...selected.roles] as AppRole[] : current.roles }));
+  };
+  const toggleRole = (role: AppRole) => setData((current) => ({ ...current, roles: current.roles.includes(role) ? current.roles.filter((item) => item !== role) : [...current.roles, role] }));
 
-  function toggleChip<K extends keyof OBData>(key: K, val: string) {
-    setData((d) => {
-      const arr = d[key] as string[];
-      return { ...d, [key]: arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val] };
-    });
-  }
-
-  function toggleRole(r: AppRole) {
-    setData((d) => {
-      const next = d.roles.includes(r) ? d.roles.filter((x) => x !== r) : [...d.roles, r];
-      return { ...d, roles: next };
-    });
-  }
-
-  // Step validation
-  const step1Valid = data.fullName.trim().length >= 2 && data.phone.trim().length >= 7 && data.country !== "";
-  const step2Valid = data.roles.length > 0;
-  const step3Valid = true; // role details are encouraged but not all mandatory
-  const step4Valid = data.agreedAge && data.agreedTerms;
-
+  const step1Valid = data.intent !== "";
+  const primaryTrack = getTrackFromIntent(data.intent);
+  const step2Valid = data.fullName.trim().length >= 2 && data.phone.trim().length >= 7 && data.country !== "";
+  const requiresIndividualKyc = data.roles.includes("investor") || data.roles.includes("business_owner") || data.roles.includes("mentor") || data.roles.includes("professional");
+  const requiresBusinessKyb = data.roles.includes("business_owner");
+  const requiresNigeriaIdentifier = data.country === "Nigeria" || data.nationality === "Nigeria";
+  const hasNigeriaIdentifier = data.nin.trim().length > 0 || data.bvn.trim().length > 0;
+  const individualKycValid = !requiresIndividualKyc || (
+    data.dateOfBirth !== "" &&
+    data.nationality !== "" &&
+    data.residentialAddress.trim().length >= 10 &&
+    data.kycIdType !== "" &&
+    data.kycIdNumber.trim().length >= 5 &&
+    data.pepConsent &&
+    data.sanctionsConsent &&
+    (!requiresNigeriaIdentifier || hasNigeriaIdentifier)
+  );
+  const investorSuitabilityValid = !data.roles.includes("investor") || (
+    data.investorAccreditationStatus !== "" &&
+    data.investorAccreditationBasis !== ""
+  );
+  const businessKybValid = !requiresBusinessKyb || (
+    data.businessName.trim().length >= 2 &&
+    data.businessCountry !== "" &&
+    data.businessRegistrationNumber.trim().length >= 4 &&
+    data.businessAddress.trim().length >= 10 &&
+    data.representativeName.trim().length >= 2 &&
+    data.representativeRole.trim().length >= 2 &&
+    data.representativeEmail.trim().length >= 5
+  );
+  const step3Valid = data.roles.length > 0 && individualKycValid && investorSuitabilityValid && businessKybValid;
+  const requiresRiskAgreement = data.roles.includes("investor") || data.roles.includes("business_owner");
+  const step4Valid = data.agreedAge && data.agreedTerms && (!requiresRiskAgreement || data.agreedRisk);
   async function finish() {
     if (!user) return;
     setBusy(true);
     try {
-      const roles = data.roles.length > 0 ? data.roles : (["community_member"] as AppRole[]);
+      const roles = data.roles.length > 0 ? data.roles : (data.intent === "invest" ? (["investor"] as AppRole[]) : (["community_member"] as AppRole[]));
+      const metadata: Record<string, unknown> = {};
+      if (roles.includes("investor")) metadata.investor = { type: data.investorType, experience: data.investorExperience, capitalRange: data.investorCapitalRange, minTicket: data.investorMinTicket, maxTicket: data.investorMaxTicket, sectors: data.investorSectors, accredited: data.investorAccredited };
+      if (roles.includes("business_owner")) metadata.business = { name: data.businessName, industry: data.businessIndustry, country: data.businessCountry, stage: data.businessStage, revenueRange: data.businessRevenueRange, teamSize: data.businessTeamSize, seeking: data.businessSeeking, capitalNeeded: data.businessCapitalNeeded };
+      if (roles.includes("startup_builder")) metadata.startup = { name: data.startupName, industry: data.startupIndustry, stage: data.startupStage, cofounderStatus: data.startupCofounderStatus, seeking: data.startupSeeking };
+      if (roles.includes("mentor")) metadata.mentor = { expertise: data.mentorExpertise, experience: data.mentorExperience, industry: data.mentorIndustry, availability: data.mentorAvailability, hoursPerMonth: data.mentorHours };
+      if (roles.includes("professional")) metadata.professional = { service: data.professionalService, experience: data.professionalExperience, openToStartups: data.professionalOpenToStartups, engagement: data.professionalEngagement };
+      if (roles.includes("community_member")) metadata.community = { interests: data.communityInterests, referral: data.communityReferral };
+      metadata.compliance = buildComplianceMetadata(roles, {
+        verificationProviderPreference: data.verificationProviderPreference,
+        dateOfBirth: data.dateOfBirth,
+        nationality: data.nationality,
+        residentialAddress: data.residentialAddress,
+        kycIdType: data.kycIdType,
+        kycIdNumber: data.kycIdNumber,
+        nin: data.nin,
+        bvn: data.bvn,
+        pepConsent: data.pepConsent,
+        sanctionsConsent: data.sanctionsConsent,
+        investorAccreditationStatus: data.investorAccreditationStatus,
+        investorAccreditationBasis: data.investorAccreditationBasis,
+        investorAnnualIncomeRange: data.investorAnnualIncomeRange,
+        investorNetWorthRange: data.investorNetWorthRange,
+        businessRegistrationNumber: data.businessRegistrationNumber,
+        businessTaxId: data.businessTaxId,
+        businessAddress: data.businessAddress,
+        representativeName: data.representativeName,
+        representativeRole: data.representativeRole,
+        representativeEmail: data.representativeEmail,
+        directorsCount: data.directorsCount,
+        beneficialOwnersCount: data.beneficialOwnersCount,
+      });
 
-      // Build metadata object for role-specific data
-      const metadata: Record<string, any> = {};
-      if (roles.includes("investor")) {
-        metadata.investor = {
-          type: data.investorType, experience: data.investorExperience,
-          capitalRange: data.investorCapitalRange, minTicket: data.investorMinTicket,
-          maxTicket: data.investorMaxTicket, sectors: data.investorSectors,
-          accredited: data.investorAccredited,
-        };
-      }
-      if (roles.includes("business_owner")) {
-        metadata.business = {
-          name: data.businessName, industry: data.businessIndustry,
-          country: data.businessCountry, stage: data.businessStage,
-          revenueRange: data.businessRevenueRange, teamSize: data.businessTeamSize,
-          seeking: data.businessSeeking, capitalNeeded: data.businessCapitalNeeded,
-        };
-      }
-      if (roles.includes("startup_builder")) {
-        metadata.startup = {
-          name: data.startupName, industry: data.startupIndustry,
-          stage: data.startupStage, cofounderStatus: data.startupCofounderStatus,
-          seeking: data.startupSeeking,
-        };
-      }
-      if (roles.includes("mentor")) {
-        metadata.mentor = {
-          expertise: data.mentorExpertise, experience: data.mentorExperience,
-          industry: data.mentorIndustry, availability: data.mentorAvailability,
-          hoursPerMonth: data.mentorHours,
-        };
-      }
-      if (roles.includes("professional")) {
-        metadata.professional = {
-          service: data.professionalService, experience: data.professionalExperience,
-          openToStartups: data.professionalOpenToStartups, engagement: data.professionalEngagement,
-        };
-      }
-      if (roles.includes("community_member")) {
-        metadata.community = {
-          interests: data.communityInterests, referral: data.communityReferral,
-        };
-      }
-
-      // Derive occupation headline
-      const primaryRole = roles[0];
       const headlineMap: Record<string, string> = {
-        investor: data.investorType ? `${INVESTOR_TYPES.find(t => t.id === data.investorType)?.label ?? "Investor"}` : "Investor",
+        investor: data.investorType ? data.investorType : "Investor",
         business_owner: data.businessName ? `Founder, ${data.businessName}` : "Business Owner",
-        startup_builder: data.startupName ? `Startup Builder · ${data.startupName}` : "Startup Builder",
+        startup_builder: data.startupName ? `Startup Builder - ${data.startupName}` : "Startup Builder",
         mentor: "Mentor & Advisor",
         professional: data.professionalService || "Service Professional",
         community_member: "Community Member",
       };
-      const occupation = data.occupation.trim() || headlineMap[primaryRole] || "CoFund Member";
 
-      // Save profile — try new columns, gracefully fall back
-      const profilePayload: any = {
+      const payload = {
         full_name: data.fullName,
         bio: data.bio,
         location: [data.city, data.country].filter(Boolean).join(", "),
-        occupation,
+        occupation: data.occupation.trim() || headlineMap[roles[0]] || "CoFund Member",
         onboarded: true,
-        // New columns (require migration to be applied)
         phone: data.phone,
         country: data.country,
         city: data.city,
@@ -307,755 +287,80 @@ function Onboarding() {
         onboarding_step: 4,
       };
 
-      const { error: pErr } = await supabase
-        .from("profiles")
-        .update(profilePayload)
-        .eq("id", user.id);
-
-      if (pErr) {
-        // If new columns don't exist yet, retry with only base columns
-        const { error: pErr2 } = await supabase
-          .from("profiles")
-          .update({
-            full_name: profilePayload.full_name,
-            bio: profilePayload.bio,
-            location: profilePayload.location,
-            occupation: profilePayload.occupation,
-            onboarded: true,
-          })
-          .eq("id", user.id);
-        if (pErr2) throw pErr2;
+      const { error: profileErr } = await supabase.from("profiles").update(payload).eq("id", user.id);
+      if (profileErr) {
+        const { error: fallbackErr } = await supabase.from("profiles").update({ full_name: payload.full_name, bio: payload.bio, location: payload.location, occupation: payload.occupation, onboarded: true }).eq("id", user.id);
+        if (fallbackErr) throw fallbackErr;
       }
 
-      // Save roles
-      const roleRows = roles.map((role) => ({ user_id: user.id, role }));
-      const { error: rErr } = await supabase
-        .from("user_roles")
-        .upsert(roleRows, { onConflict: "user_id,role" });
-      if (rErr) throw rErr;
+      const { error: rolesErr } = await supabase.from("user_roles").upsert(roles.map((role) => ({ user_id: user.id, role })), { onConflict: "user_id,role" });
+      if (rolesErr) throw rolesErr;
 
       await refresh();
-      toast.success("Welcome to CoFund! 🎉");
+      toast.success("Welcome to CoFund!");
       navigate({ to: "/home" });
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not save profile");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not save profile");
     } finally {
       setBusy(false);
     }
   }
 
-  const TOTAL_STEPS = 4;
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border/40 px-6 py-4">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <img src={logo} alt="CoFund" className="h-8 w-8 object-contain" />
-            <span className="font-display text-lg font-bold">CoFund</span>
-          </Link>
-          <span className="text-sm text-muted-foreground">
-            Step {step} of {TOTAL_STEPS}
-          </span>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="h-1 bg-border/40">
-        <div
-          className="h-1 gradient-brand transition-all duration-500"
-          style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
-        />
-      </div>
-
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-        {step === 1 && <Step1 data={data} set={set} />}
-        {step === 2 && <Step2 data={data} toggleRole={toggleRole} />}
-        {step === 3 && <Step3 data={data} set={set} toggleChip={toggleChip} />}
-        {step === 4 && <Step4 data={data} set={set} />}
-
-        {/* Navigation */}
+      <div className="border-b border-border/40 px-6 py-4"><div className="mx-auto flex max-w-4xl items-center justify-between"><Link to="/" className="flex items-center gap-2.5"><img src={logo} alt="CoFund" className="h-8 w-8 object-contain" /><span className="font-display text-lg font-bold">CoFund</span></Link><span className="text-sm text-muted-foreground">Step {step} of 4</span></div></div>
+      <div className="h-1 bg-border/40"><div className="h-1 gradient-brand transition-all duration-500" style={{ width: `${(step / 4) * 100}%` }} /></div>
+      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
+        {step === 1 && <StepIntent data={data} chooseIntent={chooseIntent} />}
+        {step === 2 && <StepProfile data={data} set={set} track={primaryTrack} />}
+        {step === 3 && <StepRoles data={data} track={primaryTrack} toggleRole={toggleRole} set={set} toggleChip={toggleChip} />}
+        {step === 4 && <StepReview data={data} set={set} track={primaryTrack} />}
         <div className="mt-10 flex items-center justify-between">
-          {step > 1 ? (
-            <button
-              onClick={() => setStep((s) => s - 1)}
-              className="flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
-            >
-              <ChevronLeft className="h-4 w-4" /> Back
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {step < TOTAL_STEPS ? (
-            <button
-              onClick={() => setStep((s) => s + 1)}
-              disabled={
-                (step === 1 && !step1Valid) ||
-                (step === 2 && !step2Valid) ||
-                (step === 3 && !step3Valid)
-              }
-              className="gradient-brand flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:opacity-90 disabled:opacity-40"
-            >
-              Continue <ChevronRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              onClick={finish}
-              disabled={!step4Valid || busy}
-              className="gradient-brand flex items-center gap-2 rounded-xl px-8 py-3 text-sm font-semibold text-white shadow-brand transition hover:opacity-90 disabled:opacity-40"
-            >
-              {busy ? "Setting up…" : "Complete my profile"}
-              {!busy && <Check className="h-4 w-4" />}
-            </button>
-          )}
+          {step > 1 ? <button type="button" onClick={() => setStep((current) => (current - 1) as 1 | 2 | 3 | 4)} className="flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary/40 hover:text-foreground"><ChevronLeft className="h-4 w-4" /> Back</button> : <div />}
+          {step < 4 ? <button type="button" onClick={() => setStep((current) => (current + 1) as 1 | 2 | 3 | 4)} disabled={(step === 1 && !step1Valid) || (step === 2 && !step2Valid) || (step === 3 && !step3Valid)} className="gradient-brand flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:opacity-90 disabled:opacity-40">Continue <ChevronRight className="h-4 w-4" /></button> : <button type="button" onClick={finish} disabled={!step4Valid || busy} className="gradient-brand flex items-center gap-2 rounded-xl px-8 py-3 text-sm font-semibold text-white shadow-brand transition hover:opacity-90 disabled:opacity-40">{busy ? "Setting up..." : "Complete my profile"}{!busy && <Check className="h-4 w-4" />}</button>}
         </div>
       </div>
     </div>
   );
 }
-
-// ─── Step 1: Basic Profile ────────────────────────────────────────────────────
-
-function Step1({ data, set }: { data: OBData; set: any }) {
-  return (
-    <div>
-      <div className="mb-8">
-        <p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 1 of 4</p>
-        <h1 className="font-display text-3xl font-extrabold sm:text-4xl">Tell us about yourself</h1>
-        <p className="mt-2 text-muted-foreground">This creates your public CoFund profile. You can edit it anytime.</p>
-      </div>
-
-      <div className="space-y-6">
-        {/* Name + phone row */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <OBField label="Full name *" icon={<User className="h-4 w-4" />}>
-            <input
-              type="text"
-              value={data.fullName}
-              onChange={(e) => set("fullName", e.target.value)}
-              placeholder="e.g. Amara Okonkwo"
-              className={inputCls}
-              required
-            />
-          </OBField>
-          <OBField label="Phone number *" icon={<Phone className="h-4 w-4" />}>
-            <input
-              type="tel"
-              value={data.phone}
-              onChange={(e) => set("phone", e.target.value)}
-              placeholder="+234 800 000 0000"
-              className={inputCls}
-              required
-            />
-          </OBField>
-        </div>
-
-        {/* Country + city */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <OBField label="Country *" icon={<Globe className="h-4 w-4" />}>
-            <select
-              value={data.country}
-              onChange={(e) => set("country", e.target.value)}
-              className={inputCls}
-              required
-            >
-              <option value="">Select country…</option>
-              <optgroup label="African Countries">
-                {AFRICAN_COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </optgroup>
-              <optgroup label="Diaspora / Global">
-                {DIASPORA_COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </optgroup>
-            </select>
-          </OBField>
-          <OBField label="City / State" icon={<MapPin className="h-4 w-4" />}>
-            <input
-              type="text"
-              value={data.city}
-              onChange={(e) => set("city", e.target.value)}
-              placeholder="e.g. Lagos, Abuja, Nairobi…"
-              className={inputCls}
-            />
-          </OBField>
-        </div>
-
-        {/* Professional headline */}
-        <OBField label="Professional headline" icon={<Briefcase className="h-4 w-4" />}>
-          <input
-            type="text"
-            value={data.occupation}
-            onChange={(e) => set("occupation", e.target.value)}
-            placeholder="e.g. Angel Investor · Lagos | Startup Founder | CFO at Acme Ltd"
-            className={inputCls}
-            maxLength={100}
-          />
-        </OBField>
-
-        {/* Bio */}
-        <OBField label="About you (optional)" icon={<FileText className="h-4 w-4" />}>
-          <textarea
-            value={data.bio}
-            onChange={(e) => set("bio", e.target.value)}
-            placeholder="Brief introduction — your background, interests, and what excites you about African business…"
-            className={`${inputCls} min-h-[96px] resize-none`}
-            maxLength={500}
-          />
-          <p className="mt-1.5 text-right text-xs text-muted-foreground">{data.bio.length}/500</p>
-        </OBField>
-
-        {/* LinkedIn + Website */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <OBField label="LinkedIn URL (optional)" icon={<Link2 className="h-4 w-4" />}>
-            <input
-              type="url"
-              value={data.linkedinUrl}
-              onChange={(e) => set("linkedinUrl", e.target.value)}
-              placeholder="https://linkedin.com/in/yourname"
-              className={inputCls}
-            />
-          </OBField>
-          <OBField label="Website / Portfolio (optional)" icon={<Globe className="h-4 w-4" />}>
-            <input
-              type="url"
-              value={data.websiteUrl}
-              onChange={(e) => set("websiteUrl", e.target.value)}
-              placeholder="https://yourwebsite.com"
-              className={inputCls}
-            />
-          </OBField>
-        </div>
-      </div>
-    </div>
-  );
+function StepIntent({ data, chooseIntent }: { data: OBData; chooseIntent: (intent: string) => void }) {
+  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 1 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">What brings you to CoFund?</h1><p className="mt-2 text-muted-foreground">Start with your reason for joining. You can add other roles later.</p></div><div className="grid gap-3 sm:grid-cols-2">{INTENTS.map((intent) => { const active = data.intent === intent.id; const Icon = intent.icon; return <button key={intent.id} type="button" onClick={() => chooseIntent(intent.id)} className={`rounded-2xl border p-5 text-left transition ${active ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/40"}`}><div className="flex items-start gap-3"><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition ${active ? "gradient-brand text-white" : "bg-muted text-muted-foreground"}`}><Icon className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="font-display text-lg font-bold">{intent.label}</p><p className="mt-2 text-sm text-muted-foreground">{intent.desc}</p></div></div></button>; })}</div></div>;
 }
 
-// ─── Step 2: Role Selection ───────────────────────────────────────────────────
-
-function Step2({ data, toggleRole }: { data: OBData; toggleRole: (r: AppRole) => void }) {
-  return (
-    <div>
-      <div className="mb-8">
-        <p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 2 of 4</p>
-        <h1 className="font-display text-3xl font-extrabold sm:text-4xl">What brings you to CoFund?</h1>
-        <p className="mt-2 text-muted-foreground">Pick one or more roles — you can always add more later in settings.</p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {ROLES.map((r) => {
-          const active = data.roles.includes(r.id);
-          return (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => toggleRole(r.id)}
-              className={`relative rounded-2xl border p-5 text-left transition ${
-                active
-                  ? "border-primary bg-primary/5 shadow-soft"
-                  : "border-border bg-card hover:border-primary/40"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-                  active ? "gradient-brand text-white" : "bg-muted text-muted-foreground"
-                }`}>
-                  <r.icon className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-display text-base font-bold">{r.title}</h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{r.desc}</p>
-                </div>
-                <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${
-                  active ? "border-primary bg-primary" : "border-border"
-                }`}>
-                  {active && <Check className="h-3 w-3 text-white" />}
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {data.roles.length === 0 && (
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Select at least one role to continue.
-        </p>
-      )}
-    </div>
-  );
+function StepProfile({ data, set, track }: { data: OBData; set: <K extends keyof OBData>(key: K, value: OBData[K]) => void; track: OnboardingTrack }) {
+  const intro = track === "investor"
+    ? "This is the profile behind your investor identity and future portfolio activity."
+    : track === "founder"
+      ? "This becomes the identity layer behind your founder, business, and funding journey."
+      : "This creates your CoFund profile so you can browse, follow, contribute, and grow into other roles later.";
+  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 2 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">Tell us about yourself</h1><p className="mt-2 text-muted-foreground">{intro}</p></div><div className="space-y-6"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name *" icon={<User className="h-4 w-4" />}><input type="text" value={data.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="e.g. Amara Okonkwo" className={inputCls} required /></Field><Field label="Phone number *" icon={<Phone className="h-4 w-4" />}><input type="tel" value={data.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+234 800 000 0000" className={inputCls} required /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Country *" icon={<MapPin className="h-4 w-4" />}><select value={data.country} onChange={(e) => set("country", e.target.value)} className={inputCls} required><option value="">Select country...</option><optgroup label="African Countries">{AFRICAN_COUNTRIES.map((country) => <option key={country} value={country}>{country}</option>)}</optgroup><optgroup label="Diaspora / Global">{DIASPORA_COUNTRIES.map((country) => <option key={country} value={country}>{country}</option>)}</optgroup></select></Field><Field label="City / State" icon={<MapPin className="h-4 w-4" />}><input type="text" value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="e.g. Lagos, Abuja, Nairobi..." className={inputCls} /></Field></div><Field label="Professional headline" icon={<Briefcase className="h-4 w-4" />}><input type="text" value={data.occupation} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Angel Investor | Founder | CFO" className={inputCls} maxLength={100} /></Field><Field label="About you (optional)" icon={<FileText className="h-4 w-4" />}><textarea value={data.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Brief introduction - your background, interests, and what excites you about African business..." className={`${inputCls} min-h-[96px] resize-none`} maxLength={500} /><p className="mt-1.5 text-right text-xs text-muted-foreground">{data.bio.length}/500</p></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="LinkedIn URL (optional)" icon={<Link2 className="h-4 w-4" />}><input type="url" value={data.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} placeholder="https://linkedin.com/in/yourname" className={inputCls} /></Field><Field label="Website / Portfolio (optional)" icon={<Link2 className="h-4 w-4" />}><input type="url" value={data.websiteUrl} onChange={(e) => set("websiteUrl", e.target.value)} placeholder="https://yourwebsite.com" className={inputCls} /></Field></div></div></div>;
 }
+function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData; track: OnboardingTrack; toggleRole: (role: AppRole) => void; set: <K extends keyof OBData>(key: K, value: OBData[K]) => void; toggleChip: <K extends keyof OBData>(key: K, value: string) => void }) {
+  const needsCompliance = data.roles.includes("investor") || data.roles.includes("business_owner") || data.roles.includes("mentor") || data.roles.includes("professional");
+  const needsInvestorChecks = data.roles.includes("investor");
+  const needsBusinessChecks = data.roles.includes("business_owner");
+  const trackRoles = getTrackRoleOptions(track);
+  const trackTitle = track === "investor" ? "Investor verification track" : track === "founder" ? "Founder and business track" : "Community and growth track";
+  const trackDescription = track === "investor"
+    ? "This path focuses on investor identity, suitability, and readiness to fund opportunities."
+    : track === "founder"
+      ? "This path focuses on founder identity, business verification, and the information needed before funding applications."
+      : "This path keeps things lighter: community access first, with optional upgrades into startup, mentor, or professional roles later.";
 
-// ─── Step 3: Role-Specific Details ───────────────────────────────────────────
-
-function Step3({ data, set, toggleChip }: { data: OBData; set: any; toggleChip: any }) {
-  const hasInvestor = data.roles.includes("investor");
-  const hasBusiness = data.roles.includes("business_owner");
-  const hasStartup = data.roles.includes("startup_builder");
-  const hasMentor = data.roles.includes("mentor");
-  const hasProfessional = data.roles.includes("professional");
-  const hasCommunity = data.roles.includes("community_member");
-
-  return (
-    <div>
-      <div className="mb-8">
-        <p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 3 of 4</p>
-        <h1 className="font-display text-3xl font-extrabold sm:text-4xl">Your details</h1>
-        <p className="mt-2 text-muted-foreground">
-          Help us personalise your experience. The more you share, the better your matches.
-        </p>
-      </div>
-
-      <div className="space-y-10">
-        {hasInvestor && (
-          <RoleSection icon={<TrendingUp className="h-5 w-5" />} title="As an Investor">
-            <div className="space-y-5">
-              <div>
-                <label className={labelCls}>Investor type *</label>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {INVESTOR_TYPES.map((t) => (
-                    <RadioCard
-                      key={t.id}
-                      active={data.investorType === t.id}
-                      onClick={() => set("investorType", t.id)}
-                      label={t.label}
-                      desc={t.desc}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <OBSelect label="Investment experience" value={data.investorExperience}
-                onChange={(v) => set("investorExperience", v)}
-                options={["Less than 1 year", "1–3 years", "3–5 years", "5–10 years", "10+ years"]} />
-
-              <OBSelect label="Total investable capital (approx.)" value={data.investorCapitalRange}
-                onChange={(v) => set("investorCapitalRange", v)} options={CAPITAL_RANGES} />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <OBSelect label="Minimum ticket size" value={data.investorMinTicket}
-                  onChange={(v) => set("investorMinTicket", v)} options={TICKET_SIZES} />
-                <OBSelect label="Maximum ticket size" value={data.investorMaxTicket}
-                  onChange={(v) => set("investorMaxTicket", v)} options={TICKET_SIZES} />
-              </div>
-
-              <div>
-                <label className={labelCls}>Sectors of interest (select all that apply)</label>
-                <ChipSelector
-                  options={SECTORS}
-                  selected={data.investorSectors}
-                  toggle={(v) => toggleChip("investorSectors", v)}
-                />
-              </div>
-
-              <div>
-                <label className={labelCls}>Are you a professional / sophisticated investor?</label>
-                <div className="mt-2 flex gap-3">
-                  {["Yes", "No", "Not sure"].map((v) => (
-                    <button key={v} type="button"
-                      onClick={() => set("investorAccredited", v.toLowerCase().replace(" ", "_"))}
-                      className={pillCls(data.investorAccredited === v.toLowerCase().replace(" ", "_"))}>
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </RoleSection>
-        )}
-
-        {hasBusiness && (
-          <RoleSection icon={<Building2 className="h-5 w-5" />} title="About your Business">
-            <div className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <OBField label="Business name *">
-                  <input type="text" value={data.businessName}
-                    onChange={(e) => set("businessName", e.target.value)}
-                    placeholder="e.g. Agroflow Ltd" className={inputCls} />
-                </OBField>
-                <OBSelect label="Industry / Sector *" value={data.businessIndustry}
-                  onChange={(v) => set("businessIndustry", v)} options={SECTORS} />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <OBSelect label="Country of operation" value={data.businessCountry}
-                  onChange={(v) => set("businessCountry", v)} options={ALL_COUNTRIES} />
-                <OBSelect label="Annual revenue" value={data.businessRevenueRange}
-                  onChange={(v) => set("businessRevenueRange", v)} options={REVENUE_RANGES} />
-              </div>
-
-              <div>
-                <label className={labelCls}>Business stage *</label>
-                <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                  {BUSINESS_STAGES.map((s) => (
-                    <RadioCard key={s.id} active={data.businessStage === s.id}
-                      onClick={() => set("businessStage", s.id)}
-                      label={s.label} desc={s.desc} />
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <OBSelect label="Team size" value={data.businessTeamSize}
-                  onChange={(v) => set("businessTeamSize", v)} options={TEAM_SIZES} />
-                <OBSelect label="Capital you're seeking" value={data.businessCapitalNeeded}
-                  onChange={(v) => set("businessCapitalNeeded", v)} options={BUSINESS_CAPITAL} />
-              </div>
-
-              <div>
-                <label className={labelCls}>What are you looking for? (select all that apply)</label>
-                <ChipSelector options={SEEKING_OPTIONS} selected={data.businessSeeking}
-                  toggle={(v) => toggleChip("businessSeeking", v)} />
-              </div>
-            </div>
-          </RoleSection>
-        )}
-
-        {hasStartup && (
-          <RoleSection icon={<Rocket className="h-5 w-5" />} title="Your Startup">
-            <div className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <OBField label="Startup / idea name (optional)">
-                  <input type="text" value={data.startupName}
-                    onChange={(e) => set("startupName", e.target.value)}
-                    placeholder="Leave blank if not named yet" className={inputCls} />
-                </OBField>
-                <OBSelect label="Industry / Domain" value={data.startupIndustry}
-                  onChange={(v) => set("startupIndustry", v)} options={SECTORS} />
-              </div>
-
-              <div>
-                <label className={labelCls}>Current stage</label>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {STARTUP_STAGES.map((s) => (
-                    <RadioCard key={s.id} active={data.startupStage === s.id}
-                      onClick={() => set("startupStage", s.id)} label={s.label} />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className={labelCls}>Co-founder status</label>
-                <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                  {COFOUND_STATUS.map((s) => (
-                    <RadioCard key={s.id} active={data.startupCofounderStatus === s.id}
-                      onClick={() => set("startupCofounderStatus", s.id)}
-                      label={s.label} desc={s.desc} />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className={labelCls}>What do you need from CoFund? (select all that apply)</label>
-                <ChipSelector options={SEEKING_OPTIONS} selected={data.startupSeeking}
-                  toggle={(v) => toggleChip("startupSeeking", v)} />
-              </div>
-            </div>
-          </RoleSection>
-        )}
-
-        {hasMentor && (
-          <RoleSection icon={<GraduationCap className="h-5 w-5" />} title="As a Mentor / Advisor">
-            <div className="space-y-5">
-              <div>
-                <label className={labelCls}>Areas of expertise (select all that apply)</label>
-                <ChipSelector options={EXPERTISE_AREAS} selected={data.mentorExpertise}
-                  toggle={(v) => toggleChip("mentorExpertise", v)} />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <OBSelect label="Years of professional experience" value={data.mentorExperience}
-                  onChange={(v) => set("mentorExperience", v)} options={EXPERIENCE_YEARS} />
-                <OBSelect label="Primary industry" value={data.mentorIndustry}
-                  onChange={(v) => set("mentorIndustry", v)} options={SECTORS} />
-              </div>
-
-              <div>
-                <label className={labelCls}>Mentoring availability</label>
-                <div className="mt-2 flex flex-wrap gap-3">
-                  {[
-                    { id: "paid", label: "Paid engagements only" },
-                    { id: "volunteer", label: "Volunteer / pro-bono" },
-                    { id: "both", label: "Open to both" },
-                  ].map((opt) => (
-                    <button key={opt.id} type="button"
-                      onClick={() => set("mentorAvailability", opt.id)}
-                      className={pillCls(data.mentorAvailability === opt.id)}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <OBSelect label="Hours available per month" value={data.mentorHours}
-                onChange={(v) => set("mentorHours", v)}
-                options={["1–2 hours", "2–5 hours", "5–10 hours", "10+ hours"]} />
-            </div>
-          </RoleSection>
-        )}
-
-        {hasProfessional && (
-          <RoleSection icon={<Wrench className="h-5 w-5" />} title="Your Professional Services">
-            <div className="space-y-5">
-              <OBSelect label="Primary service type *" value={data.professionalService}
-                onChange={(v) => set("professionalService", v)} options={PROFESSIONAL_SERVICES} />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <OBSelect label="Years of experience" value={data.professionalExperience}
-                  onChange={(v) => set("professionalExperience", v)} options={EXPERIENCE_YEARS} />
-                <OBSelect label="Preferred engagement type" value={data.professionalEngagement}
-                  onChange={(v) => set("professionalEngagement", v)} options={ENGAGEMENT_TYPES} />
-              </div>
-
-              <div>
-                <label className={labelCls}>Are you open to working with early-stage startups?</label>
-                <div className="mt-2 flex gap-3">
-                  {["Yes", "No", "Case by case"].map((v) => (
-                    <button key={v} type="button"
-                      onClick={() => set("professionalOpenToStartups", v === "Yes")}
-                      className={pillCls(
-                        v === "Yes" ? data.professionalOpenToStartups === true :
-                        v === "No" ? data.professionalOpenToStartups === false : false
-                      )}>
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </RoleSection>
-        )}
-
-        {hasCommunity && !hasInvestor && !hasBusiness && !hasStartup && !hasMentor && !hasProfessional && (
-          <RoleSection icon={<Users className="h-5 w-5" />} title="Community Interests">
-            <div className="space-y-5">
-              <div>
-                <label className={labelCls}>Topics you're interested in (select all that apply)</label>
-                <ChipSelector options={COMMUNITY_INTERESTS} selected={data.communityInterests}
-                  toggle={(v) => toggleChip("communityInterests", v)} />
-              </div>
-
-              <OBSelect label="How did you hear about CoFund?" value={data.communityReferral}
-                onChange={(v) => set("communityReferral", v)} options={REFERRAL_SOURCES} />
-            </div>
-          </RoleSection>
-        )}
-      </div>
-    </div>
-  );
+  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 3 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">{trackTitle}</h1><p className="mt-2 text-muted-foreground">{trackDescription}</p></div><div className="mb-6 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-muted-foreground">{track === "investor" ? "You can still enable extra roles like mentor or community member, but investing stays locked behind verification and suitability checks." : track === "founder" ? "You still have one CoFund account. This flow just prioritizes the business and funding data founders need first." : "Community members can browse, follow, save, and contribute first, then expand into investing or business roles later without creating a new account."}</div><div className="grid gap-3 sm:grid-cols-2">{ROLES.filter((role) => trackRoles.includes(role.id)).map((role) => { const active = data.roles.includes(role.id); const Icon = role.icon; return <button key={role.id} type="button" onClick={() => toggleRole(role.id)} className={`rounded-2xl border p-5 text-left transition ${active ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/40"}`}><div className="flex items-start gap-3"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${active ? "gradient-brand text-white" : "bg-muted text-muted-foreground"}`}><Icon className="h-5 w-5" /></div><div className="min-w-0 flex-1"><h3 className="font-display text-base font-bold">{role.title}</h3><p className="mt-0.5 text-sm text-muted-foreground">{role.desc}</p></div><div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${active ? "border-primary bg-primary" : "border-border"}`}>{active && <Check className="h-3 w-3 text-white" />}</div></div></button>; })}</div><div className="mt-8 space-y-8">{needsCompliance && <Panel icon={<ShieldCheck className="h-5 w-5" />} title="Identity verification readiness"><div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><OptionSelectField label="Preferred verification flow" value={data.verificationProviderPreference} onChange={(value) => set("verificationProviderPreference", value as VerificationProvider)} options={VERIFICATION_PROVIDER_OPTIONS.map((option) => ({ value: option.value, label: option.label }))} /><Field label="Date of birth"><input type="date" value={data.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Nationality" value={data.nationality} onChange={(value) => set("nationality", value)} options={ALL_COUNTRIES} /><Field label="Residential address"><input type="text" value={data.residentialAddress} onChange={(e) => set("residentialAddress", e.target.value)} placeholder="Full residential address" className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Primary ID document" value={data.kycIdType} onChange={(value) => set("kycIdType", value)} options={[...ID_DOCUMENT_OPTIONS]} /><Field label="ID number"><input type="text" value={data.kycIdNumber} onChange={(e) => set("kycIdNumber", e.target.value)} placeholder="Document or national ID number" className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="NIN (Nigeria, if available)"><input type="text" value={data.nin} onChange={(e) => set("nin", e.target.value)} placeholder="National Identification Number" className={inputCls} /></Field><Field label="BVN (Nigeria, if available)"><input type="text" value={data.bvn} onChange={(e) => set("bvn", e.target.value)} placeholder="Bank Verification Number" className={inputCls} /></Field></div><div className="grid gap-3 sm:grid-cols-2"><AgreementBox checked={data.pepConsent} onChange={(value) => set("pepConsent", value)} label="I consent to PEP and politically exposed person screening as part of onboarding." required /><AgreementBox checked={data.sanctionsConsent} onChange={(value) => set("sanctionsConsent", value)} label="I consent to sanctions, watchlist, and AML screening checks." required /></div></div></Panel>}{needsInvestorChecks && <Panel icon={<TrendingUp className="h-5 w-5" />} title="Investor details"><div className="space-y-4"><SelectField label="Investor type" value={data.investorType} onChange={(value) => set("investorType", value)} options={["Individual investor","Family office","Fund / VC","Corporate investor"]} /><SelectField label="Investment experience" value={data.investorExperience} onChange={(value) => set("investorExperience", value)} options={["Less than 1 year","1-3 years","3-5 years","5-10 years","10+ years"]} /><SelectField label="Accreditation status" value={data.investorAccreditationStatus} onChange={(value) => set("investorAccreditationStatus", value)} options={[...ACCREDITATION_STATUS_OPTIONS]} /><SelectField label="Accreditation basis" value={data.investorAccreditationBasis} onChange={(value) => set("investorAccreditationBasis", value)} options={[...ACCREDITATION_BASIS_OPTIONS]} /><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Annual income range" value={data.investorAnnualIncomeRange} onChange={(value) => set("investorAnnualIncomeRange", value)} options={[...ANNUAL_INCOME_OPTIONS]} /><SelectField label="Net worth range" value={data.investorNetWorthRange} onChange={(value) => set("investorNetWorthRange", value)} options={[...NET_WORTH_OPTIONS]} /></div><SelectField label="Total investable capital" value={data.investorCapitalRange} onChange={(value) => set("investorCapitalRange", value)} options={CAPITAL_RANGES} /><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Minimum ticket" value={data.investorMinTicket} onChange={(value) => set("investorMinTicket", value)} options={TICKET_SIZES} /><SelectField label="Maximum ticket" value={data.investorMaxTicket} onChange={(value) => set("investorMaxTicket", value)} options={TICKET_SIZES} /></div><ChipField label="Sectors of interest" options={SECTORS} selected={data.investorSectors} toggle={(value) => toggleChip("investorSectors", value)} /></div></Panel>}{needsBusinessChecks && <Panel icon={<Building2 className="h-5 w-5" />} title="Business verification details"><div className="space-y-4"><Field label="Business name"><input type="text" value={data.businessName} onChange={(e) => set("businessName", e.target.value)} placeholder="e.g. Agroflow Ltd" className={inputCls} /></Field><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Industry / Sector" value={data.businessIndustry} onChange={(value) => set("businessIndustry", value)} options={SECTORS} /><SelectField label="Country of operation" value={data.businessCountry} onChange={(value) => set("businessCountry", value)} options={ALL_COUNTRIES} /></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Registration number"><input type="text" value={data.businessRegistrationNumber} onChange={(e) => set("businessRegistrationNumber", e.target.value)} placeholder="CAC / company registration number" className={inputCls} /></Field><Field label="Tax ID / TIN"><input type="text" value={data.businessTaxId} onChange={(e) => set("businessTaxId", e.target.value)} placeholder="Business tax number" className={inputCls} /></Field></div><Field label="Registered business address"><input type="text" value={data.businessAddress} onChange={(e) => set("businessAddress", e.target.value)} placeholder="Registered operating address" className={inputCls} /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="Authorized representative"><input type="text" value={data.representativeName} onChange={(e) => set("representativeName", e.target.value)} placeholder="Founder or compliance contact" className={inputCls} /></Field><Field label="Representative role"><input type="text" value={data.representativeRole} onChange={(e) => set("representativeRole", e.target.value)} placeholder="CEO, Founder, Compliance Officer..." className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Representative email"><input type="email" value={data.representativeEmail} onChange={(e) => set("representativeEmail", e.target.value)} placeholder="compliance@business.com" className={inputCls} /></Field><Field label="Directors count"><input type="text" value={data.directorsCount} onChange={(e) => set("directorsCount", e.target.value)} placeholder="e.g. 2" className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Beneficial owners count"><input type="text" value={data.beneficialOwnersCount} onChange={(e) => set("beneficialOwnersCount", e.target.value)} placeholder="e.g. 3" className={inputCls} /></Field><SelectField label="Business stage" value={data.businessStage} onChange={(value) => set("businessStage", value)} options={BUSINESS_STAGES} /></div><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Annual revenue" value={data.businessRevenueRange} onChange={(value) => set("businessRevenueRange", value)} options={REVENUE_RANGES} /><SelectField label="Team size" value={data.businessTeamSize} onChange={(value) => set("businessTeamSize", value)} options={TEAM_SIZES} /></div><SelectField label="Capital you're seeking" value={data.businessCapitalNeeded} onChange={(value) => set("businessCapitalNeeded", value)} options={BUSINESS_CAPITAL} /><ChipField label="What are you looking for?" options={SEEKING_OPTIONS} selected={data.businessSeeking} toggle={(value) => toggleChip("businessSeeking", value)} /></div></Panel>}{data.roles.includes("startup_builder") && <Panel icon={<Rocket className="h-5 w-5" />} title="Startup details"><div className="space-y-4"><Field label="Startup / idea name"><input type="text" value={data.startupName} onChange={(e) => set("startupName", e.target.value)} placeholder="Leave blank if not named yet" className={inputCls} /></Field><SelectField label="Industry / Domain" value={data.startupIndustry} onChange={(value) => set("startupIndustry", value)} options={SECTORS} /><SelectField label="Current stage" value={data.startupStage} onChange={(value) => set("startupStage", value)} options={STARTUP_STAGES} /><SelectField label="Co-founder status" value={data.startupCofounderStatus} onChange={(value) => set("startupCofounderStatus", value)} options={COFOUND_STATUS} /><ChipField label="What do you need from CoFund?" options={SEEKING_OPTIONS} selected={data.startupSeeking} toggle={(value) => toggleChip("startupSeeking", value)} /></div></Panel>}{data.roles.includes("mentor") && <Panel icon={<GraduationCap className="h-5 w-5" />} title="Mentor / advisor details"><div className="space-y-4"><ChipField label="Areas of expertise" options={EXPERTISE_AREAS} selected={data.mentorExpertise} toggle={(value) => toggleChip("mentorExpertise", value)} /><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Years of experience" value={data.mentorExperience} onChange={(value) => set("mentorExperience", value)} options={EXPERIENCE_YEARS} /><SelectField label="Primary industry" value={data.mentorIndustry} onChange={(value) => set("mentorIndustry", value)} options={SECTORS} /></div><SelectField label="Availability" value={data.mentorAvailability} onChange={(value) => set("mentorAvailability", value)} options={["Paid engagements only","Volunteer / pro-bono","Open to both"]} /><SelectField label="Hours per month" value={data.mentorHours} onChange={(value) => set("mentorHours", value)} options={["1-2 hours","2-5 hours","5-10 hours","10+ hours"]} /></div></Panel>}{data.roles.includes("professional") && <Panel icon={<Wrench className="h-5 w-5" />} title="Professional services"><div className="space-y-4"><SelectField label="Primary service type" value={data.professionalService} onChange={(value) => set("professionalService", value)} options={PROFESSIONAL_SERVICES} /><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Years of experience" value={data.professionalExperience} onChange={(value) => set("professionalExperience", value)} options={EXPERIENCE_YEARS} /><SelectField label="Preferred engagement" value={data.professionalEngagement} onChange={(value) => set("professionalEngagement", value)} options={ENGAGEMENT_TYPES} /></div></div></Panel>}{data.roles.includes("community_member") && <Panel icon={<Users className="h-5 w-5" />} title="Community interests"><div className="space-y-4"><ChipField label="Topics you're interested in" options={COMMUNITY_INTERESTS} selected={data.communityInterests} toggle={(value) => toggleChip("communityInterests", value)} /><SelectField label="How did you hear about CoFund?" value={data.communityReferral} onChange={(value) => set("communityReferral", value)} options={REFERRAL_SOURCES} /></div></Panel>}</div></div>;
 }
-
-// ─── Step 4: Verify & Commit ──────────────────────────────────────────────────
-
-function Step4({ data, set }: { data: OBData; set: any }) {
+function StepReview({ data, set, track }: { data: OBData; set: <K extends keyof OBData>(key: K, value: OBData[K]) => void; track: OnboardingTrack }) {
   const hasInvestorRole = data.roles.includes("investor") || data.roles.includes("business_owner");
-  const primaryRoleLabel = ROLES.find((r) => r.id === data.roles[0])?.title ?? "Member";
-
-  return (
-    <div>
-      <div className="mb-8">
-        <p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 4 of 4</p>
-        <h1 className="font-display text-3xl font-extrabold sm:text-4xl">Almost there!</h1>
-        <p className="mt-2 text-muted-foreground">Review your profile and agree to our terms to complete setup.</p>
-      </div>
-
-      {/* Profile summary card */}
-      <div className="mb-8 rounded-2xl border border-border bg-card p-6">
-        <h3 className="mb-4 font-display text-base font-bold text-muted-foreground uppercase tracking-wider text-xs">
-          Your profile summary
-        </h3>
-        <div className="space-y-3">
-          <SummaryRow label="Name" value={data.fullName} />
-          <SummaryRow label="Location" value={[data.city, data.country].filter(Boolean).join(", ")} />
-          <SummaryRow label="Phone" value={data.phone} />
-          {data.occupation && <SummaryRow label="Headline" value={data.occupation} />}
-          <SummaryRow
-            label="Role(s)"
-            value={data.roles.map((r) => ROLES.find((x) => x.id === r)?.title).filter(Boolean).join(", ")}
-          />
-          {data.linkedinUrl && <SummaryRow label="LinkedIn" value={data.linkedinUrl} />}
-        </div>
-      </div>
-
-      {/* Agreements */}
-      <div className="space-y-4">
-        <h3 className="font-display text-base font-bold">Before you continue</h3>
-
-        <AgreementBox
-          checked={data.agreedAge}
-          onChange={(v) => set("agreedAge", v)}
-          label="I confirm I am 18 years of age or older."
-          required
-        />
-
-        <AgreementBox
-          checked={data.agreedTerms}
-          onChange={(v) => set("agreedTerms", v)}
-          required
-          label={
-            <>
-              I have read and agree to the{" "}
-              <a href="/terms" target="_blank" className="text-primary underline underline-offset-2">Terms of Use</a>
-              {" "}and{" "}
-              <a href="/privacy" target="_blank" className="text-primary underline underline-offset-2">Privacy Policy</a>.
-            </>
-          }
-        />
-
-        {hasInvestorRole && (
-          <>
-            <AgreementBox
-              checked={data.agreedRisk}
-              onChange={(v) => set("agreedRisk", v)}
-              label="I understand that investing in private businesses involves significant risk, including the potential loss of all invested capital."
-            />
-            <AgreementBox
-              checked={true}
-              onChange={() => {}}
-              readOnly
-              label="I understand CoFund does not guarantee investment returns or the performance of any listed business."
-            />
-          </>
-        )}
-
-        <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-          <AlertCircle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
-          <p className="text-sm text-muted-foreground">
-            CoFund is a private investment platform. All businesses are independently verified, but
-            investments are not insured. Only invest what you can afford to lose.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  const reviewCopy = track === "investor" ? "Review your investor profile, verification choices, and suitability details before finishing setup." : track === "founder" ? "Review your founder profile and business verification details before finishing setup." : "Review your community profile now. You can still unlock investor or business features later after verification.";
+  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 4 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">Almost there</h1><p className="mt-2 text-muted-foreground">{reviewCopy}</p></div><div className="mb-8 rounded-2xl border border-border bg-card p-6"><h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your profile summary</h3><div className="space-y-3"><SummaryRow label="Name" value={data.fullName} /><SummaryRow label="Location" value={[data.city, data.country].filter(Boolean).join(", ")} /><SummaryRow label="Phone" value={data.phone} /><SummaryRow label="Headline" value={data.occupation} /><SummaryRow label="Role(s)" value={data.roles.map((role) => ROLES.find((item) => item.id === role)?.title).filter(Boolean).join(", ")} /><SummaryRow label="LinkedIn" value={data.linkedinUrl} /><SummaryRow label="Verification" value={VERIFICATION_PROVIDER_OPTIONS.find((option) => option.value === data.verificationProviderPreference)?.label ?? "Decide later"} />{data.dateOfBirth && <SummaryRow label="KYC" value={`${data.kycIdType || "ID"} ready for review`} />}{data.businessRegistrationNumber && <SummaryRow label="KYB" value={`Registration ${data.businessRegistrationNumber}`} />}</div></div><div className="space-y-4"><h3 className="font-display text-base font-bold">Before you continue</h3><AgreementBox checked={data.agreedAge} onChange={(value) => set("agreedAge", value)} label="I confirm I am 18 years of age or older." required /><AgreementBox checked={data.agreedTerms} onChange={(value) => set("agreedTerms", value)} label={<><a href="/terms" target="_blank" className="text-primary underline underline-offset-2">Terms of Use</a> and <a href="/privacy" target="_blank" className="text-primary underline underline-offset-2">Privacy Policy</a>.</>} required />{hasInvestorRole && <AgreementBox checked={data.agreedRisk} onChange={(value) => set("agreedRisk", value)} label="I understand that investing in private businesses involves significant risk, including the potential loss of all invested capital." />}<div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" /><p className="text-sm text-muted-foreground">CoFund is a private investment platform. All businesses are independently verified, but investments are not insured. Only invest what you can afford to lose.</p></div></div></div>;
 }
 
-// ─── Shared UI Helpers ────────────────────────────────────────────────────────
+function Field({ label, icon, children }: { label: string; icon?: ReactNode; children: ReactNode }) { return <label className="block"><span className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground">{icon ? <span className="text-muted-foreground">{icon}</span> : null}{label}</span>{children}</label>; }
+function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: string[] }) { return <label className="block"><span className="mb-1.5 block text-sm font-medium text-foreground">{label}</span><select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}><option value="">Select...</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>; }
+function OptionSelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: { value: string; label: string }[] }) { return <label className="block"><span className="mb-1.5 block text-sm font-medium text-foreground">{label}</span><select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}><option value="">Select...</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>; }
+function ChipField({ label, options, selected, toggle }: { label: string; options: string[]; selected: string[]; toggle: (value: string) => void }) { return <div><label className="mb-1.5 block text-sm font-medium text-foreground">{label}</label><div className="mt-2 flex flex-wrap gap-2">{options.map((option) => { const active = selected.includes(option); return <button key={option} type="button" onClick={() => toggle(option)} className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"}`}>{option}</button>; })}</div></div>; }
+function Panel({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) { return <div className="rounded-2xl border border-border bg-card/40 p-6"><div className="mb-5 flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand text-white">{icon}</div><h2 className="font-display text-lg font-bold">{title}</h2></div>{children}</div>; }
+function SummaryRow({ label, value }: { label: string; value: string }) { if (!value) return null; return <div className="flex items-start gap-3 text-sm"><span className="w-20 shrink-0 text-muted-foreground">{label}</span><span className="font-medium">{value}</span></div>; }
+function AgreementBox({ checked, onChange, label, required }: { checked: boolean; onChange: (value: boolean) => void; label: ReactNode; required?: boolean }) { return <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${checked ? "border-primary/40 bg-primary/5" : "border-border"}`}><button type="button" onClick={() => onChange(!checked)} className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${checked ? "border-primary bg-primary" : "border-border"}`}>{checked && <Check className="h-3 w-3 text-white" />}</button><span className="text-sm leading-relaxed text-muted-foreground">{label}{required && <span className="ml-1 text-primary">*</span>}</span></label>; }
 
 const inputCls = "w-full rounded-xl border border-border bg-card/60 px-3.5 py-2.5 text-sm outline-none transition placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20";
-const labelCls = "block text-sm font-medium text-foreground mb-1.5";
-
-function OBField({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className={labelCls}>
-        {icon && <span className="mr-1.5 inline-block align-text-bottom text-muted-foreground">{icon}</span>}
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function OBSelect({ label, value, onChange, options }: {
-  label: string; value: string; onChange: (v: string) => void; options: string[];
-}) {
-  return (
-    <label className="block">
-      <span className={labelCls}>{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
-        <option value="">Select…</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </label>
-  );
-}
-
-function RoleSection({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card/40 p-6">
-      <div className="mb-5 flex items-center gap-2.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand text-white">
-          {icon}
-        </div>
-        <h2 className="font-display text-lg font-bold">{title}</h2>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function ChipSelector({ options, selected, toggle }: {
-  options: string[]; selected: string[]; toggle: (v: string) => void;
-}) {
-  return (
-    <div className="mt-2 flex flex-wrap gap-2">
-      {options.map((opt) => {
-        const active = selected.includes(opt);
-        return (
-          <button key={opt} type="button" onClick={() => toggle(opt)}
-            className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
-              active
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
-            }`}>
-            {active && <span className="mr-1">✓</span>}{opt}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function RadioCard({ active, onClick, label, desc }: {
-  active: boolean; onClick: () => void; label: string; desc?: string;
-}) {
-  return (
-    <button type="button" onClick={onClick}
-      className={`rounded-xl border p-3.5 text-left text-sm transition ${
-        active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-      }`}>
-      <div className="flex items-start gap-2.5">
-        <div className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-          active ? "border-primary bg-primary" : "border-border"
-        }`}>
-          {active && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
-        </div>
-        <div>
-          <p className="font-medium text-foreground">{label}</p>
-          {desc && <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>}
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function pillCls(active: boolean) {
-  return `rounded-full border px-4 py-1.5 text-sm font-medium transition ${
-    active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"
-  }`;
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  if (!value) return null;
-  return (
-    <div className="flex items-start gap-3 text-sm">
-      <span className="w-20 shrink-0 text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
-    </div>
-  );
-}
-
-function AgreementBox({ checked, onChange, label, required, readOnly }: {
-  checked: boolean; onChange: (v: boolean) => void;
-  label: ReactNode; required?: boolean; readOnly?: boolean;
-}) {
-  return (
-    <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
-      checked ? "border-primary/40 bg-primary/5" : "border-border"
-    } ${readOnly ? "cursor-default opacity-70" : ""}`}>
-      <div
-        onClick={() => !readOnly && onChange(!checked)}
-        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${
-          checked ? "border-primary bg-primary" : "border-border"
-        }`}
-      >
-        {checked && <Check className="h-3 w-3 text-white" />}
-      </div>
-      <span className="text-sm text-muted-foreground leading-relaxed">
-        {label}
-        {required && <span className="ml-1 text-primary">*</span>}
-      </span>
-    </label>
-  );
-}

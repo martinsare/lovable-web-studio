@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useSecurity } from "@/hooks/use-security";
+import { buildInvestmentReadiness } from "@/lib/investment-readiness";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import {
@@ -31,7 +33,8 @@ type BizTab = "overview" | "opportunities" | "updates" | "team";
 
 function BusinessPassportPage() {
   const { slug } = Route.useParams();
-  const { user } = useAuth();
+  const { user, profile, roles } = useAuth();
+  const { security } = useSecurity();
   const [tab, setTab] = useState<BizTab>("overview");
   const [followed, setFollowed] = useState(false);
 
@@ -98,6 +101,8 @@ function BusinessPassportPage() {
 
   const trustPct = Math.min(100, Math.round((biz.trust_score ?? 0) * 10));
   const isOwner = user?.id === biz.owner_id;
+  const investorReadiness = buildInvestmentReadiness({ profile, roles, security });
+  const investLabel = investorReadiness.canInvestNow ? "Invest in this round" : "Complete checks to invest";
 
   const TABS: { key: BizTab; label: string; icon: typeof Building2 }[] = [
     { key: "overview", label: "Overview", icon: Building2 },
@@ -203,7 +208,7 @@ function BusinessPassportPage() {
             </button>
             {!isOwner && (
               <button className="gradient-brand flex-1 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-soft">
-                Invest / Connect
+                {investorReadiness.canInvestNow ? "Invest / Connect" : "Review readiness"}
               </button>
             )}
             {isOwner && (
@@ -295,9 +300,16 @@ function BusinessPassportPage() {
                 </button>
 
                 {!isOwner && (
-                  <button className="gradient-brand w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-soft transition hover:opacity-90">
-                    Invest / Connect
-                  </button>
+                  <div className="space-y-2">
+                    <button className="gradient-brand w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-soft transition hover:opacity-90">
+                      {investorReadiness.canInvestNow ? "Invest / Connect" : "Review readiness"}
+                    </button>
+                    {!investorReadiness.canInvestNow && (
+                      <p className="text-center text-xs text-muted-foreground">
+                        Funding actions unlock after email verification, MFA, and approved KYC/KYB.
+                      </p>
+                    )}
+                  </div>
                 )}
                 {isOwner && (
                   <Link
@@ -519,7 +531,7 @@ function OpportunitiesTab({ opps, bizName }: { opps: any[]; bizName: string }) {
 
             {isOpen && (
               <button className="gradient-brand mt-4 w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-soft transition hover:opacity-90">
-                Invest in this round
+                {investLabel}
               </button>
             )}
           </article>
