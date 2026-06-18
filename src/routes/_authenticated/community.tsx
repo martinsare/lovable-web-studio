@@ -6,18 +6,20 @@ import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/app-layout";
 import { toast } from "sonner";
 import {
-  Home,
-  Rocket,
-  Users,
-  BookOpen,
-  Flame,
-  Send,
   MessageCircle,
-  Hash,
   Heart,
   MoreHorizontal,
   Pencil,
   Trash2,
+  Bookmark,
+  Share2,
+  Search,
+  BookOpen,
+  Users,
+  Flame,
+  Rocket,
+  Home,
+  Send,
   X,
 } from "lucide-react";
 
@@ -26,32 +28,35 @@ export const Route = createFileRoute("/_authenticated/community")({
   component: CommunityPage,
 });
 
-type Tab = "feed" | "startup-hub" | "circles" | "knowledge" | "trending";
+type Tab = "feed" | "startup-hub" | "trending" | "knowledge" | "circles";
 
 const TABS: { id: Tab; label: string; icon: any }[] = [
-  { id: "feed", label: "Feed", icon: Home },
+  { id: "feed", label: "For You", icon: Home },
   { id: "startup-hub", label: "Startup Hub", icon: Rocket },
-  { id: "circles", label: "Circles", icon: Users },
-  { id: "knowledge", label: "Knowledge", icon: BookOpen },
   { id: "trending", label: "Trending", icon: Flame },
+  { id: "knowledge", label: "Knowledge", icon: BookOpen },
+  { id: "circles", label: "Circles", icon: Users },
 ];
 
-const TOPICS = ["Hospitality", "Agriculture", "Manufacturing", "Technology", "Healthcare", "Retail", "Fintech", "Energy", "Real Estate"];
-const LOCATIONS = ["Lagos", "Abuja", "Ibadan", "Port Harcourt", "Kano", "Accra", "Nairobi"];
+const CATEGORIES = [
+  "discussion", "startup", "agriculture", "technology", "healthcare",
+  "fintech", "real estate", "energy", "hospitality", "manufacturing",
+  "retail", "education",
+];
 
 const CIRCLES = [
-  { name: "Agriculture", emoji: "🌾" },
-  { name: "Technology", emoji: "💻" },
-  { name: "Healthcare", emoji: "🏥" },
-  { name: "Fintech", emoji: "💳" },
-  { name: "Real Estate", emoji: "🏘️" },
-  { name: "Energy", emoji: "⚡" },
-  { name: "Hospitality", emoji: "🏨" },
-  { name: "Manufacturing", emoji: "🏭" },
-  { name: "Retail", emoji: "🛍️" },
-  { name: "Education", emoji: "📚" },
-  { name: "Startup", emoji: "🚀" },
-  { name: "Logistics", emoji: "🚚" },
+  { name: "Agriculture", emoji: "🌾", cat: "agriculture" },
+  { name: "Technology", emoji: "💻", cat: "technology" },
+  { name: "Healthcare", emoji: "🏥", cat: "healthcare" },
+  { name: "Fintech", emoji: "💳", cat: "fintech" },
+  { name: "Real Estate", emoji: "🏘️", cat: "real estate" },
+  { name: "Energy", emoji: "⚡", cat: "energy" },
+  { name: "Hospitality", emoji: "🏨", cat: "hospitality" },
+  { name: "Manufacturing", emoji: "🏭", cat: "manufacturing" },
+  { name: "Retail", emoji: "🛍️", cat: "retail" },
+  { name: "Education", emoji: "📚", cat: "education" },
+  { name: "Startup", emoji: "🚀", cat: "startup" },
+  { name: "Logistics", emoji: "🚚", cat: "logistics" },
 ];
 
 type PostData = {
@@ -60,7 +65,7 @@ type PostData = {
   content: string;
   created_at: string;
   category?: string | null;
-  profile: { full_name: string | null; avatar_url?: string | null } | null;
+  profile: { full_name: string | null; username?: string | null; avatar_url?: string | null } | null;
   like_count: number;
   comment_count: number;
   liked_by_me: boolean;
@@ -71,19 +76,26 @@ type CommentRow = {
   author_id: string;
   content: string;
   created_at: string;
-  profile?: { full_name: string | null } | null;
+  profile?: { full_name: string | null; username?: string | null } | null;
 };
 
-function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+function relativeTime(d: string): string {
+  const diff = Date.now() - new Date(d).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
+  if (mins < 1) return "now";
   if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d`;
-  return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+function fmtCount(n: number): string {
+  if (n <= 0) return "";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
 }
 
 async function fetchEnrichedPosts(
@@ -106,153 +118,231 @@ async function fetchEnrichedPosts(
   const ids = posts.map((p) => p.id);
   const authorIds = [...new Set(posts.map((p) => p.author_id))];
 
-  const [profilesRes, likesRes, myLikesRes, commentsRes] = await Promise.allSettled([
-    supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds),
+  const [pRes, lRes, mlRes, cRes] = await Promise.allSettled([
+    supabase.from("profiles").select("id, full_name, username, avatar_url").in("id", authorIds),
     supabase.from("post_likes").select("post_id").in("post_id", ids),
     supabase.from("post_likes").select("post_id").in("post_id", ids).eq("user_id", userId),
     supabase.from("post_comments").select("post_id").in("post_id", ids),
   ]);
 
-  const profiles = profilesRes.status === "fulfilled" ? (profilesRes.value.data ?? []) : [];
-  const likes = likesRes.status === "fulfilled" ? (likesRes.value.data ?? []) : [];
-  const myLikes = myLikesRes.status === "fulfilled" ? (myLikesRes.value.data ?? []) : [];
-  const comments = commentsRes.status === "fulfilled" ? (commentsRes.value.data ?? []) : [];
+  const profiles = pRes.status === "fulfilled" ? (pRes.value.data ?? []) : [];
+  const likes = lRes.status === "fulfilled" ? (lRes.value.data ?? []) : [];
+  const myLikes = mlRes.status === "fulfilled" ? (mlRes.value.data ?? []) : [];
+  const comments = cRes.status === "fulfilled" ? (cRes.value.data ?? []) : [];
 
-  const profileMap = new Map(profiles.map((p) => [p.id, p]));
+  const pm = new Map(profiles.map((p) => [p.id, p]));
   const likeMap = new Map<string, number>();
-  const commentMap = new Map<string, number>();
-  const myLikeSet = new Set(myLikes.map((l) => l.post_id));
+  const cmtMap = new Map<string, number>();
+  const mySet = new Set(myLikes.map((l) => l.post_id));
 
   for (const l of likes) likeMap.set(l.post_id, (likeMap.get(l.post_id) ?? 0) + 1);
-  for (const c of comments) commentMap.set(c.post_id, (commentMap.get(c.post_id) ?? 0) + 1);
+  for (const c of comments) cmtMap.set(c.post_id, (cmtMap.get(c.post_id) ?? 0) + 1);
 
   let result: PostData[] = posts.map((p) => ({
     ...p,
-    profile: profileMap.get(p.author_id) ?? null,
+    profile: pm.get(p.author_id) ?? null,
     like_count: likeMap.get(p.id) ?? 0,
-    comment_count: commentMap.get(p.id) ?? 0,
-    liked_by_me: myLikeSet.has(p.id),
+    comment_count: cmtMap.get(p.id) ?? 0,
+    liked_by_me: mySet.has(p.id),
   }));
 
   if (opts.sortByLikes) result = result.sort((a, b) => b.like_count - a.like_count);
   return result;
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Page
+// ─────────────────────────────────────────────────────────────
 function CommunityPage() {
   const [tab, setTab] = useState<Tab>("feed");
-  const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [circleFilter, setCircleFilter] = useState<string | null>(null);
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-background">
-        <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-xl">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide py-1">
+      <div className="flex min-h-full justify-center">
+        <div className="flex w-full max-w-[960px]">
+
+          {/* ── Center column ── */}
+          <div className="flex-1 min-w-0 border-r border-border">
+
+            {/* Sticky tab bar */}
+            <div className="sticky top-0 z-10 flex border-b border-border bg-background/95 backdrop-blur-xl">
               {TABS.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
-                  className={`flex shrink-0 items-center gap-1.5 py-3.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                  className={`relative flex flex-1 flex-col items-center justify-center py-3.5 text-xs font-bold transition-colors ${
                     tab === t.id
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"
                   }`}
                 >
-                  <t.icon className="h-3.5 w-3.5" />
-                  {t.label}
+                  <t.icon className="h-4 w-4 mb-0.5" />
+                  <span className="hidden sm:block">{t.label}</span>
+                  {tab === t.id && (
+                    <span className="absolute bottom-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-full bg-primary" />
+                  )}
                 </button>
               ))}
             </div>
+
+            {tab === "feed" && <FeedTab />}
+            {tab === "startup-hub" && <StartupHubTab />}
+            {tab === "trending" && <TrendingTab />}
+            {tab === "knowledge" && <KnowledgeTab />}
+            {tab === "circles" && (
+              <CirclesTab circleFilter={circleFilter} setCircleFilter={setCircleFilter} />
+            )}
           </div>
-        </div>
 
-        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-[1fr_240px]">
-            <main className="min-w-0">
-              {tab === "feed" && <FeedTab activeTopic={activeTopic} />}
-              {tab === "startup-hub" && <StartupHubTab />}
-              {tab === "circles" && (
-                <CirclesTab circleFilter={circleFilter} setCircleFilter={setCircleFilter} />
-              )}
-              {tab === "knowledge" && <KnowledgeTab />}
-              {tab === "trending" && <TrendingTab />}
-            </main>
-
-            <aside className="hidden lg:block space-y-6">
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Topics</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {TOPICS.map((topic) => (
-                    <button
-                      key={topic}
-                      onClick={() => setActiveTopic(activeTopic === topic ? null : topic)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                        activeTopic === topic
-                          ? "bg-primary text-primary-foreground"
-                          : "border border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      {topic}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Cities</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {LOCATIONS.map((loc) => (
-                    <button
-                      key={loc}
-                      className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition"
-                    >
-                      {loc}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-card p-4">
-                <p className="text-xs font-bold text-muted-foreground mb-1">Community</p>
-                <p className="font-display text-2xl font-bold">2,400+</p>
-                <p className="text-xs text-muted-foreground mt-0.5">investors & founders</p>
-              </div>
-            </aside>
-          </div>
+          {/* ── Right sidebar ── */}
+          <aside className="hidden xl:block w-[300px] shrink-0">
+            <div className="sticky top-0 max-h-screen overflow-y-auto p-5 space-y-4">
+              <RightSidebar />
+            </div>
+          </aside>
         </div>
       </div>
     </AppLayout>
   );
 }
 
-function Compose({
+// ─────────────────────────────────────────────────────────────
+//  Right sidebar
+// ─────────────────────────────────────────────────────────────
+function RightSidebar() {
+  const [q, setQ] = useState("");
+
+  const { data: trending = [] } = useQuery({
+    queryKey: ["community", "trending-categories"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("posts")
+        .select("category")
+        .not("category", "is", null)
+        .is("business_id", null);
+      const counts: Record<string, number> = {};
+      for (const p of data ?? []) {
+        if (p.category && p.category !== "discussion") {
+          counts[p.category] = (counts[p.category] ?? 0) + 1;
+        }
+      }
+      return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([cat, count], i) => ({ cat, count, rank: i + 1 }));
+    },
+  });
+
+  const { data: members = [] } = useQuery({
+    queryKey: ["community", "active-members"],
+    staleTime: 120_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, username, avatar_url")
+        .not("full_name", "is", null)
+        .limit(4);
+      return data ?? [];
+    },
+  });
+
+  return (
+    <>
+      {/* Search */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search CoFund…"
+          className="w-full rounded-full border border-border bg-secondary pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary/50 focus:bg-background transition placeholder:text-muted-foreground/60"
+        />
+      </div>
+
+      {/* Trending topics */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <p className="border-b border-border px-4 py-3.5 font-display text-[15px] font-bold">
+          Trending in CoFund
+        </p>
+        {trending.length === 0 ? (
+          <p className="px-4 py-5 text-xs text-muted-foreground">No trending topics yet.</p>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {trending.map(({ cat, count, rank }) => (
+              <div key={cat} className="px-4 py-3 hover:bg-secondary/40 transition-colors cursor-default">
+                <p className="text-[10px] text-muted-foreground">#{rank} · Investment sector</p>
+                <p className="mt-0.5 text-sm font-bold capitalize">{cat}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {count} {count === 1 ? "post" : "posts"}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Active members */}
+      {members.length > 0 && (
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <p className="border-b border-border px-4 py-3.5 font-display text-[15px] font-bold">
+            Active Members
+          </p>
+          <div className="divide-y divide-border/50">
+            {members.map((m: any) => (
+              <div key={m.id} className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/40 transition-colors">
+                <div className="gradient-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-primary-foreground">
+                  {(m.full_name ?? "U").charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold">{m.full_name}</p>
+                  {m.username && (
+                    <p className="truncate text-xs text-muted-foreground">@{m.username}</p>
+                  )}
+                </div>
+                <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Stat card */}
+      <div className="rounded-2xl border border-border/60 bg-card p-4">
+        <p className="text-xs font-bold text-muted-foreground">Community size</p>
+        <p className="mt-1 font-display text-2xl font-bold">2,400+</p>
+        <p className="text-xs text-muted-foreground">investors & founders</p>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Compose
+// ─────────────────────────────────────────────────────────────
+function XCompose({
   onPosted,
-  category,
+  defaultCategory = "discussion",
   placeholder,
 }: {
   onPosted: () => void;
-  category?: string;
+  defaultCategory?: string;
   placeholder?: string;
 }) {
   const { user, profile } = useAuth();
   const [content, setContent] = useState("");
+  const [category, setCategory] = useState(defaultCategory);
   const [busy, setBusy] = useState(false);
+  const limit = 500;
   const initial = (profile?.full_name ?? user?.email ?? "U").charAt(0).toUpperCase();
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit() {
     if (!user || !content.trim()) return;
     setBusy(true);
     const { error } = await supabase
       .from("posts")
-      .insert({ author_id: user.id, content: content.trim(), category: category ?? "discussion" });
+      .insert({ author_id: user.id, content: content.trim(), category });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     setContent("");
@@ -261,44 +351,68 @@ function Compose({
   }
 
   return (
-    <form onSubmit={submit} className="mb-6 flex items-start gap-3">
-      <div className="gradient-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
-        {initial}
+    <div className="border-b border-border px-4 py-4">
+      <div className="flex gap-3">
+        <div className="gradient-brand flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
+          {initial}
+        </div>
+        <div className="flex-1 min-w-0">
+          <textarea
+            value={content}
+            onChange={(e) => { if (e.target.value.length <= limit) setContent(e.target.value); }}
+            placeholder={placeholder ?? "What's happening in your world?"}
+            rows={content.length > 80 ? 4 : 2}
+            className="w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground/50"
+          />
+
+          {content.trim() && (
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary outline-none"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                ))}
+              </select>
+
+              <div className="flex items-center gap-3">
+                {limit - content.length <= 80 && (
+                  <span className={`text-xs font-bold tabular-nums ${limit - content.length <= 20 ? "text-destructive" : "text-amber-400"}`}>
+                    {limit - content.length}
+                  </span>
+                )}
+                <button
+                  onClick={submit}
+                  disabled={busy || !content.trim()}
+                  className="gradient-brand rounded-full px-5 py-2 text-sm font-bold text-primary-foreground shadow-brand disabled:opacity-50"
+                >
+                  {busy ? "Posting…" : "Post"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={placeholder ?? "Share something with the community…"}
-          rows={content.length > 60 ? 3 : 1}
-          className="w-full resize-none rounded-2xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary/60 placeholder:text-muted-foreground/50 transition-all"
-        />
-        {content.trim() && (
-          <div className="mt-2 flex justify-end">
-            <button
-              type="submit"
-              disabled={busy}
-              className="gradient-brand inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-primary-foreground shadow-brand disabled:opacity-50"
-            >
-              <Send className="h-3.5 w-3.5" />
-              Post
-            </button>
-          </div>
-        )}
-      </div>
-    </form>
+    </div>
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Comment thread
+// ─────────────────────────────────────────────────────────────
 function CommentThread({
   postId,
   userId,
   userInitial,
+  authorName,
   onCountChange,
 }: {
   postId: string;
   userId: string;
   userInitial: string;
+  authorName: string;
   onCountChange: (fn: (n: number) => number) => void;
 }) {
   const qc = useQueryClient();
@@ -320,7 +434,7 @@ function CommentThread({
       const authorIds = [...new Set(rows.map((r) => r.author_id))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, username")
         .in("id", authorIds);
       const pm = new Map((profiles ?? []).map((p) => [p.id, p]));
       return rows.map((r) => ({ ...r, profile: pm.get(r.author_id) ?? null }));
@@ -342,10 +456,7 @@ function CommentThread({
 
   async function saveEdit(id: string) {
     if (!editText.trim()) return;
-    const { error } = await supabase
-      .from("post_comments")
-      .update({ content: editText.trim() })
-      .eq("id", id);
+    const { error } = await supabase.from("post_comments").update({ content: editText.trim() }).eq("id", id);
     if (error) { toast.error("Could not update."); return; }
     setEditingId(null);
     qc.invalidateQueries({ queryKey: qk });
@@ -360,96 +471,97 @@ function CommentThread({
   }
 
   return (
-    <div className="mt-4 border-l-2 border-border pl-4 space-y-3">
+    <div className="mt-3 border-t border-border/40 pt-3">
+      <p className="mb-3 text-xs text-muted-foreground">
+        Replying to <span className="font-semibold text-primary">{authorName}</span>
+      </p>
+
       {isLoading ? (
-        <p className="text-xs text-muted-foreground animate-pulse">Loading replies…</p>
-      ) : comments.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No replies yet — be first.</p>
-      ) : (
-        comments.map((c) => (
-          <div key={c.id} className="flex items-start gap-2.5">
-            <div className="gradient-brand flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-primary-foreground">
-              {(c.profile?.full_name ?? "U").charAt(0).toUpperCase()}
+        <div className="space-y-3 pb-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex gap-2.5">
+              <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-secondary" />
+              <div className="flex-1 space-y-1.5 pt-0.5">
+                <div className="h-2.5 w-20 animate-pulse rounded bg-secondary" />
+                <div className="h-2.5 w-3/4 animate-pulse rounded bg-secondary" />
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold">{c.profile?.full_name ?? "Member"}</span>
-                  <span className="text-[10px] text-muted-foreground">{relativeTime(c.created_at)}</span>
-                </div>
-                {c.author_id === userId && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => { setEditingId(c.id); setEditText(c.content); }}
-                      className="text-muted-foreground hover:text-foreground transition"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => deleteComment(c.id)}
-                      className="text-muted-foreground hover:text-destructive transition"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+          ))}
+        </div>
+      ) : comments.length === 0 ? (
+        <p className="mb-3 text-xs text-muted-foreground">No replies yet.</p>
+      ) : (
+        <div className="space-y-4 pb-3">
+          {comments.map((c) => (
+            <div key={c.id} className="flex gap-3">
+              <div className="gradient-brand flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-primary-foreground">
+                {(c.profile?.full_name ?? "U").charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-sm font-bold">{c.profile?.full_name ?? "Member"}</span>
+                    {c.profile?.username && (
+                      <span className="text-xs text-muted-foreground">@{c.profile.username}</span>
+                    )}
+                    <span className="text-[11px] text-muted-foreground">· {relativeTime(c.created_at)}</span>
                   </div>
+                  {c.author_id === userId && (
+                    <div className="flex shrink-0 gap-1">
+                      <button
+                        onClick={() => { setEditingId(c.id); setEditText(c.content); }}
+                        className="rounded-full p-1 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => deleteComment(c.id)}
+                        className="rounded-full p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {editingId === c.id ? (
+                  <div className="mt-1.5">
+                    <textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      rows={2}
+                      autoFocus
+                      className="w-full resize-none rounded-xl border border-primary/40 bg-secondary px-3 py-2 text-sm outline-none"
+                    />
+                    <div className="mt-1.5 flex gap-3">
+                      <button onClick={() => saveEdit(c.id)} className="text-xs font-bold text-primary">Save</button>
+                      <button onClick={() => setEditingId(null)} className="text-xs text-muted-foreground">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm leading-relaxed text-foreground/85">{c.content}</p>
                 )}
               </div>
-              {editingId === c.id ? (
-                <div className="mt-1">
-                  <textarea
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    rows={2}
-                    className="w-full resize-none rounded-lg border border-primary/40 bg-secondary px-2.5 py-1.5 text-xs outline-none"
-                    autoFocus
-                  />
-                  <div className="mt-1 flex gap-2">
-                    <button
-                      onClick={() => saveEdit(c.id)}
-                      className="text-[10px] font-bold text-primary"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="text-[10px] text-muted-foreground"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="mt-0.5 text-xs leading-relaxed text-foreground/80">{c.content}</p>
-              )}
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
 
-      <div className="flex items-center gap-2 pt-1">
-        <div className="gradient-brand flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-primary-foreground">
+      {/* Reply compose pill */}
+      <div className="flex gap-2.5 pt-1">
+        <div className="gradient-brand flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-primary-foreground">
           {userInitial}
         </div>
-        <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2">
+        <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-2">
           <input
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                postComment();
-              }
-            }}
-            placeholder="Write a reply…"
-            className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/50"
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postComment(); } }}
+            placeholder="Post your reply…"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
           />
           {newComment.trim() && (
-            <button
-              onClick={postComment}
-              disabled={sending}
-              className="shrink-0 text-primary disabled:opacity-50"
-            >
-              <Send className="h-3.5 w-3.5" />
+            <button onClick={postComment} disabled={sending} className="shrink-0 text-primary disabled:opacity-40">
+              <Send className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -458,6 +570,9 @@ function CommentThread({
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Post card
+// ─────────────────────────────────────────────────────────────
 function PostCard({
   post,
   userId,
@@ -473,17 +588,39 @@ function PostCard({
   const [liked, setLiked] = useState(post.liked_by_me);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [commentCount, setCommentCount] = useState(post.comment_count);
-  const [showComments, setShowComments] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.content);
+  const [bookmarked, setBookmarked] = useState(() => {
+    try { return (JSON.parse(localStorage.getItem("cofund_bookmarks") ?? "[]") as string[]).includes(post.id); }
+    catch { return false; }
+  });
+
   const isOwn = post.author_id === userId;
+  const authorName = post.profile?.full_name ?? "Member";
+  const authorHandle = post.profile?.username;
+
+  function toggleBookmark() {
+    try {
+      const saved: string[] = JSON.parse(localStorage.getItem("cofund_bookmarks") ?? "[]");
+      const next = bookmarked ? saved.filter((id) => id !== post.id) : [...saved, post.id];
+      localStorage.setItem("cofund_bookmarks", JSON.stringify(next));
+      setBookmarked(!bookmarked);
+      toast.success(bookmarked ? "Removed from bookmarks" : "Saved to bookmarks");
+    } catch {}
+  }
+
+  function sharePost() {
+    const text = `${authorName} on CoFund: "${post.content.slice(0, 120)}${post.content.length > 120 ? "…" : ""}"`;
+    navigator.clipboard?.writeText(text).then(() => toast.success("Copied to clipboard"));
+  }
 
   async function toggleLike() {
-    const wasLiked = liked;
-    setLiked(!wasLiked);
-    setLikeCount((c) => c + (wasLiked ? -1 : 1));
-    if (wasLiked) {
+    const was = liked;
+    setLiked(!was);
+    setLikeCount((c) => c + (was ? -1 : 1));
+    if (was) {
       await supabase.from("post_likes").delete().eq("post_id", post.id).eq("user_id", userId);
     } else {
       await supabase.from("post_likes").insert({ post_id: post.id, user_id: userId });
@@ -491,14 +628,8 @@ function PostCard({
   }
 
   async function saveEdit() {
-    if (!editText.trim() || editText.trim() === post.content) {
-      setEditing(false);
-      return;
-    }
-    const { error } = await supabase
-      .from("posts")
-      .update({ content: editText.trim() })
-      .eq("id", post.id);
+    if (!editText.trim() || editText.trim() === post.content) { setEditing(false); return; }
+    const { error } = await supabase.from("posts").update({ content: editText.trim() }).eq("id", post.id);
     if (error) { toast.error("Could not save."); return; }
     setEditing(false);
     qc.invalidateQueries({ queryKey: qk });
@@ -512,57 +643,75 @@ function PostCard({
     toast.success("Post deleted.");
   }
 
-  const authorInitial = (post.profile?.full_name ?? "U").charAt(0).toUpperCase();
-
   return (
-    <article className="py-5 first:pt-0">
-      <div className="flex items-start gap-3">
-        <div className="gradient-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
-          {authorInitial}
+    <article className="border-b border-border/50 px-4 py-4 transition-colors hover:bg-secondary/10">
+      <div className="flex gap-3">
+
+        {/* Avatar col with optional thread line */}
+        <div className="flex shrink-0 flex-col items-center">
+          <div className="gradient-brand flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
+            {authorName.charAt(0).toUpperCase()}
+          </div>
+          {showReplies && <div className="mt-1 w-0.5 flex-1 bg-border/60" />}
         </div>
 
+        {/* Content col */}
         <div className="min-w-0 flex-1">
+
+          {/* Header row */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-bold leading-none">{post.profile?.full_name ?? "Member"}</p>
-              <span className="text-[11px] text-muted-foreground">{relativeTime(post.created_at)}</span>
+            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+              <span className="text-[15px] font-bold leading-none">{authorName}</span>
+              {authorHandle && (
+                <span className="text-sm text-muted-foreground">@{authorHandle}</span>
+              )}
+              <span className="text-muted-foreground">·</span>
+              <span className="text-sm text-muted-foreground">{relativeTime(post.created_at)}</span>
               {post.category && post.category !== "discussion" && (
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                <span className="ml-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
                   {post.category}
                 </span>
               )}
             </div>
 
-            {isOwn && (
-              <div className="relative shrink-0">
-                <button
-                  onClick={() => setMenuOpen((v) => !v)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
-                {menuOpen && (
-                  <div className="absolute right-0 top-8 z-20 w-36 overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
-                    <button
-                      onClick={() => { setEditing(true); setMenuOpen(false); }}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-semibold hover:bg-secondary transition"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit post
-                    </button>
-                    <button
-                      onClick={() => { setMenuOpen(false); deletePost(); }}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Menu */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-9 z-30 w-44 overflow-hidden rounded-2xl border border-border bg-card shadow-elevated">
+                  {isOwn && (
+                    <>
+                      <button
+                        onClick={() => { setEditing(true); setMenuOpen(false); }}
+                        className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-semibold hover:bg-secondary transition"
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Edit post
+                      </button>
+                      <button
+                        onClick={() => { setMenuOpen(false); deletePost(); }}
+                        className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Delete post
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => { sharePost(); setMenuOpen(false); }}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-semibold hover:bg-secondary transition"
+                  >
+                    <Share2 className="h-3.5 w-3.5" /> Copy text
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Body */}
           {editing ? (
             <div className="mt-2">
               <textarea
@@ -573,53 +722,72 @@ function PostCard({
                 className="w-full resize-none rounded-xl border border-primary/40 bg-secondary px-3 py-2.5 text-sm outline-none"
               />
               <div className="mt-2 flex items-center gap-2">
-                <button
-                  onClick={saveEdit}
-                  className="gradient-brand rounded-lg px-3 py-1.5 text-xs font-bold text-primary-foreground"
-                >
+                <button onClick={saveEdit} className="gradient-brand rounded-full px-4 py-1.5 text-xs font-bold text-primary-foreground">
                   Save
                 </button>
                 <button
                   onClick={() => { setEditing(false); setEditText(post.content); }}
-                  className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
+                  className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
                 >
-                  <X className="h-3 w-3" />
-                  Cancel
+                  <X className="h-3 w-3" /> Cancel
                 </button>
               </div>
             </div>
           ) : (
-            <p className="mt-2 text-sm leading-relaxed text-foreground/80 whitespace-pre-wrap">
+            <p className="mt-1.5 break-words text-[15px] leading-relaxed text-foreground/90 whitespace-pre-wrap">
               {post.content}
             </p>
           )}
 
-          <div className="mt-3 flex items-center gap-4">
-            <button
-              onClick={toggleLike}
-              className={`flex items-center gap-1.5 text-[12px] font-semibold transition-colors ${
-                liked ? "text-rose-500" : "text-muted-foreground hover:text-rose-400"
-              }`}
-            >
-              <Heart className={`h-3.5 w-3.5 ${liked ? "fill-current" : ""}`} />
-              {likeCount > 0 ? likeCount : "Like"}
+          {/* Action bar — X-style circular hover zones */}
+          <div className="mt-3 flex items-center gap-0.5">
+
+            {/* Reply */}
+            <button onClick={() => setShowReplies((v) => !v)} className="group flex items-center gap-0.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors group-hover:bg-sky-500/10 group-hover:text-sky-500">
+                <MessageCircle className="h-[18px] w-[18px]" />
+              </span>
+              {commentCount > 0 && (
+                <span className="min-w-[20px] text-xs text-muted-foreground transition-colors group-hover:text-sky-500">
+                  {fmtCount(commentCount)}
+                </span>
+              )}
             </button>
-            <button
-              onClick={() => setShowComments((v) => !v)}
-              className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              {commentCount > 0
-                ? `${commentCount} ${commentCount === 1 ? "reply" : "replies"}`
-                : "Reply"}
+
+            {/* Like */}
+            <button onClick={toggleLike} className="group flex items-center gap-0.5 ml-1">
+              <span className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors group-hover:bg-rose-500/10 ${liked ? "text-rose-500" : "text-muted-foreground group-hover:text-rose-500"}`}>
+                <Heart className={`h-[18px] w-[18px] ${liked ? "fill-current" : ""}`} />
+              </span>
+              {likeCount > 0 && (
+                <span className={`min-w-[20px] text-xs transition-colors ${liked ? "text-rose-500" : "text-muted-foreground group-hover:text-rose-500"}`}>
+                  {fmtCount(likeCount)}
+                </span>
+              )}
+            </button>
+
+            {/* Bookmark */}
+            <button onClick={toggleBookmark} className="group ml-1">
+              <span className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors group-hover:bg-amber-400/10 ${bookmarked ? "text-amber-400" : "text-muted-foreground group-hover:text-amber-400"}`}>
+                <Bookmark className={`h-[18px] w-[18px] ${bookmarked ? "fill-current" : ""}`} />
+              </span>
+            </button>
+
+            {/* Share */}
+            <button onClick={sharePost} className="group ml-auto">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors group-hover:bg-secondary group-hover:text-foreground">
+                <Share2 className="h-[18px] w-[18px]" />
+              </span>
             </button>
           </div>
 
-          {showComments && (
+          {/* Inline reply thread */}
+          {showReplies && (
             <CommentThread
               postId={post.id}
               userId={userId}
               userInitial={userInitial}
+              authorName={authorName}
               onCountChange={setCommentCount}
             />
           )}
@@ -629,6 +797,9 @@ function PostCard({
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Post list + skeleton
+// ─────────────────────────────────────────────────────────────
 function PostList({
   posts,
   userId,
@@ -644,17 +815,15 @@ function PostList({
 }) {
   if (posts.length === 0) {
     return (
-      <div className="py-16 text-center">
-        <MessageCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground/20" />
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <MessageCircle className="mb-4 h-12 w-12 text-muted-foreground/20" />
         <p className="font-display text-base font-semibold">Nothing here yet</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {emptyMessage ?? "Be the first to post in this feed."}
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{emptyMessage ?? "Be the first to post."}</p>
       </div>
     );
   }
   return (
-    <div className="divide-y divide-border/40">
+    <div>
       {posts.map((p) => (
         <PostCard key={p.id} post={p} userId={userId} userInitial={userInitial} qk={qk} />
       ))}
@@ -664,14 +833,22 @@ function PostList({
 
 function FeedSkeleton() {
   return (
-    <div className="space-y-5">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex items-start gap-3">
-          <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-secondary" />
-          <div className="flex-1 space-y-2 pt-1">
-            <div className="h-3 w-24 animate-pulse rounded bg-secondary" />
-            <div className="h-3 w-full animate-pulse rounded bg-secondary" />
-            <div className="h-3 w-3/4 animate-pulse rounded bg-secondary" />
+    <div>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex gap-3 border-b border-border/50 px-4 py-4">
+          <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-secondary" />
+          <div className="flex-1 space-y-2.5 pt-1">
+            <div className="flex gap-2">
+              <div className="h-3 w-24 animate-pulse rounded-full bg-secondary" />
+              <div className="h-3 w-16 animate-pulse rounded-full bg-secondary" />
+            </div>
+            <div className="h-4 w-full animate-pulse rounded bg-secondary" />
+            <div className="h-4 w-4/5 animate-pulse rounded bg-secondary" />
+            <div className="flex gap-6 pt-0.5">
+              <div className="h-3 w-8 animate-pulse rounded bg-secondary" />
+              <div className="h-3 w-8 animate-pulse rounded bg-secondary" />
+              <div className="h-3 w-8 animate-pulse rounded bg-secondary" />
+            </div>
           </div>
         </div>
       ))}
@@ -679,34 +856,29 @@ function FeedSkeleton() {
   );
 }
 
-function FeedTab({ activeTopic }: { activeTopic: string | null }) {
+// ─────────────────────────────────────────────────────────────
+//  Tab views
+// ─────────────────────────────────────────────────────────────
+function FeedTab() {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const userId = user?.id ?? "";
   const userInitial = (profile?.full_name ?? user?.email ?? "U").charAt(0).toUpperCase();
-  const qk = ["community", "feed", activeTopic];
+  const qk = ["community", "feed"];
 
   const { data = [], isLoading } = useQuery({
     queryKey: qk,
     enabled: !!userId,
-    queryFn: () =>
-      fetchEnrichedPosts(userId, {
-        category: activeTopic?.toLowerCase() ?? undefined,
-      }),
+    queryFn: () => fetchEnrichedPosts(userId),
   });
-
-  if (isLoading) return <FeedSkeleton />;
 
   return (
     <div>
-      <Compose onPosted={() => qc.invalidateQueries({ queryKey: qk })} />
-      <PostList
-        posts={data}
-        userId={userId}
-        userInitial={userInitial}
-        qk={qk}
-        emptyMessage="Be the first to share something with the community."
-      />
+      <XCompose onPosted={() => qc.invalidateQueries({ queryKey: qk })} />
+      {isLoading ? <FeedSkeleton /> : (
+        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk}
+          emptyMessage="Be the first to share something with the community." />
+      )}
     </div>
   );
 }
@@ -726,29 +898,104 @@ function StartupHubTab() {
 
   return (
     <div>
-      <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4">
-        <p className="font-display text-base font-bold">🚀 Startup Hub</p>
-        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-          Share your idea, look for co-founders, mentors, or early-stage capital.
-          All posts here are tagged as <span className="font-semibold text-foreground">startup</span>.
+      <div className="border-b border-border bg-primary/5 px-4 py-4">
+        <p className="font-display text-sm font-bold">🚀 Startup Hub</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Share your idea, find co-founders, mentors, and early-stage capital.
         </p>
       </div>
-      <Compose
-        category="startup"
-        placeholder="Share your startup idea, looking for co-founder, need mentorship…"
+      <XCompose
+        defaultCategory="startup"
+        placeholder="Share your startup idea or connect with the ecosystem…"
         onPosted={() => qc.invalidateQueries({ queryKey: qk })}
       />
-      {isLoading ? (
-        <FeedSkeleton />
-      ) : (
-        <PostList
-          posts={data}
-          userId={userId}
-          userInitial={userInitial}
-          qk={qk}
-          emptyMessage="No startup posts yet. Share your idea first."
-        />
+      {isLoading ? <FeedSkeleton /> : (
+        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk}
+          emptyMessage="No startup posts yet — share your idea first." />
       )}
+    </div>
+  );
+}
+
+function TrendingTab() {
+  const { user, profile } = useAuth();
+  const userId = user?.id ?? "";
+  const userInitial = (profile?.full_name ?? user?.email ?? "U").charAt(0).toUpperCase();
+  const qk = ["community", "trending"];
+
+  const { data = [], isLoading } = useQuery({
+    queryKey: qk,
+    enabled: !!userId,
+    queryFn: () => fetchEnrichedPosts(userId, { sortByLikes: true }),
+  });
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+        <Flame className="h-4 w-4 text-amber-400 shrink-0" />
+        <p className="text-sm font-bold">Most liked posts</p>
+      </div>
+      {isLoading ? <FeedSkeleton /> : (
+        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk}
+          emptyMessage="Nothing trending yet — start posting!" />
+      )}
+    </div>
+  );
+}
+
+function KnowledgeTab() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["community", "articles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("learning_articles")
+        .select("id,title,excerpt,category,cover_url")
+        .eq("published", true)
+        .order("created_at", { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 p-4 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-48 animate-pulse rounded-2xl bg-secondary" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!data?.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <BookOpen className="mb-4 h-12 w-12 text-muted-foreground/20" />
+        <p className="font-display text-base font-semibold">No articles yet</p>
+        <p className="mt-2 text-sm text-muted-foreground">Learning content will appear here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 p-4 sm:grid-cols-2">
+      {data.map((a: any) => (
+        <article key={a.id} className="group overflow-hidden rounded-2xl border border-border bg-card hover:border-primary/30 transition-colors">
+          {a.cover_url ? (
+            <img src={a.cover_url} alt="" className="aspect-video w-full object-cover" />
+          ) : (
+            <div className="aspect-video w-full gradient-mesh" />
+          )}
+          <div className="p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{a.category}</p>
+            <h3 className="mt-1.5 font-display text-base font-bold leading-snug group-hover:text-primary transition-colors">
+              {a.title}
+            </h3>
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{a.excerpt}</p>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
@@ -775,19 +1022,19 @@ function CirclesTab({
 
   if (!circleFilter) {
     return (
-      <div>
-        <p className="mb-5 text-sm text-muted-foreground">
-          Join an industry circle to see posts, deals, and discussions from your sectors.
+      <div className="p-4">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Choose an industry circle to connect with founders, investors, and operators.
         </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3">
           {CIRCLES.map((c) => (
             <button
               key={c.name}
               onClick={() => setCircleFilter(c.name)}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-4 py-6 font-semibold hover:border-primary/40 hover:bg-secondary/40 transition-all"
+              className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 text-left transition-all hover:border-primary/40 hover:bg-secondary/40"
             >
-              <span className="text-3xl">{c.emoji}</span>
-              <span className="text-sm">{c.name}</span>
+              <span className="text-2xl">{c.emoji}</span>
+              <span className="text-sm font-semibold">{c.name}</span>
             </button>
           ))}
         </div>
@@ -799,127 +1046,25 @@ function CirclesTab({
 
   return (
     <div>
-      <div className="mb-5 flex items-center gap-3">
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
         <button
           onClick={() => setCircleFilter(null)}
-          className="text-sm font-semibold text-muted-foreground hover:text-foreground transition"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
         >
-          ← Circles
+          <Users className="h-3.5 w-3.5" /> Circles
         </button>
         <span className="text-muted-foreground">/</span>
-        <span className="text-sm font-bold">
-          {circle?.emoji} {circleFilter}
-        </span>
+        <span className="text-sm font-bold">{circle?.emoji} {circleFilter}</span>
       </div>
-      <Compose
-        category={circleFilter.toLowerCase()}
+      <XCompose
+        defaultCategory={circle?.cat ?? circleFilter.toLowerCase()}
         placeholder={`Post about ${circleFilter}…`}
         onPosted={() => qc.invalidateQueries({ queryKey: qk })}
       />
-      {isLoading ? (
-        <FeedSkeleton />
-      ) : (
-        <PostList
-          posts={data}
-          userId={userId}
-          userInitial={userInitial}
-          qk={qk}
-          emptyMessage={`No posts in the ${circleFilter} circle yet.`}
-        />
+      {isLoading ? <FeedSkeleton /> : (
+        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk}
+          emptyMessage={`No posts in ${circleFilter} yet.`} />
       )}
-    </div>
-  );
-}
-
-function TrendingTab() {
-  const { user, profile } = useAuth();
-  const userId = user?.id ?? "";
-  const userInitial = (profile?.full_name ?? user?.email ?? "U").charAt(0).toUpperCase();
-  const qk = ["community", "trending"];
-
-  const { data = [], isLoading } = useQuery({
-    queryKey: qk,
-    enabled: !!userId,
-    queryFn: () => fetchEnrichedPosts(userId, { sortByLikes: true }),
-  });
-
-  if (isLoading) return <FeedSkeleton />;
-
-  return (
-    <div>
-      <div className="mb-5 flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3">
-        <Flame className="h-4 w-4 text-amber-400 shrink-0" />
-        <span className="text-sm text-muted-foreground">Posts sorted by most likes.</span>
-      </div>
-      <PostList
-        posts={data}
-        userId={userId}
-        userInitial={userInitial}
-        qk={qk}
-        emptyMessage="No posts yet — be the first to share something."
-      />
-    </div>
-  );
-}
-
-function KnowledgeTab() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["community", "articles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("learning_articles")
-        .select("id,title,excerpt,category,cover_url")
-        .eq("published", true)
-        .order("created_at", { ascending: false })
-        .limit(12);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="grid gap-5 sm:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-48 animate-pulse rounded-2xl bg-card" />
-        ))}
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="py-20 text-center">
-        <BookOpen className="mx-auto mb-4 h-12 w-12 text-muted-foreground/20" />
-        <p className="font-display text-base font-semibold">No articles yet</p>
-        <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-          Business resources and learning content will appear here as they're published.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-5 sm:grid-cols-2">
-      {data.map((a: any) => (
-        <article
-          key={a.id}
-          className="group overflow-hidden rounded-2xl border border-border bg-card hover:border-primary/20 transition-colors"
-        >
-          {a.cover_url ? (
-            <img src={a.cover_url} alt="" className="aspect-video w-full object-cover" />
-          ) : (
-            <div className="aspect-video w-full gradient-mesh" />
-          )}
-          <div className="p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{a.category}</p>
-            <h3 className="mt-1.5 font-display text-base font-bold group-hover:text-primary transition-colors">
-              {a.title}
-            </h3>
-            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{a.excerpt}</p>
-          </div>
-        </article>
-      ))}
     </div>
   );
 }
