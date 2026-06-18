@@ -3,8 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { AppLayout } from "@/components/app-layout";
 import {
   MapPin,
   Calendar,
@@ -174,9 +173,7 @@ function UserProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-
+    <AppLayout>
       {/* ── Banner ── */}
       <div className="relative h-36 w-full overflow-hidden sm:h-48">
         <div className="gradient-mesh h-full w-full" />
@@ -341,8 +338,7 @@ function UserProfilePage() {
         )}
       </div>
 
-      <SiteFooter />
-    </div>
+    </AppLayout>
   );
 }
 
@@ -659,8 +655,7 @@ function UserRow({
 
 function ProfileSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
+    <AppLayout>
       <div className="h-36 w-full animate-pulse gradient-mesh sm:h-48" />
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="-mt-14 flex items-end gap-5 pb-6">
@@ -672,6 +667,6 @@ function ProfileSkeleton() {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
