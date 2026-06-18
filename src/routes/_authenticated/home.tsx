@@ -272,6 +272,13 @@ function FeaturedOpportunity() {
 
       {data ? (
         <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card">
+          {/* Full-card overlay link */}
+          <Link
+            to="/offerings/$opportunityId"
+            params={{ opportunityId: (data as any).id }}
+            className="absolute inset-0 z-0 rounded-2xl"
+            aria-label={`View ${(data as any).title} offering details`}
+          />
           <div className="absolute top-0 inset-x-0 h-px gradient-brand" />
           <div className="p-5">
             <div className="flex items-center gap-1.5 mb-4">
@@ -330,7 +337,8 @@ function FeaturedOpportunity() {
             <Link
               to="/offerings/$opportunityId"
               params={{ opportunityId: (data as any).id }}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl gradient-brand py-3 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90"
+              onClick={(e) => e.stopPropagation()}
+              className="relative z-10 mt-5 flex w-full items-center justify-center gap-2 rounded-xl gradient-brand py-3 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90"
             >
               View opportunity <ArrowRight className="h-4 w-4" />
             </Link>
