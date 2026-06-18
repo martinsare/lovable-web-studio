@@ -99,6 +99,13 @@ function Opportunities({ q }: { q: string }) {
                   Target return <span className="font-semibold text-brand-green">{o.target_return_pct}%</span>
                 </p>
               )}
+              <Link
+                to="/invest/$opportunityId"
+                params={{ opportunityId: o.id }}
+                className="mt-4 inline-flex items-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+              >
+                Open checkout
+              </Link>
             </div>
           </article>
         );

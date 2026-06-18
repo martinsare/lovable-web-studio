@@ -20,12 +20,19 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedSuitabilityRouteImport } from './routes/_authenticated/suitability'
+import { Route as AuthenticatedSecurityRouteImport } from './routes/_authenticated/security'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMyBusinessRouteImport } from './routes/_authenticated/my-business'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
 import { Route as AuthenticatedBrowseRouteImport } from './routes/_authenticated/browse'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedOfferingsOpportunityIdRouteImport } from './routes/_authenticated/offerings/$opportunityId'
+import { Route as AuthenticatedInvestOpportunityIdRouteImport } from './routes/_authenticated/invest/$opportunityId'
 import { Route as AuthenticatedBusinessSlugRouteImport } from './routes/_authenticated/business/$slug'
 
 const TermsRoute = TermsRouteImport.update({
@@ -82,6 +89,22 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSuitabilityRoute =
+  AuthenticatedSuitabilityRouteImport.update({
+    id: '/suitability',
+    path: '/suitability',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSecurityRoute = AuthenticatedSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -92,6 +115,12 @@ const AuthenticatedPortfolioRoute = AuthenticatedPortfolioRouteImport.update({
   path: '/portfolio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMyBusinessRoute = AuthenticatedMyBusinessRouteImport.update({
   id: '/my-business',
   path: '/my-business',
@@ -112,6 +141,23 @@ const AuthenticatedBrowseRoute = AuthenticatedBrowseRouteImport.update({
   path: '/browse',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOfferingsOpportunityIdRoute =
+  AuthenticatedOfferingsOpportunityIdRouteImport.update({
+    id: '/offerings/$opportunityId',
+    path: '/offerings/$opportunityId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInvestOpportunityIdRoute =
+  AuthenticatedInvestOpportunityIdRouteImport.update({
+    id: '/invest/$opportunityId',
+    path: '/invest/$opportunityId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBusinessSlugRoute =
   AuthenticatedBusinessSlugRouteImport.update({
     id: '/business/$slug',
@@ -130,13 +176,20 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/browse': typeof AuthenticatedBrowseRoute
   '/community': typeof AuthenticatedCommunityRoute
   '/home': typeof AuthenticatedHomeRoute
   '/my-business': typeof AuthenticatedMyBusinessRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/security': typeof AuthenticatedSecurityRoute
+  '/suitability': typeof AuthenticatedSuitabilityRoute
+  '/wallet': typeof AuthenticatedWalletRoute
   '/business/$slug': typeof AuthenticatedBusinessSlugRoute
+  '/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
+  '/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,13 +202,20 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/browse': typeof AuthenticatedBrowseRoute
   '/community': typeof AuthenticatedCommunityRoute
   '/home': typeof AuthenticatedHomeRoute
   '/my-business': typeof AuthenticatedMyBusinessRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/security': typeof AuthenticatedSecurityRoute
+  '/suitability': typeof AuthenticatedSuitabilityRoute
+  '/wallet': typeof AuthenticatedWalletRoute
   '/business/$slug': typeof AuthenticatedBusinessSlugRoute
+  '/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
+  '/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,13 +230,20 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/risk': typeof RiskRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/browse': typeof AuthenticatedBrowseRoute
   '/_authenticated/community': typeof AuthenticatedCommunityRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/my-business': typeof AuthenticatedMyBusinessRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/security': typeof AuthenticatedSecurityRoute
+  '/_authenticated/suitability': typeof AuthenticatedSuitabilityRoute
+  '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/business/$slug': typeof AuthenticatedBusinessSlugRoute
+  '/_authenticated/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
+  '/_authenticated/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -191,13 +258,20 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/risk'
     | '/terms'
+    | '/admin'
     | '/browse'
     | '/community'
     | '/home'
     | '/my-business'
+    | '/notifications'
     | '/portfolio'
     | '/profile'
+    | '/security'
+    | '/suitability'
+    | '/wallet'
     | '/business/$slug'
+    | '/invest/$opportunityId'
+    | '/offerings/$opportunityId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -210,13 +284,20 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/risk'
     | '/terms'
+    | '/admin'
     | '/browse'
     | '/community'
     | '/home'
     | '/my-business'
+    | '/notifications'
     | '/portfolio'
     | '/profile'
+    | '/security'
+    | '/suitability'
+    | '/wallet'
     | '/business/$slug'
+    | '/invest/$opportunityId'
+    | '/offerings/$opportunityId'
   id:
     | '__root__'
     | '/'
@@ -230,13 +311,20 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/risk'
     | '/terms'
+    | '/_authenticated/admin'
     | '/_authenticated/browse'
     | '/_authenticated/community'
     | '/_authenticated/home'
     | '/_authenticated/my-business'
+    | '/_authenticated/notifications'
     | '/_authenticated/portfolio'
     | '/_authenticated/profile'
+    | '/_authenticated/security'
+    | '/_authenticated/suitability'
+    | '/_authenticated/wallet'
     | '/_authenticated/business/$slug'
+    | '/_authenticated/invest/$opportunityId'
+    | '/_authenticated/offerings/$opportunityId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -332,6 +420,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/wallet': {
+      id: '/_authenticated/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof AuthenticatedWalletRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/suitability': {
+      id: '/_authenticated/suitability'
+      path: '/suitability'
+      fullPath: '/suitability'
+      preLoaderRoute: typeof AuthenticatedSuitabilityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/security': {
+      id: '/_authenticated/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof AuthenticatedSecurityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -344,6 +453,13 @@ declare module '@tanstack/react-router' {
       path: '/portfolio'
       fullPath: '/portfolio'
       preLoaderRoute: typeof AuthenticatedPortfolioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/my-business': {
@@ -374,6 +490,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrowseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/offerings/$opportunityId': {
+      id: '/_authenticated/offerings/$opportunityId'
+      path: '/offerings/$opportunityId'
+      fullPath: '/offerings/$opportunityId'
+      preLoaderRoute: typeof AuthenticatedOfferingsOpportunityIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/invest/$opportunityId': {
+      id: '/_authenticated/invest/$opportunityId'
+      path: '/invest/$opportunityId'
+      fullPath: '/invest/$opportunityId'
+      preLoaderRoute: typeof AuthenticatedInvestOpportunityIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/business/$slug': {
       id: '/_authenticated/business/$slug'
       path: '/business/$slug'
@@ -385,23 +522,38 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBrowseRoute: typeof AuthenticatedBrowseRoute
   AuthenticatedCommunityRoute: typeof AuthenticatedCommunityRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMyBusinessRoute: typeof AuthenticatedMyBusinessRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPortfolioRoute: typeof AuthenticatedPortfolioRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRoute
+  AuthenticatedSuitabilityRoute: typeof AuthenticatedSuitabilityRoute
+  AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedBusinessSlugRoute: typeof AuthenticatedBusinessSlugRoute
+  AuthenticatedInvestOpportunityIdRoute: typeof AuthenticatedInvestOpportunityIdRoute
+  AuthenticatedOfferingsOpportunityIdRoute: typeof AuthenticatedOfferingsOpportunityIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBrowseRoute: AuthenticatedBrowseRoute,
   AuthenticatedCommunityRoute: AuthenticatedCommunityRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMyBusinessRoute: AuthenticatedMyBusinessRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPortfolioRoute: AuthenticatedPortfolioRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSecurityRoute: AuthenticatedSecurityRoute,
+  AuthenticatedSuitabilityRoute: AuthenticatedSuitabilityRoute,
+  AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedBusinessSlugRoute: AuthenticatedBusinessSlugRoute,
+  AuthenticatedInvestOpportunityIdRoute: AuthenticatedInvestOpportunityIdRoute,
+  AuthenticatedOfferingsOpportunityIdRoute:
+    AuthenticatedOfferingsOpportunityIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

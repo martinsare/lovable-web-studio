@@ -1,16 +1,22 @@
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/icon.png";
 import { useState } from "react";
-import { Menu, X, Sun, Moon } from "lucide-react";
+import { Bell, Menu, Moon, Sun, X } from "lucide-react";
 
 function navItemsForRoles(roles: AppRole[]) {
   const items: { to: string; label: string }[] = [{ to: "/home", label: "Home" }];
   items.push({ to: "/browse", label: "Browse" });
   items.push({ to: "/community", label: "Community" });
   if (roles.includes("investor")) items.push({ to: "/portfolio", label: "Portfolio" });
+  if (roles.includes("investor")) items.push({ to: "/wallet", label: "Wallet" });
   if (roles.includes("business_owner")) items.push({ to: "/my-business", label: "My Business" });
+  items.push({ to: "/notifications", label: "Notifications" });
+  items.push({ to: "/security", label: "Security" });
+  if (roles.includes("admin")) items.push({ to: "/admin", label: "Admin" });
   items.push({ to: "/profile", label: "Profile" });
   return items;
 }
@@ -40,6 +46,19 @@ export function SiteHeader() {
   const { theme, toggle } = useTheme();
   const items = user ? navItemsForRoles(roles) : [];
   const initials = (profile?.full_name ?? user?.email ?? "U").charAt(0).toUpperCase();
+  const { data: unreadCount = 0 } = useQuery({
+    enabled: !!user?.id,
+    queryKey: ["notifications", "unread-count", user?.id],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("user_notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .is("read_at", null);
+      if (error) throw error;
+      return Number(count ?? 0);
+    },
+  });
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-2xl">
@@ -64,6 +83,17 @@ export function SiteHeader() {
               ))}
             </nav>
             <div className="hidden items-center gap-2 md:flex">
+              <Link
+                to="/notifications"
+                className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                ) : null}
+              </Link>
               <ThemeToggle theme={theme} toggle={toggle} />
               <button
                 onClick={async () => { await signOut(); navigate({ to: "/" }); }}

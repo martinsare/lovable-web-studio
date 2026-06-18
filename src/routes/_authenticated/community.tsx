@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { PageShell, EmptyState } from "@/components/page-shell";
+import { fetchPostsWithAuthors } from "@/lib/post-feed";
 import { toast } from "sonner";
 import { Home, Rocket, Users, BookOpen, Flame, Send } from "lucide-react";
 
@@ -77,12 +78,11 @@ function Feed() {
   const { data, isLoading } = useQuery({
     queryKey: ["community", "feed"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("posts")
-        .select("id,content,category,created_at,profiles(full_name,avatar_url)")
-        .order("created_at", { ascending: false }).limit(30);
-      if (error) throw error;
-      return data ?? [];
+      try {
+        return await fetchPostsWithAuthors(30);
+      } catch {
+        return [];
+      }
     },
   });
 
@@ -135,11 +135,11 @@ function Feed() {
           <article key={p.id} className="rounded-2xl border border-white/[0.06] bg-card p-5">
             <div className="flex items-start gap-3">
               <div className="gradient-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white">
-                {(p.profiles?.full_name ?? "U").charAt(0)}
+                {(p.profile?.full_name ?? "U").charAt(0)}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold">{p.profiles?.full_name ?? "Member"}</p>
+                  <p className="text-sm font-semibold">{p.profile?.full_name ?? "Member"}</p>
                   <span className="text-xs text-muted-foreground">· {new Date(p.created_at).toLocaleDateString()}</span>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/80 leading-relaxed">{p.content}</p>

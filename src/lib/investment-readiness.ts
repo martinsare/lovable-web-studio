@@ -24,6 +24,7 @@ export function buildInvestmentReadiness(input: {
   const isInvestor = input.roles.includes("investor");
   const isBusinessOwner = input.roles.includes("business_owner");
   const security = input.security;
+  const suitabilityOutcome = String(compliance.suitability?.outcome ?? "");
 
   const checklist = [
     { label: "Profile onboarding completed", done: Boolean(input.profile?.onboarded) },
@@ -35,7 +36,11 @@ export function buildInvestmentReadiness(input: {
     },
     {
       label: "Accreditation or suitability reviewed",
-      done: !isInvestor || Boolean(compliance.investorSuitability?.accreditationStatus),
+      done:
+        !isInvestor ||
+        suitabilityOutcome === "passed" ||
+        suitabilityOutcome === "needs_review" ||
+        Boolean(compliance.investorSuitability?.accreditationStatus),
     },
     {
       label: "Business verification approved",

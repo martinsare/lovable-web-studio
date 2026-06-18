@@ -15,6 +15,16 @@ import logo from "../assets/icon.png";
 import { AuthProvider } from "../hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 
+function isRedirectLike(error: unknown) {
+  return (
+    error instanceof Response ||
+    (typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      typeof (error as { status?: unknown }).status === "number")
+  );
+}
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -38,10 +48,14 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  if (!isRedirectLike(error)) {
+    console.error(error);
+  }
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    if (!isRedirectLike(error)) {
+      reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    }
   }, [error]);
 
   return (
@@ -114,7 +128,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>

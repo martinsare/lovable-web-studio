@@ -103,6 +103,7 @@ function BusinessPassportPage() {
   const isOwner = user?.id === biz.owner_id;
   const investorReadiness = buildInvestmentReadiness({ profile, roles, security });
   const investLabel = investorReadiness.canInvestNow ? "Invest in this round" : "Complete checks to invest";
+  const firstOpenOpportunity = (opps ?? []).find((opportunity) => opportunity.status === "open");
 
   const TABS: { key: BizTab; label: string; icon: typeof Building2 }[] = [
     { key: "overview", label: "Overview", icon: Building2 },
@@ -207,9 +208,19 @@ function BusinessPassportPage() {
               {followed ? "Following" : "Follow"}
             </button>
             {!isOwner && (
-              <button className="gradient-brand flex-1 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-soft">
-                {investorReadiness.canInvestNow ? "Invest / Connect" : "Review readiness"}
-              </button>
+              firstOpenOpportunity ? (
+                <Link
+                  to="/invest/$opportunityId"
+                  params={{ opportunityId: firstOpenOpportunity.id }}
+                  className="gradient-brand flex-1 rounded-xl px-4 py-2 text-center text-sm font-semibold text-white shadow-soft"
+                >
+                  {investorReadiness.canInvestNow ? "Invest / Connect" : "Review readiness"}
+                </Link>
+              ) : (
+                <button className="flex-1 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">
+                  No open round
+                </button>
+              )
             )}
             {isOwner && (
               <Link
@@ -256,7 +267,9 @@ function BusinessPassportPage() {
           {/* Main */}
           <div className="min-w-0">
             {tab === "overview" && <OverviewTab biz={biz} owner={owner} />}
-            {tab === "opportunities" && <OpportunitiesTab opps={opps ?? []} bizName={biz.name} />}
+            {tab === "opportunities" && (
+              <OpportunitiesTab opps={opps ?? []} bizName={biz.name} investLabel={investLabel} />
+            )}
             {tab === "updates" && <UpdatesTab posts={posts ?? []} bizName={biz.name} logo={biz.logo_url} />}
             {tab === "team" && <TeamTab owner={owner} biz={biz} />}
           </div>
@@ -301,9 +314,19 @@ function BusinessPassportPage() {
 
                 {!isOwner && (
                   <div className="space-y-2">
-                    <button className="gradient-brand w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-soft transition hover:opacity-90">
-                      {investorReadiness.canInvestNow ? "Invest / Connect" : "Review readiness"}
-                    </button>
+                    {firstOpenOpportunity ? (
+                      <Link
+                        to="/invest/$opportunityId"
+                        params={{ opportunityId: firstOpenOpportunity.id }}
+                        className="gradient-brand block w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white shadow-soft transition hover:opacity-90"
+                      >
+                        {investorReadiness.canInvestNow ? "Invest / Connect" : "Review readiness"}
+                      </Link>
+                    ) : (
+                      <button className="w-full rounded-xl border border-border py-2.5 text-sm font-semibold text-muted-foreground">
+                        No open round
+                      </button>
+                    )}
                     {!investorReadiness.canInvestNow && (
                       <p className="text-center text-xs text-muted-foreground">
                         Funding actions unlock after email verification, MFA, and approved KYC/KYB.
@@ -472,7 +495,7 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
 }
 
-function OpportunitiesTab({ opps, bizName }: { opps: any[]; bizName: string }) {
+function OpportunitiesTab({ opps, bizName, investLabel }: { opps: any[]; bizName: string; investLabel: string }) {
   if (!opps.length) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center">
@@ -530,10 +553,21 @@ function OpportunitiesTab({ opps, bizName }: { opps: any[]; bizName: string }) {
             </div>
 
             {isOpen && (
-              <button className="gradient-brand mt-4 w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-soft transition hover:opacity-90">
+              <Link
+                to="/invest/$opportunityId"
+                params={{ opportunityId: o.id }}
+                className="gradient-brand mt-4 block w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white shadow-soft transition hover:opacity-90"
+              >
                 {investLabel}
-              </button>
+              </Link>
             )}
+            <Link
+              to="/offerings/$opportunityId"
+              params={{ opportunityId: o.id }}
+              className="mt-2 block w-full rounded-xl border border-border py-2.5 text-center text-sm font-semibold text-muted-foreground transition hover:border-primary/30 hover:text-foreground"
+            >
+              Open offering room
+            </Link>
           </article>
         );
       })}

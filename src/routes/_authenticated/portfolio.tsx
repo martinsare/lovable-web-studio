@@ -1,21 +1,86 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ArrowUpRight, CreditCard, ExternalLink, Landmark, PiggyBank, RadioTower, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import { PageShell, EmptyState } from "@/components/page-shell";
-import { Wallet, TrendingUp, PiggyBank, ArrowUpRight, ShieldCheck, Landmark, CreditCard, RadioTower } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useSecurity } from "@/hooks/use-security";
 import { buildInvestmentReadiness } from "@/lib/investment-readiness";
 import { getInvestmentWorkflow } from "@/lib/investment-workflow";
+import { supabase } from "@/integrations/supabase/client";
+import { getDocumentSignedUrl } from "@/lib/document-storage";
+import { formatMoney, getRailLabel } from "@/lib/investment-checkout";
 
 export const Route = createFileRoute("/_authenticated/portfolio")({
-  head: () => ({ meta: [{ title: "My Portfolio · CoFund" }] }),
+  head: () => ({ meta: [{ title: "My Portfolio - CoFund" }] }),
   component: PortfolioPage,
 });
 
 function PortfolioPage() {
-  const { profile, roles } = useAuth();
+  const { user, profile, roles } = useAuth();
   const { security } = useSecurity();
   const readiness = buildInvestmentReadiness({ profile, roles, security });
   const workflow = getInvestmentWorkflow();
+
+  const { data: commitments = [] } = useQuery({
+    enabled: !!user?.id,
+    queryKey: ["portfolio", "commitments", user?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("investment_commitments")
+        .select("id,amount,currency,rail,status,escrow_reference,created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: statements = [] } = useQuery({
+    enabled: !!user?.id,
+    queryKey: ["portfolio", "statements", user?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("investor_statements")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: payouts = [] } = useQuery({
+    enabled: !!user?.id,
+    queryKey: ["portfolio", "payouts", user?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("payout_events")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: refunds = [] } = useQuery({
+    enabled: !!user?.id,
+    queryKey: ["portfolio", "refunds", user?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("refund_events")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
 
   const stats = [
     { icon: Wallet, label: "Total invested", value: "NGN 0", color: "text-primary bg-primary/10" },
@@ -31,15 +96,38 @@ function PortfolioPage() {
     wire: RadioTower,
   } as const;
 
+  async function openStatement(statement: any) {
+    try {
+      const directUrl = typeof statement.file_url === "string" && /^https?:\/\//.test(statement.file_url) ? statement.file_url : null;
+      const signedUrl =
+        statement.storage_bucket && statement.storage_path
+          ? await getDocumentSignedUrl(statement.storage_bucket, statement.storage_path, statement.original_filename ?? statement.title)
+          : directUrl;
+
+      if (!signedUrl) throw new Error("This statement file is not available yet.");
+      window.open(signedUrl, "_blank", "noopener,noreferrer");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Unable to open that statement.");
+    }
+  }
+
   return (
     <PageShell
       eyebrow="Investor"
       title="My Portfolio"
       description="Track investments, funding readiness, escrow status, milestones, and returns in one place."
       actions={
-        <Link to="/browse" className="gradient-brand hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-brand sm:inline-flex">
-          Browse opportunities
-        </Link>
+        <div className="hidden gap-2 sm:flex">
+          <Link to="/wallet" className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">
+            Wallet
+          </Link>
+          <Link to="/security" className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">
+            Security
+          </Link>
+          <Link to="/browse" className="gradient-brand rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-brand">
+            Browse opportunities
+          </Link>
+        </div>
       }
     >
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -77,6 +165,17 @@ function PortfolioPage() {
             {readiness.canInvestNow
               ? "This account is ready for escrow-backed investment actions once payment rails are connected."
               : "This account is not ready to move funds yet. Complete the pending checks before enabling investment checkout."}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link to="/suitability" className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">
+              Suitability test
+            </Link>
+            <Link to="/security" className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">
+              Security center
+            </Link>
+            <Link to="/wallet" className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">
+              Wallet
+            </Link>
           </div>
         </div>
 
@@ -125,10 +224,86 @@ function PortfolioPage() {
         </div>
         <h2 className="font-display text-xl font-bold">Your investments</h2>
         <div className="mt-4">
-          <EmptyState
-            title="No investments yet"
-            hint="Browse verified opportunities and back the businesses building Africa's future."
-          />
+          {!commitments.length ? (
+            <EmptyState title="No investments yet" hint="Browse verified opportunities and back the businesses building Africa's future." />
+          ) : (
+            <div className="grid gap-3">
+              {commitments.map((commitment) => (
+                <div key={commitment.id} className="rounded-2xl border border-border bg-card p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-display text-xl font-bold">{formatMoney(Number(commitment.amount ?? 0))}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {getRailLabel(commitment.rail)} · {commitment.escrow_reference ?? "Reference pending"}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                      {String(commitment.status).replaceAll("_", " ")}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-xl font-bold">Statements</h2>
+          <div className="mt-4 grid gap-3">
+            {!statements.length ? (
+              <p className="text-sm text-muted-foreground">Statements, certificates, and formal investor notices will appear here once uploaded by operations.</p>
+            ) : (
+              statements.map((statement) => (
+                <div key={statement.id} className="rounded-xl border border-border bg-secondary/20 p-4">
+                  <p className="font-semibold">{statement.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{statement.statement_type}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{new Date(statement.created_at).toLocaleString()}</p>
+                  <button
+                    type="button"
+                    onClick={() => void openStatement(statement)}
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Download secure copy
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-xl font-bold">Payout history</h2>
+          <div className="mt-4 grid gap-3">
+            {!payouts.length ? (
+              <p className="text-sm text-muted-foreground">Distributions, coupon payments, and profit-share remittances will be tracked here.</p>
+            ) : (
+              payouts.map((payout) => (
+                <div key={payout.id} className="rounded-xl border border-border bg-secondary/20 p-4">
+                  <p className="font-semibold">{formatMoney(Number(payout.amount ?? 0))}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{payout.event_type}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{String(payout.status).replaceAll("_", " ")}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="font-display text-xl font-bold">Refund history</h2>
+          <div className="mt-4 grid gap-3">
+            {!refunds.length ? (
+              <p className="text-sm text-muted-foreground">Cancelled or unresolved rounds should leave a visible refund trail here.</p>
+            ) : (
+              refunds.map((refund) => (
+                <div key={refund.id} className="rounded-xl border border-border bg-secondary/20 p-4">
+                  <p className="font-semibold">{formatMoney(Number(refund.amount ?? 0))}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{refund.note ?? "Refund event"}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{String(refund.status).replaceAll("_", " ")}</p>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </section>
     </PageShell>

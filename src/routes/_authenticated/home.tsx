@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
+import { fetchPostsWithAuthors } from "@/lib/post-feed";
 import { MessageCircle, Sparkles, ArrowRight, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/home")({
@@ -128,11 +129,11 @@ function CommunityFeed() {
   const { data, isLoading } = useQuery({
     queryKey: ["dash", "feed"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("posts").select("id,content,created_at,profiles(full_name)")
-        .order("created_at", { ascending: false }).limit(10);
-      if (error) throw error;
-      return data ?? [];
+      try {
+        return await fetchPostsWithAuthors(10);
+      } catch {
+        return [];
+      }
     },
   });
 
@@ -157,10 +158,10 @@ function CommunityFeed() {
           data.map((p: any) => (
             <div key={p.id} className="flex items-start gap-3 rounded-xl border border-white/[0.04] bg-secondary/30 p-4">
               <div className="gradient-brand flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
-                {(p.profiles?.full_name ?? "U").charAt(0)}
+                {(p.profile?.full_name ?? "U").charAt(0)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{p.profiles?.full_name ?? "Member"}</p>
+                <p className="text-sm font-semibold">{p.profile?.full_name ?? "Member"}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">{p.content}</p>
               </div>
             </div>
