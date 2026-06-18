@@ -33,6 +33,8 @@ import logo from "@/assets/icon.png";
 
 export const Route = createFileRoute("/onboarding")({ ssr: false, head: () => ({ meta: [{ title: "Get started Ãƒâ€šÃ‚Â· CoFund" }] }), component: Onboarding });
 
+const ONBOARDING_STORAGE_KEY = "cofund:onboarding-draft";
+
 const AFRICAN_COUNTRIES = ["Nigeria","South Africa","Kenya","Ghana","Ethiopia","Tanzania","Uganda","Rwanda","Senegal","Ivory Coast","Cameroon","Angola","Mozambique","Zambia","Zimbabwe","Botswana","Namibia","Mauritius","Morocco","Egypt","Tunisia","Algeria","Libya","Sudan","Somalia","DRC","Gabon","Congo","Mali","Burkina Faso","Niger","Chad","Sierra Leone","Liberia","Guinea","Benin","Togo","Malawi","Lesotho","Eswatini","Eritrea","Djibouti","Comoros","Cape Verde","SÃƒÆ’Ã‚Â£o TomÃƒÆ’Ã‚Â© and PrÃƒÆ’Ã‚Â­ncipe","Equatorial Guinea","South Sudan","Madagascar","Seychelles","Gambia","Guinea-Bissau"];
 const DIASPORA_COUNTRIES = ["United Kingdom","United States","Canada","United Arab Emirates","France","Germany","Netherlands","Belgium","Portugal","Italy","Saudi Arabia","Qatar","Australia","Other"];
 const ALL_COUNTRIES = [...AFRICAN_COUNTRIES, ...DIASPORA_COUNTRIES];
@@ -156,6 +158,10 @@ function getTrackFromIntent(intents: string[]): OnboardingTrack {
   return "community";
 }
 
+function getPrimaryIntent(intents: string[]) {
+  return intents[0] ?? "community";
+}
+
 function getTrackRoleOptions(track: OnboardingTrack) {
   if (track === "investor") return ["investor", "professional", "community_member"] as AppRole[];
   if (track === "founder") return ["business_owner", "startup_builder", "professional", "community_member"] as AppRole[];
@@ -182,23 +188,41 @@ function Onboarding() {
   const [data, setData] = useState<OBData>(() => ({ ...INITIAL, fullName: typeof window !== "undefined" ? (user?.user_metadata?.full_name ?? "") : "" }));
 
   useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { step?: 1 | 2 | 3 | 4; data?: Partial<OBData> };
+      if (parsed?.data) setData((current) => ({ ...current, ...parsed.data }));
+      if (parsed?.step && [1, 2, 3, 4].includes(parsed.step)) setStep(parsed.step);
+    } catch {
+      window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
     const nextFullName = user?.user_metadata?.full_name;
     if (typeof nextFullName === "string" && nextFullName.trim() && !data.fullName.trim()) {
       setData((current) => ({ ...current, fullName: nextFullName }));
     }
   }, [data.fullName, user?.user_metadata?.full_name]);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ step, data }));
+    } catch {
+      // Ignore storage write failures and keep the form working.
+    }
+  }, [data, step]);
+
   if (!loading && !user) throw redirect({ to: "/auth", search: { mode: "signin" } });
   if (!loading && profile?.onboarded) throw redirect({ to: "/home" });
 
   const set = <K extends keyof OBData>(key: K, value: OBData[K]) => setData((current) => ({ ...current, [key]: value }));
   const toggleChip = <K extends keyof OBData>(key: K, value: string) => setData((current) => ({ ...current, [key]: ((current[key] as string[]).includes(value) ? (current[key] as string[]).filter((item) => item !== value) : [...(current[key] as string[]), value]) }));
-    const chooseIntent = (intent: string) => {
+  const chooseIntent = (intent: string) => {
     setData((current) => ({
       ...current,
-      intent: current.intent.includes(intent)
-        ? current.intent.filter((item) => item !== intent)
-        : [...current.intent, intent],
+      intent: [intent],
     }));
   };
   const toggleRole = (role: AppRole) => setData((current) => ({ ...current, roles: current.roles.includes(role) ? current.roles.filter((item) => item !== role) : [...current.roles, role] }));
@@ -312,6 +336,7 @@ function Onboarding() {
       const { error: rolesErr } = await supabase.from("user_roles").upsert(roles.map((role) => ({ user_id: user.id, role })), { onConflict: "user_id,role" });
       if (rolesErr) throw rolesErr;
 
+      window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
       await refresh();
       toast.success("Welcome to CoFund!");
       navigate({ to: "/home" });
@@ -340,7 +365,7 @@ function Onboarding() {
   );
 }
 function StepIntent({ data, chooseIntent }: { data: OBData; chooseIntent: (intent: string) => void }) {
-  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 1 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">What brings you to CoFund?</h1><p className="mt-2 text-muted-foreground">Select one or more paths. One account can cover investing, building, and community membership.</p><p className="mt-2 text-sm font-medium text-primary/90">Most members use 2-3 roles.</p></div><div className="grid gap-3 sm:grid-cols-2">{INTENTS.map((intent) => { const active = data.intent.includes(intent.id); const Icon = intent.icon; return <button key={intent.id} type="button" onClick={() => chooseIntent(intent.id)} className={`rounded-2xl border p-5 text-left transition ${active ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/40"}`}><div className="flex items-start gap-3"><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition ${active ? "gradient-brand text-white" : "bg-muted text-muted-foreground"}`}><Icon className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="font-display text-lg font-bold">{intent.label}</p><p className="mt-2 text-sm text-muted-foreground">{intent.desc}</p></div></div></button>; })}</div></div>;
+  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 1 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">What is your primary path on CoFund?</h1><p className="mt-2 text-muted-foreground">Choose the main reason you are joining. You can add secondary roles in the next step.</p></div><div className="grid gap-3 sm:grid-cols-2">{INTENTS.map((intent) => { const active = data.intent.includes(intent.id); const Icon = intent.icon; return <button key={intent.id} type="button" onClick={() => chooseIntent(intent.id)} className={`rounded-2xl border p-5 text-left transition ${active ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/40"}`}><div className="flex items-start gap-3"><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition ${active ? "gradient-brand text-white" : "bg-muted text-muted-foreground"}`}><Icon className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="font-display text-lg font-bold">{intent.label}</p><p className="mt-2 text-sm text-muted-foreground">{intent.desc}</p></div></div></button>; })}</div></div>;
 }
 
 function StepProfile({ data, set, track }: { data: OBData; set: <K extends keyof OBData>(key: K, value: OBData[K]) => void; track: OnboardingTrack }) {
@@ -356,6 +381,7 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
   const needsInvestorChecks = data.roles.includes("investor");
   const needsBusinessChecks = data.roles.includes("business_owner");
   const trackRoles = getTrackRoleOptions(track);
+  const primaryIntent = getPrimaryIntent(data.intent);
   const trackTitle = track === "investor" ? "Investor verification track" : track === "founder" ? "Founder and business track" : "Community and growth track";
   const trackDescription =
     track === "investor"
@@ -366,16 +392,18 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
 
   const introCopy =
     track === "investor"
-      ? "You can still add professional or community roles later, but investing stays behind verification and suitability checks."
+      ? "This step adds the roles tied to your investor journey. You can still add professional or community roles later, but investing stays behind verification and suitability checks."
       : track === "founder"
-        ? "You still have one CoFund account. This flow just prioritizes the business and funding data founders need first."
-        : "Community members can browse, follow, save, and contribute first, then expand into investing or business roles later without creating a new account.";
+        ? primaryIntent === "business"
+          ? "This step starts with your business owner profile. You still have one CoFund account; the flow just prioritizes business and funding data first."
+          : "This step starts with your startup builder profile. You still have one CoFund account; the flow just prioritizes startup and funding data first."
+        : "This step adds the roles tied to your community journey. You can browse, follow, save, and contribute first, then expand into investing or business roles later without creating a new account.";
 
   return (
     <div>
       <div className="mb-8">
         <p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 3 of 4</p>
-        <h1 className="font-display text-3xl font-extrabold sm:text-4xl">{trackTitle}</h1>
+        <h1 className="font-display text-3xl font-extrabold sm:text-4xl">Add your roles</h1>
         <p className="mt-2 text-muted-foreground">{trackDescription}</p>
       </div>
       <div className="mb-6 space-y-4">
@@ -385,7 +413,24 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {ROLES.filter((role) => trackRoles.includes(role.id)).map((role) => {
+        {ROLES.filter((role) => trackRoles.includes(role.id))
+          .sort((a, b) => {
+            if (track !== "founder") return 0;
+            if (primaryIntent === "business") {
+              if (a.id === "business_owner") return -1;
+              if (b.id === "business_owner") return 1;
+              if (a.id === "startup_builder") return 1;
+              if (b.id === "startup_builder") return -1;
+            }
+            if (primaryIntent === "idea") {
+              if (a.id === "startup_builder") return -1;
+              if (b.id === "startup_builder") return 1;
+              if (a.id === "business_owner") return 1;
+              if (b.id === "business_owner") return -1;
+            }
+            return 0;
+          })
+          .map((role) => {
           const active = data.roles.includes(role.id);
           const Icon = role.icon;
           return (
