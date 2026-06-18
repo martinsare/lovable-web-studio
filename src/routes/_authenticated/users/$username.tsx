@@ -16,7 +16,7 @@ import {
   MessageCircle,
   Briefcase,
   Globe,
-  Linkedin,
+  Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -707,7 +707,7 @@ function ProfileSidebar({ profile, roles }: { profile: any; roles: string[] }) {
           )}
           {profile.linkedin_url && (
             <div className="flex items-start gap-2.5">
-              <Linkedin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <a
                 href={profile.linkedin_url}
                 target="_blank"
