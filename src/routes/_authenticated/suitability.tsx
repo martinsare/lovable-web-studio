@@ -2,20 +2,32 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
-import { PageShell } from "@/components/page-shell";
+import { AlertTriangle, CheckCircle2, ShieldCheck, ChevronRight } from "lucide-react";
+import { AppLayout } from "@/components/app-layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { assessSuitability, suitabilityQuestions, type SuitabilityAnswerSet } from "@/lib/suitability";
+import {
+  assessSuitability,
+  suitabilityQuestions,
+  type SuitabilityAnswerSet,
+} from "@/lib/suitability";
 
 export const Route = createFileRoute("/_authenticated/suitability")({
-  head: () => ({ meta: [{ title: "Investor Suitability - CoFund" }] }),
+  head: () => ({ meta: [{ title: "Investor Suitability · CoFund" }] }),
   component: SuitabilityPage,
 });
+
+const STEPS = [
+  { id: "background", label: "Background" },
+  { id: "financial", label: "Financial profile" },
+  { id: "risk", label: "Risk tolerance" },
+  { id: "declarations", label: "Declarations" },
+];
 
 function SuitabilityPage() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
+  const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<SuitabilityAnswerSet>({
     jurisdiction: profile?.country ?? "Nigeria",
     experienceLevel: "",
@@ -50,21 +62,23 @@ function SuitabilityPage() {
   const saveAssessment = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("You must be signed in.");
-      const { error } = await (supabase as any).from("investor_suitability_assessments").insert({
-        user_id: user.id,
-        jurisdiction: answers.jurisdiction,
-        experience_level: answers.experienceLevel,
-        annual_income_range: answers.annualIncomeRange,
-        net_worth_range: answers.netWorthRange,
-        loss_capacity: answers.lossCapacity,
-        liquidity_needs: answers.liquidityNeeds,
-        investment_horizon: answers.investmentHorizon,
-        risk_tolerance: answers.riskTolerance,
-        answers,
-        score: result.score,
-        outcome: result.outcome,
-        notes: result.reasons.join(" "),
-      });
+      const { error } = await (supabase as any)
+        .from("investor_suitability_assessments")
+        .insert({
+          user_id: user.id,
+          jurisdiction: answers.jurisdiction,
+          experience_level: answers.experienceLevel,
+          annual_income_range: answers.annualIncomeRange,
+          net_worth_range: answers.netWorthRange,
+          loss_capacity: answers.lossCapacity,
+          liquidity_needs: answers.liquidityNeeds,
+          investment_horizon: answers.investmentHorizon,
+          risk_tolerance: answers.riskTolerance,
+          answers,
+          score: result.score,
+          outcome: result.outcome,
+          notes: result.reasons.join(" "),
+        });
       if (error) throw error;
 
       const existingMetadata =
@@ -72,10 +86,11 @@ function SuitabilityPage() {
           ? { ...(profile.metadata as Record<string, unknown>) }
           : {};
       const compliance =
-        existingMetadata.compliance && typeof existingMetadata.compliance === "object" && !Array.isArray(existingMetadata.compliance)
+        existingMetadata.compliance &&
+        typeof existingMetadata.compliance === "object" &&
+        !Array.isArray(existingMetadata.compliance)
           ? { ...(existingMetadata.compliance as Record<string, unknown>) }
           : {};
-
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
@@ -83,182 +98,291 @@ function SuitabilityPage() {
             ...existingMetadata,
             compliance: {
               ...compliance,
-              suitability: {
-                outcome: result.outcome,
-                score: result.score,
-                assessedAt: new Date().toISOString(),
-                answers,
-              },
+              suitability: { outcome: result.outcome, score: result.score, assessedAt: new Date().toISOString(), answers },
             },
           },
         })
         .eq("id", user.id);
-
       if (profileError) throw profileError;
     },
     onSuccess: async () => {
-      toast.success("Suitability assessment saved.");
+      toast.success("Assessment saved.");
       await queryClient.invalidateQueries({ queryKey: ["suitability", user?.id] });
     },
-    onError: (error: any) => {
-      toast.error(error?.message ?? "Unable to save the assessment.");
-    },
+    onError: (e: any) => toast.error(e?.message ?? "Unable to save the assessment."),
   });
 
+  function patch(update: Partial<SuitabilityAnswerSet>) {
+    setAnswers((prev) => ({ ...prev, ...update }));
+  }
+
+  const scoreColor =
+    result.outcome === "passed"
+      ? "text-brand-green"
+      : result.outcome === "needs_review"
+        ? "text-amber-400"
+        : "text-destructive";
+
+  const scoreBg =
+    result.outcome === "passed"
+      ? "bg-brand-green/10"
+      : result.outcome === "needs_review"
+        ? "bg-amber-400/10"
+        : "bg-destructive/10";
+
   return (
-    <PageShell
-      eyebrow="Investor controls"
-      title="Appropriateness and Suitability"
-      description="Private-market investing should stay behind a real suitability screen. This assessment records experience, loss capacity, time horizon, and risk tolerance before capital moves."
-    >
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-3xl border border-border bg-card p-6">
-          <div className="grid gap-5">
-            <SelectRow label="Jurisdiction" value={answers.jurisdiction} onChange={(value) => setAnswers((current) => ({ ...current, jurisdiction: value }))} options={["Nigeria", "United Kingdom", "United States", "Other"]} />
-            <SelectRow label="Investment experience" value={answers.experienceLevel} onChange={(value) => setAnswers((current) => ({ ...current, experienceLevel: value }))} options={suitabilityQuestions.experienceLevels.map((item) => ({ value: item.value, label: item.label }))} />
-            <SelectRow label="Loss capacity" value={answers.lossCapacity} onChange={(value) => setAnswers((current) => ({ ...current, lossCapacity: value }))} options={suitabilityQuestions.lossCapacity.map((item) => ({ value: item.value, label: item.label }))} />
-            <SelectRow label="Liquidity needs" value={answers.liquidityNeeds} onChange={(value) => setAnswers((current) => ({ ...current, liquidityNeeds: value }))} options={suitabilityQuestions.liquidityNeeds.map((item) => ({ value: item.value, label: item.label }))} />
-            <SelectRow label="Investment horizon" value={answers.investmentHorizon} onChange={(value) => setAnswers((current) => ({ ...current, investmentHorizon: value }))} options={suitabilityQuestions.investmentHorizons.map((item) => ({ value: item.value, label: item.label }))} />
-            <SelectRow label="Risk tolerance" value={answers.riskTolerance} onChange={(value) => setAnswers((current) => ({ ...current, riskTolerance: value }))} options={suitabilityQuestions.riskTolerance.map((item) => ({ value: item.value, label: item.label }))} />
-            <InputRow label="Annual income range" value={answers.annualIncomeRange} onChange={(value) => setAnswers((current) => ({ ...current, annualIncomeRange: value }))} placeholder="e.g. $50,000 - $100,000" />
-            <InputRow label="Net worth range" value={answers.netWorthRange} onChange={(value) => setAnswers((current) => ({ ...current, netWorthRange: value }))} placeholder="e.g. $250,000 - $500,000" />
-            <CheckRow label="I understand private-business investments are illiquid and high risk." checked={answers.understandsPrivateMarketRisk} onChange={(checked) => setAnswers((current) => ({ ...current, understandsPrivateMarketRisk: checked }))} />
-            <CheckRow label="I can bear a total loss of this capital without immediate hardship." checked={answers.canBearTotalLoss} onChange={(checked) => setAnswers((current) => ({ ...current, canBearTotalLoss: checked }))} />
-            <button
-              type="button"
-              onClick={() => void saveAssessment.mutateAsync()}
-              disabled={saveAssessment.isPending}
-              className="gradient-brand rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-brand disabled:opacity-50"
-            >
-              {saveAssessment.isPending ? "Saving assessment..." : "Save assessment"}
-            </button>
-          </div>
-        </section>
+    <AppLayout>
+      <div className="min-h-full bg-background">
+        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
 
-        <section className="space-y-6">
-          <div className="rounded-3xl border border-border bg-card p-6">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-primary" />
-              <h2 className="font-display text-xl font-bold">Assessment result</h2>
-            </div>
-            <p className="mt-4 font-display text-5xl font-bold">{result.score}</p>
-            <StatusBadge outcome={result.outcome} />
-            <div className="mt-4 grid gap-2">
-              {result.reasons.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No immediate concerns flagged by the current answers.</p>
-              ) : (
-                result.reasons.map((reason) => (
-                  <p key={reason} className="text-sm text-muted-foreground">
-                    - {reason}
-                  </p>
-                ))
-              )}
-            </div>
+          {/* Header */}
+          <div className="mb-8">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary mb-2">Investor controls</p>
+            <h1 className="font-display text-2xl font-bold">Suitability assessment</h1>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-xl">
+              Private-market investing stays behind a real suitability screen. This records your experience, loss capacity, time horizon, and risk tolerance before capital moves.
+            </p>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6">
-            <h2 className="font-display text-xl font-bold">Latest recorded assessment</h2>
-            {!latestAssessment ? (
-              <p className="mt-3 text-sm text-muted-foreground">No suitability assessment has been recorded yet.</p>
-            ) : (
-              <div className="mt-4 grid gap-3">
-                <Summary label="Outcome" value={String(latestAssessment.outcome).replaceAll("_", " ")} />
-                <Summary label="Score" value={String(latestAssessment.score)} />
-                <Summary label="Jurisdiction" value={latestAssessment.jurisdiction} />
-                <Summary label="Created" value={new Date(latestAssessment.created_at).toLocaleString()} />
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-400" />
-              <p className="text-sm text-muted-foreground">
-                High-risk or ambiguous answers should flow into manual review. This screen gives CoFund a real suitability record instead of relying only on accreditation checkboxes.
+          {/* Previous assessment banner */}
+          {latestAssessment && (
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-green" />
+              <p className="text-sm">
+                <span className="font-semibold">Last assessment: </span>
+                <span className="text-muted-foreground capitalize">{String(latestAssessment.outcome).replaceAll("_", " ")} · score {latestAssessment.score} · {new Date(latestAssessment.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
               </p>
             </div>
+          )}
+
+          <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
+            {/* Assessment form */}
+            <div>
+              {/* Step progress */}
+              <div className="mb-8 flex items-center gap-0">
+                {STEPS.map((s, i) => (
+                  <div key={s.id} className="flex items-center flex-1 last:flex-none">
+                    <button
+                      type="button"
+                      onClick={() => setStep(i)}
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
+                        i < step
+                          ? "bg-brand-green text-primary-foreground"
+                          : i === step
+                            ? "gradient-brand text-primary-foreground shadow-brand"
+                            : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
+                      {i < step ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+                    </button>
+                    {i < STEPS.length - 1 && (
+                      <div className={`flex-1 h-px mx-2 ${i < step ? "bg-brand-green" : "bg-border"}`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="mb-6 text-sm font-bold text-foreground">{STEPS[step].label}</p>
+
+              {step === 0 && (
+                <div className="space-y-5">
+                  <FieldGroup label="Country / jurisdiction">
+                    <select value={answers.jurisdiction} onChange={(e) => patch({ jurisdiction: e.target.value })} className={sel}>
+                      {["Nigeria", "United Kingdom", "United States", "Other"].map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </FieldGroup>
+                  <FieldGroup label="Investment experience">
+                    <select value={answers.experienceLevel} onChange={(e) => patch({ experienceLevel: e.target.value })} className={sel}>
+                      <option value="">Select…</option>
+                      {suitabilityQuestions.experienceLevels.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </FieldGroup>
+                  <FieldGroup label="Investment horizon">
+                    <select value={answers.investmentHorizon} onChange={(e) => patch({ investmentHorizon: e.target.value })} className={sel}>
+                      <option value="">Select…</option>
+                      {suitabilityQuestions.investmentHorizons.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </FieldGroup>
+                </div>
+              )}
+
+              {step === 1 && (
+                <div className="space-y-5">
+                  <FieldGroup label="Annual income range" hint="Used to assess investment size relative to income.">
+                    <input
+                      value={answers.annualIncomeRange}
+                      onChange={(e) => patch({ annualIncomeRange: e.target.value })}
+                      placeholder="e.g. ₦5,000,000 – ₦10,000,000"
+                      className={inp}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Net worth range" hint="Approximate total assets minus liabilities.">
+                    <input
+                      value={answers.netWorthRange}
+                      onChange={(e) => patch({ netWorthRange: e.target.value })}
+                      placeholder="e.g. ₦25,000,000+"
+                      className={inp}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Liquidity needs">
+                    <select value={answers.liquidityNeeds} onChange={(e) => patch({ liquidityNeeds: e.target.value })} className={sel}>
+                      <option value="">Select…</option>
+                      {suitabilityQuestions.liquidityNeeds.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </FieldGroup>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-5">
+                  <FieldGroup label="Risk tolerance">
+                    <select value={answers.riskTolerance} onChange={(e) => patch({ riskTolerance: e.target.value })} className={sel}>
+                      <option value="">Select…</option>
+                      {suitabilityQuestions.riskTolerance.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </FieldGroup>
+                  <FieldGroup label="Loss capacity">
+                    <select value={answers.lossCapacity} onChange={(e) => patch({ lossCapacity: e.target.value })} className={sel}>
+                      <option value="">Select…</option>
+                      {suitabilityQuestions.lossCapacity.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </FieldGroup>
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Please confirm you have read and understood the following before proceeding.
+                  </p>
+                  {[
+                    {
+                      key: "understandsPrivateMarketRisk" as const,
+                      label: "I understand that private-market investments are illiquid, high risk, and not covered by any deposit protection scheme.",
+                    },
+                    {
+                      key: "canBearTotalLoss" as const,
+                      label: "I can bear a total loss of the capital I invest without causing significant financial hardship.",
+                    },
+                  ].map(({ key, label }) => (
+                    <label
+                      key={key}
+                      className={`flex items-start gap-4 rounded-xl border px-5 py-4 cursor-pointer transition-colors ${
+                        answers[key] ? "border-brand-green/30 bg-brand-green/5" : "border-border bg-card"
+                      }`}
+                    >
+                      <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition ${
+                        answers[key] ? "border-brand-green bg-brand-green" : "border-border"
+                      }`}>
+                        {answers[key] && <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={answers[key]}
+                        onChange={(e) => patch({ [key]: e.target.checked })}
+                        className="sr-only"
+                      />
+                      <p className="text-sm leading-relaxed">{label}</p>
+                    </label>
+                  ))}
+
+                  <div className="mt-6">
+                    <button
+                      type="button"
+                      onClick={() => void saveAssessment.mutateAsync()}
+                      disabled={saveAssessment.isPending || !answers.understandsPrivateMarketRisk || !answers.canBearTotalLoss}
+                      className="w-full gradient-brand rounded-xl py-3.5 text-sm font-bold text-primary-foreground shadow-brand disabled:opacity-40"
+                    >
+                      {saveAssessment.isPending ? "Saving assessment…" : "Submit & save assessment"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step nav */}
+              <div className="mt-8 flex justify-between">
+                {step > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setStep((s) => s - 1)}
+                    className="rounded-xl border border-border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition"
+                  >
+                    Back
+                  </button>
+                ) : <div />}
+                {step < STEPS.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setStep((s) => s + 1)}
+                    className="flex items-center gap-1.5 gradient-brand rounded-xl px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-brand"
+                  >
+                    Continue <ChevronRight className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Live result panel */}
+            <div className="space-y-5">
+              <div className={`rounded-2xl border ${scoreBg} p-6`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <ShieldCheck className={`h-5 w-5 ${scoreColor}`} />
+                  <p className="text-sm font-bold">Live assessment</p>
+                </div>
+                <p className={`font-display text-6xl font-bold ${scoreColor}`}>{result.score}</p>
+                <p className={`mt-1 text-sm font-bold capitalize ${scoreColor}`}>
+                  {result.outcome.replaceAll("_", " ")}
+                </p>
+                {result.reasons.length > 0 ? (
+                  <div className="mt-4 space-y-1.5">
+                    {result.reasons.map((r) => (
+                      <div key={r} className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                        <span>{r}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-muted-foreground">No concerns flagged by current answers.</p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-5">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    High-risk or ambiguous answers trigger manual compliance review. This creates a real suitability record beyond a simple checkbox.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
       </div>
-    </PageShell>
+    </AppLayout>
   );
 }
 
-function SelectRow({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<string | { value: string; label: string }>;
-}) {
+function FieldGroup({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium">{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className={inputCls}>
-        <option value="">Select...</option>
-        {options.map((option) => {
-          if (typeof option === "string") {
-            return (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            );
-          }
-          return (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          );
-        })}
-      </select>
+      <span className="mb-1.5 block text-sm font-semibold">{label}</span>
+      {hint && <p className="mb-2 text-xs text-muted-foreground">{hint}</p>}
+      {children}
     </label>
   );
 }
 
-function InputRow({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-medium">{label}</span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={inputCls} />
-    </label>
-  );
-}
-
-function CheckRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <label className="flex items-start gap-3 rounded-2xl border border-border bg-background px-4 py-3 text-sm">
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="mt-1" />
-      <span>{label}</span>
-    </label>
-  );
-}
-
-function StatusBadge({ outcome }: { outcome: string }) {
-  const style =
-    outcome === "passed"
-      ? "bg-brand-green/10 text-brand-green"
-      : outcome === "needs_review"
-        ? "bg-amber-500/10 text-amber-400"
-        : "bg-destructive/10 text-destructive";
-  const Icon = outcome === "passed" ? CheckCircle2 : AlertTriangle;
-  return (
-    <span className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${style}`}>
-      <Icon className="h-4 w-4" /> {outcome.replaceAll("_", " ")}
-    </span>
-  );
-}
-
-function Summary({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold">{value}</span>
-    </div>
-  );
-}
-
-const inputCls = "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary";
+const sel = "w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary appearance-none";
+const inp = "w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary placeholder:text-muted-foreground/50";
