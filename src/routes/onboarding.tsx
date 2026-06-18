@@ -585,7 +585,7 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
           <Panel icon={<ShieldCheck className="h-5 w-5" />} title="Identity verification readiness">
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">Verification is handled internally by CoFund operations.</div>
+                <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">Your verification details are reviewed by the CoFund operations team.</div>
                 <Field label="Date of birth">
                   <input type="date" value={data.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} className={inputCls} />
                 </Field>

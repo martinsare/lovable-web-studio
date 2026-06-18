@@ -9,6 +9,7 @@ function XIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
 function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -16,6 +17,7 @@ function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -27,17 +29,20 @@ function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 type Item = { label: string; to: string };
+
 const platform: Item[] = [
   { label: "Invest", to: "/how-it-works" },
   { label: "Raise Capital", to: "/how-it-works" },
   { label: "Startup Hub", to: "/community" },
   { label: "Community", to: "/community" },
 ];
+
 const company: Item[] = [
   { label: "About", to: "/about" },
   { label: "How it works", to: "/how-it-works" },
   { label: "Contact", to: "/contact" },
 ];
+
 const legal: Item[] = [
   { label: "Privacy", to: "/privacy" },
   { label: "Terms", to: "/terms" },
@@ -47,7 +52,7 @@ const legal: Item[] = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-20 border-t border-white/[0.06]">
+    <footer className="mt-20 border-t border-border/80 bg-card/20">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
@@ -56,7 +61,7 @@ export function SiteFooter() {
               <span className="font-display text-[17px] font-bold">CoFund</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Africa's trusted private investment and business growth ecosystem.
+              A private investment and business growth platform for serious founders and investors.
             </p>
             <div className="mt-5 flex items-center gap-2">
               {[
@@ -65,18 +70,24 @@ export function SiteFooter() {
                 { href: "https://instagram.com", Icon: InstagramIcon, label: "Instagram" },
                 { href: "mailto:hello@cofund.africa", Icon: Mail, label: "Email" },
               ].map(({ href, Icon, label }) => (
-                <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-muted-foreground transition hover:border-primary/50 hover:text-primary">
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                >
                   <Icon className="h-4 w-4" />
                 </a>
               ))}
             </div>
           </div>
-          {[{ title: "Platform", items: platform }, { title: "Company", items: company }, { title: "Legal", items: legal }].map(col => (
+          {[{ title: "Platform", items: platform }, { title: "Company", items: company }, { title: "Legal", items: legal }].map((col) => (
             <div key={col.title}>
               <h4 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{col.title}</h4>
               <ul className="mt-4 space-y-2.5">
-                {col.items.map(i => (
+                {col.items.map((i) => (
                   <li key={i.label}>
                     <Link to={i.to as never} className="text-sm text-foreground/70 transition hover:text-foreground">
                       {i.label}
@@ -87,7 +98,7 @@ export function SiteFooter() {
             </div>
           ))}
         </div>
-        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-white/[0.06] pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center">
+        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} CoFund. Together, we grow.</p>
           <p className="max-w-sm text-right text-[11px] opacity-60">Investing involves risk including possible loss of principal.</p>
         </div>

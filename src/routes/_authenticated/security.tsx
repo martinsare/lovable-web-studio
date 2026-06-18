@@ -1,22 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Fingerprint, Lock, MailCheck, ShieldCheck, Smartphone } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, BadgeCheck, Fingerprint, MailCheck, ShieldCheck, Smartphone } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useSecurity } from "@/hooks/use-security";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/security")({
-  head: () => ({ meta: [{ title: "Security Center - CoFund" }] }),
+  head: () => ({ meta: [{ title: "Account Security - CoFund" }] }),
   component: SecurityCenterPage,
 });
 
 function SecurityCenterPage() {
   const { user } = useAuth();
   const { security } = useSecurity();
-  const queryClient = useQueryClient();
 
   const { data: factors } = useQuery({
     enabled: !!user?.id,
@@ -43,71 +41,68 @@ function SecurityCenterPage() {
     },
   });
 
-  const recordSecurityEvent = useMutation({
-    mutationFn: async (payload: { event_type: string; note: string; metadata?: Record<string, unknown> }) => {
-      if (!user?.id) throw new Error("You must be signed in.");
-      const { error } = await (supabase as any).from("security_events").insert({
-        user_id: user.id,
-        event_type: payload.event_type,
-        note: payload.note,
-        metadata: payload.metadata ?? {},
-      });
-      if (error) throw error;
-    },
-    onSuccess: async () => {
-      toast.success("Security event recorded.");
-      await queryClient.invalidateQueries({ queryKey: ["security", "events", user?.id] });
-    },
-    onError: (error: any) => {
-      toast.error(error?.message ?? "Could not record that security action.");
-    },
-  });
-
   const verifiedFactors = [
     ...(factors?.totp ?? []),
     ...(factors?.phone ?? []),
     ...(factors?.webauthn ?? []),
   ].filter((factor) => factor.status === "verified");
+  const setupNeeded = !security?.emailVerified || (security?.verifiedFactors ?? 0) === 0 || !security?.canAccessFundingActions;
 
   return (
     <PageShell
-      eyebrow="Security"
-      title="Security Center"
-      description="Funding access should sit behind visible account security, MFA status, and step-up controls. This is the operator-ready security surface for money movement."
+      eyebrow="Settings"
+      title="Account Security"
+      description="Check your sign-in protection, two-factor setup, and whether your account is ready for funding actions."
     >
+      <div className="grid gap-6">
+        <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {setupNeeded ? <AlertCircle className="h-3.5 w-3.5 text-amber-500" /> : <BadgeCheck className="h-3.5 w-3.5 text-emerald-500" />}
+                {setupNeeded ? "Setup recommended" : "Protected"}
+              </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                We keep this area simple on purpose. It tells you whether your account is ready for investing and what to finish next.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background px-4 py-3 text-sm">
+              <p className="text-muted-foreground">Funding readiness</p>
+              <p className="mt-1 text-lg font-bold">{security?.canAccessFundingActions ? "Ready" : "Not ready"}</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
         <section className="space-y-6">
           <Card
             icon={<ShieldCheck className="h-5 w-5 text-primary" />}
-            title="Funding security posture"
-            description="These checks should be complete before any transfer, wire, or wallet-funded commitment."
+            title="Account safety"
+            description="A quick view of the checks that matter before you invest."
           >
-            <div className="grid gap-3">
-              <StatusRow label="Email verified" value={security?.emailVerified ? "Yes" : "No"} />
-              <StatusRow label="Assurance level" value={security?.assuranceLevel ?? "unknown"} />
-              <StatusRow label="Verified MFA factors" value={String(security?.verifiedFactors ?? 0)} />
-              <StatusRow label="Funding actions allowed" value={security?.canAccessFundingActions ? "Yes" : "No"} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <StatusTile label="Email status" value={security?.emailVerified ? "Verified" : "Not verified"} tone={security?.emailVerified ? "good" : "warn"} />
+              <StatusTile label="Two-factor auth" value={(security?.verifiedFactors ?? 0) > 0 ? "Enabled" : "Not set up"} tone={(security?.verifiedFactors ?? 0) > 0 ? "good" : "warn"} />
+              <StatusTile label="Funding access" value={security?.canAccessFundingActions ? "Enabled" : "Locked"} tone={security?.canAccessFundingActions ? "good" : "warn"} />
+              <StatusTile label="Session level" value={security?.assuranceLevel ?? "unknown"} tone="neutral" />
             </div>
+            {security?.recommendedActions?.length ? (
+              <div className="mt-4 rounded-2xl border border-border bg-background p-4">
+                <p className="text-sm font-semibold">Next step</p>
+                <p className="mt-1 text-sm text-muted-foreground">{security.recommendedActions[0]}</p>
+              </div>
+            ) : null}
           </Card>
 
-          <Card icon={<Lock className="h-5 w-5 text-primary" />} title="Recommended actions">
-            <div className="grid gap-3">
-              {(security?.recommendedActions ?? ["No open security recommendations right now."]).map((item) => (
-                <div key={item} className="rounded-2xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
-                  {item}
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card icon={<Fingerprint className="h-5 w-5 text-primary" />} title="Security event log">
+          <Card icon={<Fingerprint className="h-5 w-5 text-primary" />} title="Recent activity">
             <div className="grid gap-3">
               {!events.length ? (
-                <p className="text-sm text-muted-foreground">No security events have been recorded yet.</p>
+                <p className="text-sm text-muted-foreground">No security activity yet. Actions like MFA setup and step-up approvals will appear here.</p>
               ) : (
                 events.map((event) => (
                   <div key={event.id} className="rounded-2xl border border-border bg-background px-4 py-3">
-                    <p className="text-sm font-semibold">{event.event_type.replaceAll("_", " ")}</p>
+                    <p className="text-sm font-semibold">{formatEventLabel(event.event_type)}</p>
                     {event.note && <p className="mt-1 text-sm text-muted-foreground">{event.note}</p>}
                     <p className="mt-1 text-xs text-muted-foreground">{new Date(event.created_at).toLocaleString()}</p>
                   </div>
@@ -115,59 +110,36 @@ function SecurityCenterPage() {
               )}
             </div>
           </Card>
+
+          <Card icon={<MailCheck className="h-5 w-5 text-primary" />} title="Signed-in account">
+            <div className="grid gap-3">
+              <StatusRow label="Email" value={user?.email ?? "-"} />
+              <StatusRow label="Current device" value="This browser session" />
+              <StatusRow label="Session assurance" value={security?.assuranceLevel ?? "unknown"} />
+            </div>
+          </Card>
         </section>
 
         <section className="space-y-6">
-          <Card icon={<Smartphone className="h-5 w-5 text-primary" />} title="MFA factors">
+          <Card icon={<Smartphone className="h-5 w-5 text-primary" />} title="Two-factor methods">
             <div className="grid gap-3">
               {verifiedFactors.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No verified second factors are enrolled yet.</p>
+                <p className="text-sm text-muted-foreground">You do not have a verified second factor yet.</p>
               ) : (
                 verifiedFactors.map((factor) => (
                   <div key={factor.id} className="rounded-2xl border border-border bg-background px-4 py-3 text-sm">
                     <p className="font-semibold">{factor.factor_type}</p>
-                    <p className="text-muted-foreground">Verified factor</p>
+                    <p className="text-muted-foreground">Verified and active</p>
                   </div>
                 ))
               )}
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  void recordSecurityEvent.mutateAsync({
-                    event_type: "mfa_enrollment_requested",
-                    note: "User opened MFA enrollment flow from the security center.",
-                  })
-                }
-                className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground"
-              >
-                Record MFA enrollment intent
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  void recordSecurityEvent.mutateAsync({
-                    event_type: "step_up_requested",
-                    note: "User requested a step-up challenge before a sensitive action.",
-                  })
-                }
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-              >
-                Record step-up request
-              </button>
+            <div className="mt-4 rounded-2xl border border-border bg-background p-4">
+              <p className="text-sm font-semibold">Why this matters</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                CoFund may ask for a stronger sign-in before you move money or approve a sensitive action.
+              </p>
             </div>
-          </Card>
-
-          <Card icon={<MailCheck className="h-5 w-5 text-primary" />} title="Current session">
-            <div className="grid gap-3">
-              <StatusRow label="Signed-in email" value={user?.email ?? "-"} />
-              <StatusRow label="Session assurance" value={security?.assuranceLevel ?? "unknown"} />
-              <StatusRow label="Current device" value="This browser session" />
-            </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Supabase handles session issuance. CoFund should still keep a product-visible audit trail of key security actions, step-up requests, and future session/device changes.
-            </p>
           </Card>
         </section>
       </div>
@@ -195,4 +167,26 @@ function StatusRow({ label, value }: { label: string; value: string }) {
       <span className="font-semibold">{value}</span>
     </div>
   );
+}
+
+function StatusTile({ label, value, tone }: { label: string; value: string; tone: "good" | "warn" | "neutral" }) {
+  const toneClasses =
+    tone === "good"
+      ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
+      : tone === "warn"
+        ? "border-amber-500/20 bg-amber-500/5 text-amber-700 dark:text-amber-300"
+        : "border-border bg-background text-foreground";
+
+  return (
+    <div className={`rounded-2xl border px-4 py-3 ${toneClasses}`}>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 text-base font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function formatEventLabel(eventType: string) {
+  return eventType
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (match) => match.toUpperCase());
 }
