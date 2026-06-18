@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -224,6 +224,15 @@ function ProfilePage() {
                     <ShieldCheck className="h-3 w-3" /> Email verified
                   </span>
                 </div>
+                {profile?.username && (
+                  <Link
+                    to="/users/$username"
+                    params={{ username: profile.username }}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-foreground transition-colors"
+                  >
+                    <ExternalLink className="h-3 w-3" /> View public profile
+                  </Link>
+                )}
               </div>
             </div>
 

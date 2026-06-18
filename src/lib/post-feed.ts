@@ -9,6 +9,7 @@ export type FeedPost = {
   business_id?: string | null;
   profile: {
     full_name: string | null;
+    username?: string | null;
     avatar_url?: string | null;
   } | null;
 };
@@ -31,7 +32,7 @@ export async function fetchPostsWithAuthors(limit: number, businessId?: string) 
   const authorIds = [...new Set(posts.map((post) => post.author_id).filter(Boolean))];
   const { data: profiles, error: profileError } = await supabase
     .from("profiles")
-    .select("id,full_name,avatar_url")
+    .select("id,full_name,username,avatar_url")
     .in("id", authorIds);
 
   if (profileError) throw profileError;
@@ -41,6 +42,7 @@ export async function fetchPostsWithAuthors(limit: number, businessId?: string) 
       profile.id,
       {
         full_name: profile.full_name,
+        username: (profile as any).username ?? null,
         avatar_url: profile.avatar_url,
       },
     ]),

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -302,7 +302,13 @@ function RightSidebar() {
                   {(m.full_name ?? "U").charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold">{m.full_name}</p>
+                  {m.username ? (
+                    <Link to="/users/$username" params={{ username: m.username }} className="truncate text-sm font-bold hover:text-primary transition-colors">
+                      {m.full_name}
+                    </Link>
+                  ) : (
+                    <p className="truncate text-sm font-bold">{m.full_name}</p>
+                  )}
                   {m.username && (
                     <p className="truncate text-xs text-muted-foreground">@{m.username}</p>
                   )}
@@ -662,9 +668,15 @@ function PostCard({
 
         {/* Avatar col with optional thread line */}
         <div className="flex shrink-0 flex-col items-center">
-          <div className="gradient-brand flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
-            {authorName.charAt(0).toUpperCase()}
-          </div>
+          {authorHandle ? (
+            <Link to="/users/$username" params={{ username: authorHandle }} className="gradient-brand flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-primary-foreground transition hover:opacity-80">
+              {authorName.charAt(0).toUpperCase()}
+            </Link>
+          ) : (
+            <div className="gradient-brand flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
+              {authorName.charAt(0).toUpperCase()}
+            </div>
+          )}
           {showReplies && <div className="mt-1 w-0.5 flex-1 bg-border/60" />}
         </div>
 
@@ -674,7 +686,13 @@ function PostCard({
           {/* Header row */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-              <span className="text-[15px] font-bold leading-none">{authorName}</span>
+              {authorHandle ? (
+                <Link to="/users/$username" params={{ username: authorHandle }} className="text-[15px] font-bold leading-none hover:text-primary transition-colors">
+                  {authorName}
+                </Link>
+              ) : (
+                <span className="text-[15px] font-bold leading-none">{authorName}</span>
+              )}
               {authorHandle && (
                 <span className="text-sm text-muted-foreground">@{authorHandle}</span>
               )}

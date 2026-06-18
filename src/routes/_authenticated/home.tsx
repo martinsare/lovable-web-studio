@@ -194,14 +194,26 @@ function CommunityFeed() {
         <div className="divide-y divide-border/60">
           {data.map((p: any) => (
             <div key={p.id} className="flex items-start gap-3.5 py-5 first:pt-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full gradient-brand text-xs font-bold text-primary-foreground">
-                {(p.profile?.full_name ?? "U").charAt(0)}
-              </div>
+              {p.profile?.username ? (
+                <Link to="/users/$username" params={{ username: p.profile.username }} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full gradient-brand text-xs font-bold text-primary-foreground transition hover:opacity-80">
+                  {(p.profile?.full_name ?? "U").charAt(0)}
+                </Link>
+              ) : (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full gradient-brand text-xs font-bold text-primary-foreground">
+                  {(p.profile?.full_name ?? "U").charAt(0)}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
-                  <p className="text-sm font-semibold leading-none">
-                    {p.profile?.full_name ?? "Member"}
-                  </p>
+                  {p.profile?.username ? (
+                    <Link to="/users/$username" params={{ username: p.profile.username }} className="text-sm font-semibold leading-none hover:text-primary transition-colors">
+                      {p.profile?.full_name ?? "Member"}
+                    </Link>
+                  ) : (
+                    <p className="text-sm font-semibold leading-none">
+                      {p.profile?.full_name ?? "Member"}
+                    </p>
+                  )}
                   {p.created_at && (
                     <span className="text-[11px] text-muted-foreground">
                       {new Date(p.created_at).toLocaleDateString("en-GB", {
