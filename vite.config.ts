@@ -15,6 +15,11 @@ export default defineConfig({
   vite: {
     define: {
       // TanStack Start and some bundled dependencies expect a browser-safe process shim.
+      process: JSON.stringify({
+        env: {
+          NODE_ENV: process.env.NODE_ENV ?? "development",
+        },
+      }),
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "development"),
       "process.env": JSON.stringify({
         NODE_ENV: process.env.NODE_ENV ?? "development",
@@ -24,6 +29,11 @@ export default defineConfig({
       host: "0.0.0.0",
       port: 5000,
       strictPort: true,
+      hmr: {
+        host: "localhost",
+        clientPort: 5000,
+        protocol: "ws",
+      },
       allowedHosts: true,
     },
   },

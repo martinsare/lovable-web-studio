@@ -1,9 +1,9 @@
 import type { AppRole } from "@/hooks/use-auth";
 
-export type VerificationProvider = "undecided" | "sumsub" | "youverify" | "manual_review";
+export type VerificationProvider = "youverify";
 
 export type ComplianceInput = {
-  verificationProviderPreference: VerificationProvider;
+  verificationProviderPreference?: VerificationProvider;
   dateOfBirth: string;
   nationality: string;
   residentialAddress: string;
@@ -28,10 +28,7 @@ export type ComplianceInput = {
 };
 
 export const VERIFICATION_PROVIDER_OPTIONS = [
-  { value: "undecided", label: "Decide later" },
-  { value: "sumsub", label: "Sumsub" },
   { value: "youverify", label: "Youverify" },
-  { value: "manual_review", label: "Manual review first" },
 ] as const;
 
 export const ID_DOCUMENT_OPTIONS = [
@@ -74,7 +71,7 @@ export const NET_WORTH_OPTIONS = [
 ] as const;
 
 export function buildComplianceMetadata(roles: AppRole[], input: ComplianceInput) {
-  const providerPreference = input.verificationProviderPreference;
+  const providerPreference = input.verificationProviderPreference ?? "youverify";
   const requiresIndividualKyc =
     roles.includes("investor") ||
     roles.includes("business_owner") ||
@@ -132,10 +129,6 @@ export function buildComplianceMetadata(roles: AppRole[], input: ComplianceInput
       sanctionsConsent: input.sanctionsConsent,
     },
     vendorHints: {
-      sumsub: {
-        individualLevel: requiresIndividualKyc ? "cofund-individual-standard" : null,
-        companyLevel: requiresBusinessKyb ? "cofund-business-standard" : null,
-      },
       youverify: {
         workflows: [
           requiresIndividualKyc ? "kyc" : null,
