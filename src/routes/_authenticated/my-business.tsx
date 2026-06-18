@@ -17,10 +17,10 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import { toast } from "sonner";
 import { DocumentUploadDialog } from "@/components/document-upload-dialog";
 import { AppLayout } from "@/components/app-layout";
 import { PageShell } from "@/components/page-shell";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -70,6 +70,7 @@ function MyBusiness() {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
 
   async function uploadBusinessImage(
     file: File,
@@ -77,9 +78,9 @@ function MyBusiness() {
     field: "logo_url" | "cover_url",
     setUploading: (v: boolean) => void,
   ) {
-    if (file.size > 10 * 1024 * 1024) { toast.error("Image must be under 10 MB."); return; }
+    if (file.size > 10 * 1024 * 1024) { setNotice({ tone: "error", title: "Image too large", message: "Image must be under 10 MB." }); return; }
     if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Upload a JPG, PNG, or WebP image.");
+      setNotice({ tone: "error", title: "Unsupported image", message: "Upload a JPG, PNG, or WebP image." });
       return;
     }
     setUploading(true);
@@ -97,9 +98,9 @@ function MyBusiness() {
         .eq("id", businessId);
       if (updateErr) throw updateErr;
       await queryClient.invalidateQueries({ queryKey: ["my-business", user?.id] });
-      toast.success(`${field === "logo_url" ? "Logo" : "Cover image"} updated.`);
+      setNotice({ tone: "success", title: "Image updated", message: `${field === "logo_url" ? "Logo" : "Cover image"} updated.` });
     } catch (err: any) {
-      toast.error(err?.message ?? "Could not upload image.");
+      setNotice({ tone: "error", title: "Upload failed", message: err?.message ?? "Could not upload image." });
     } finally {
       setUploading(false);
     }
@@ -198,10 +199,10 @@ function MyBusiness() {
       );
     },
     onSuccess: async () => {
-      toast.success("KYB document uploaded securely.");
+      setNotice({ tone: "success", title: "Document uploaded", message: "KYB document uploaded securely." });
       await queryClient.invalidateQueries({ queryKey: ["my-business-entity-docs", primaryEntity?.id] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "We couldn't upload that document."),
+    onError: (e: any) => setNotice({ tone: "error", title: "Upload failed", message: e?.message ?? "We couldn't upload that document." }),
   });
 
   async function openDocument(doc: any) {
@@ -219,7 +220,7 @@ function MyBusiness() {
       if (!signedUrl) throw new Error("This document does not have a stored file yet.");
       window.open(signedUrl, "_blank", "noopener,noreferrer");
     } catch (e: any) {
-      toast.error(e?.message ?? "Unable to open that document.");
+      setNotice({ tone: "error", title: "Open failed", message: e?.message ?? "Unable to open that document." });
     }
   }
 
@@ -316,6 +317,14 @@ function MyBusiness() {
       }
     >
       <div className="bg-background pb-16">
+        {notice && (
+          <div className="mx-auto max-w-5xl px-4 pt-6 sm:px-6 lg:px-8">
+            <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+              <AlertTitle>{notice.title}</AlertTitle>
+              <AlertDescription>{notice.message}</AlertDescription>
+            </Alert>
+          </div>
+        )}
         {/* Business passport header */}
         {businesses.map((business: any) => (
           <div key={business.id} className="relative">

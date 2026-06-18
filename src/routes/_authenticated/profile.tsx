@@ -17,8 +17,8 @@ import {
   UserCheck,
   UserPlus,
 } from "lucide-react";
-import { toast } from "sonner";
 import { AppLayout } from "@/components/app-layout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,6 +144,7 @@ function ProfilePage() {
   const [qualificationSummary, setQualificationSummary] = useState("");
   const [applicationNote, setApplicationNote] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
 
   useEffect(() => {
     if (!mentorApplication) return;
@@ -197,12 +198,12 @@ function ProfilePage() {
       });
     },
     onSuccess: async () => {
-      toast.success("Mentor application submitted for review.");
+      setNotice({ tone: "success", title: "Mentor application submitted", message: "Your application is now in review." });
       setProofFile(null);
       await queryClient.invalidateQueries({ queryKey: ["mentor-application", user?.id] });
     },
     onError: (error: any) => {
-      toast.error(error?.message ?? "Unable to submit mentor application.");
+      setNotice({ tone: "error", title: "Submission failed", message: error?.message ?? "Unable to submit mentor application." });
     },
   });
 
@@ -216,7 +217,7 @@ function ProfilePage() {
       );
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (e: any) {
-      toast.error(e?.message ?? "Unable to open proof file.");
+      setNotice({ tone: "error", title: "Open failed", message: e?.message ?? "Unable to open proof file." });
     }
   };
 
@@ -228,6 +229,14 @@ function ProfilePage() {
   return (
     <AppLayout>
       <div className="min-h-full bg-background pb-16">
+        {notice && (
+          <div className="mx-auto max-w-5xl px-4 pt-6 sm:px-6 lg:px-8">
+            <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+              <AlertTitle>{notice.title}</AlertTitle>
+              <AlertDescription>{notice.message}</AlertDescription>
+            </Alert>
+          </div>
+        )}
         <div className="relative overflow-hidden border-b border-border/40">
           <div className="absolute inset-0 gradient-hero opacity-80" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_top_right,oklch(0.65_0.18_160/0.10),transparent)]" />

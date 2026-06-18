@@ -29,8 +29,8 @@ import {
 } from "@/lib/compliance";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
-import { toast } from "sonner";
 import logo from "@/assets/icon.png";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const Route = createFileRoute("/onboarding")({ ssr: false, head: () => ({ meta: [{ title: "Get started Ãƒâ€šÃ‚Â· CoFund" }] }), component: Onboarding });
 
@@ -292,6 +292,7 @@ function Onboarding() {
   const { user, loading, profile, refresh } = useAuth();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
   const [data, setData] = useState<OBData>(() => ({ ...INITIAL, fullName: typeof window !== "undefined" ? (user?.user_metadata?.full_name ?? "") : "" }));
 
   useEffect(() => {
@@ -444,10 +445,10 @@ function Onboarding() {
 
       window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
       await refresh();
-      toast.success("Welcome to CoFund!");
+      setNotice({ tone: "success", title: "Welcome to CoFund", message: "Your profile was saved successfully." });
       navigate({ to: "/home" });
     } catch (error: any) {
-      toast.error(error?.message ?? "Could not save profile");
+      setNotice({ tone: "error", title: "Could not save profile", message: error?.message ?? "Please check the form and try again." });
     } finally {
       setBusy(false);
     }
@@ -458,6 +459,14 @@ function Onboarding() {
       <div className="border-b border-border/40 px-6 py-4"><div className="mx-auto flex max-w-4xl items-center justify-between"><Link to="/" className="flex items-center gap-2.5"><img src={logo} alt="CoFund" className="h-8 w-8 object-contain" /><span className="font-display text-lg font-bold">CoFund</span></Link><span className="text-sm text-muted-foreground">Step {step} of 4</span></div></div>
       <div className="h-1 bg-border/40"><div className="h-1 gradient-brand transition-all duration-500" style={{ width: `${(step / 4) * 100}%` }} /></div>
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
+        {notice && (
+          <div className="mb-6">
+            <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+              <AlertTitle>{notice.title}</AlertTitle>
+              <AlertDescription>{notice.message}</AlertDescription>
+            </Alert>
+          </div>
+        )}
         {step === 1 && <StepIntent data={data} chooseIntent={chooseIntent} />}
         {step === 2 && <StepProfile data={data} set={set} track={primaryTrack} />}
         {step === 3 && <StepRoles data={data} track={primaryTrack} toggleRole={toggleRole} set={set} toggleChip={toggleChip} />}

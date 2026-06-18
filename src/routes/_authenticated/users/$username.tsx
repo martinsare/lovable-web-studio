@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/app-layout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   MapPin,
   Calendar,
@@ -16,7 +17,6 @@ import {
   BadgeCheck,
   MessageCircle,
 } from "lucide-react";
-import { toast } from "sonner";
 
 const db = supabase as any;
 
@@ -32,6 +32,7 @@ function UserProfilePage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<ProfileTab>("overview");
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
 
   const profileQK = ["user-profile", username];
   const followQK = ["is-following", user?.id, username];
@@ -145,7 +146,7 @@ function UserProfilePage() {
       if (ctx?.prevFollow !== undefined) qc.setQueryData(followQK, ctx.prevFollow);
       if (ctx?.prevCount !== undefined)
         qc.setQueryData(["follower-count", profile?.id], ctx.prevCount);
-      toast.error("Could not update follow status.");
+      setNotice({ tone: "error", title: "Follow update failed", message: "Could not update follow status." });
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: followQK });
@@ -175,6 +176,14 @@ function UserProfilePage() {
 
   return (
     <AppLayout>
+      {notice && (
+        <div className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 lg:px-8">
+          <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+            <AlertTitle>{notice.title}</AlertTitle>
+            <AlertDescription>{notice.message}</AlertDescription>
+          </Alert>
+        </div>
+      )}
       {/* ── Banner ── */}
       <div className="relative h-36 w-full overflow-hidden sm:h-48">
         <div className="gradient-mesh h-full w-full" />
@@ -286,7 +295,7 @@ function UserProfilePage() {
               </Link>
             ) : (
               <>
-                <MessageButton userId={user?.id ?? ""} otherUserId={profile.id} />
+                <MessageButton userId={user?.id ?? ""} otherUserId={profile.id} setNotice={setNotice} />
                 <button
                   onClick={() => followMutation.mutate(!isFollowing)}
                   disabled={followMutation.isPending}
@@ -516,7 +525,7 @@ function FollowersList({
   return (
     <div className="divide-y divide-border/60 max-w-2xl">
       {users.map((u: any) => (
-        <UserRow key={u.id} user={u} currentUserId={currentUserId} />
+        <UserRow key={u.id} user={u} currentUserId={currentUserId} setNotice={setNotice} />
       ))}
     </div>
   );
@@ -525,6 +534,7 @@ function FollowersList({
 function UserRow({
   user,
   currentUserId,
+  setNotice,
 }: {
   user: {
     id: string;
@@ -536,6 +546,7 @@ function UserRow({
     roles: string[];
   };
   currentUserId: string | undefined;
+  setNotice: (notice: { tone: "success" | "error"; title: string; message: string } | null) => void;
 }) {
   const qc = useQueryClient();
   const followQK = ["is-following", currentUserId, user.id];
@@ -578,7 +589,7 @@ function UserRow({
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev !== undefined) qc.setQueryData(followQK, ctx.prev);
-      toast.error("Could not update follow status.");
+      setNotice({ tone: "error", title: "Follow update failed", message: "Could not update follow status." });
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: followQK });
@@ -657,7 +668,15 @@ function UserRow({
   );
 }
 
-function MessageButton({ userId, otherUserId }: { userId: string; otherUserId: string }) {
+function MessageButton({
+  userId,
+  otherUserId,
+  setNotice,
+}: {
+  userId: string;
+  otherUserId: string;
+  setNotice: (notice: { tone: "success" | "error"; title: string; message: string } | null) => void;
+}) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -688,7 +707,7 @@ function MessageButton({ userId, otherUserId }: { userId: string; otherUserId: s
       }
       navigate({ to: "/messages/$conversationId", params: { conversationId } });
     } catch {
-      toast.error("Could not open conversation");
+      setNotice({ tone: "error", title: "Message failed", message: "Could not open conversation." });
     } finally {
       setLoading(false);
     }

@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, ShieldCheck, ChevronRight } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -28,6 +28,7 @@ function SuitabilityPage() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
   const [answers, setAnswers] = useState<SuitabilityAnswerSet>({
     jurisdiction: profile?.country ?? "Nigeria",
     experienceLevel: "",
@@ -106,10 +107,10 @@ function SuitabilityPage() {
       if (profileError) throw profileError;
     },
     onSuccess: async () => {
-      toast.success("Assessment saved.");
+      setNotice({ tone: "success", title: "Assessment saved", message: "Your suitability assessment was saved." });
       await queryClient.invalidateQueries({ queryKey: ["suitability", user?.id] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Unable to save the assessment."),
+    onError: (e: any) => setNotice({ tone: "error", title: "Save failed", message: e?.message ?? "Unable to save the assessment." }),
   });
 
   function patch(update: Partial<SuitabilityAnswerSet>) {
@@ -137,6 +138,14 @@ function SuitabilityPage() {
       description="Private-market investing stays behind a real suitability screen. This records your experience, loss capacity, time horizon, and risk tolerance before capital moves."
     >
       <div className="max-w-4xl">
+          {notice && (
+            <div className="mb-6">
+              <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+                <AlertTitle>{notice.title}</AlertTitle>
+                <AlertDescription>{notice.message}</AlertDescription>
+              </Alert>
+            </div>
+          )}
 
           {/* Previous assessment banner */}
           {latestAssessment && (

@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReferenceData, useRefValues } from "@/hooks/use-reference-data";
-import { toast } from "sonner";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -16,6 +15,7 @@ import {
   Building2,
 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney } from "@/lib/investment-checkout";
@@ -32,7 +32,7 @@ type Modal = "none" | "deposit" | "withdraw";
 
 
 function copyText(text: string, label = "Copied") {
-  navigator.clipboard.writeText(text).then(() => toast.success(label));
+  navigator.clipboard.writeText(text);
 }
 
 function WalletPage() {
@@ -54,6 +54,7 @@ function WalletPage() {
   const [withdrawBank, setWithdrawBank] = useState("");
   const [withdrawAccNum, setWithdrawAccNum] = useState("");
   const [withdrawAccName, setWithdrawAccName] = useState("");
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
 
   function openDeposit() {
     setDepositStep("amount");
@@ -162,8 +163,9 @@ function WalletPage() {
         queryClient.invalidateQueries({ queryKey: ["wallet", user?.id] }),
       ]);
       setDepositStep("done");
+      setNotice({ tone: "success", title: "Deposit request created", message: "Your deposit request is now in review." });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Could not record deposit request."),
+    onError: (e: any) => setNotice({ tone: "error", title: "Deposit failed", message: e?.message ?? "Could not record deposit request." }),
   });
 
   const createWithdrawal = useMutation({
@@ -192,8 +194,9 @@ function WalletPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["wallet", "withdrawals", user?.id] });
       setWithdrawStep("done");
+      setNotice({ tone: "success", title: "Withdrawal request created", message: "Your withdrawal request is now in review." });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Unable to create withdrawal request."),
+    onError: (e: any) => setNotice({ tone: "error", title: "Withdrawal failed", message: e?.message ?? "Unable to create withdrawal request." }),
   });
 
   function generateRef(): string {
@@ -202,7 +205,7 @@ function WalletPage() {
 
   function handleDepositContinue() {
     const amount = Number(depositAmount.replace(/,/g, ""));
-    if (!amount || amount < 1000) { toast.error("Minimum deposit is ₦1,000."); return; }
+    if (!amount || amount < 1000) { setNotice({ tone: "error", title: "Invalid amount", message: "Minimum deposit is ₦1,000." }); return; }
     const ref = generateRef();
     setDepositRef(ref);
     setDepositStep("details");
@@ -222,6 +225,14 @@ function WalletPage() {
     <AppLayout>
       <div className="min-h-full bg-background">
         <div className="mx-auto max-w-xl px-4 py-8 sm:px-6">
+          {notice && (
+            <div className="mb-6">
+              <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+                <AlertTitle>{notice.title}</AlertTitle>
+                <AlertDescription>{notice.message}</AlertDescription>
+              </Alert>
+            </div>
+          )}
 
           {/* Balance card */}
           <div
@@ -558,11 +569,11 @@ function WalletPage() {
                   type="button"
                   onClick={() => {
                     const amt = Number(withdrawAmount.replace(/,/g, ""));
-                    if (!amt || amt < 100) { toast.error("Enter a valid amount."); return; }
-                    if (amt > available) { toast.error("Exceeds available balance."); return; }
-                    if (!withdrawBank) { toast.error("Select your bank."); return; }
-                    if (withdrawAccNum.length !== 10) { toast.error("Account number must be 10 digits."); return; }
-                    if (!withdrawAccName.trim()) { toast.error("Account name is required."); return; }
+                    if (!amt || amt < 100) { setNotice({ tone: "error", title: "Invalid amount", message: "Enter a valid amount." }); return; }
+                    if (amt > available) { setNotice({ tone: "error", title: "Insufficient balance", message: "Exceeds available balance." }); return; }
+                    if (!withdrawBank) { setNotice({ tone: "error", title: "Bank required", message: "Select your bank." }); return; }
+                    if (withdrawAccNum.length !== 10) { setNotice({ tone: "error", title: "Invalid account number", message: "Account number must be 10 digits." }); return; }
+                    if (!withdrawAccName.trim()) { setNotice({ tone: "error", title: "Account name required", message: "Account name is required." }); return; }
                     setWithdrawStep("review");
                   }}
                   className="w-full gradient-brand rounded-2xl py-4 text-sm font-bold text-primary-foreground shadow-brand"

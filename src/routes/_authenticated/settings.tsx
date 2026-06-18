@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReferenceData, useRefValues } from "@/hooks/use-reference-data";
-import { toast } from "sonner";
 import {
   Bell,
   Camera,
@@ -20,6 +19,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +64,7 @@ function SettingsPage() {
   const [linkedinUrl, setLinkedinUrl] = useState((profile as any)?.linkedin_url ?? "");
   const [avatarUrl, setAvatarUrl] = useState((profile as any)?.avatar_url ?? "");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -83,11 +84,11 @@ function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5 MB.");
+      setNotice({ tone: "error", title: "Image too large", message: "Image must be under 5 MB." });
       return;
     }
     if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Upload a JPG, PNG, or WebP image.");
+      setNotice({ tone: "error", title: "Unsupported image", message: "Upload a JPG, PNG, or WebP image." });
       return;
     }
     setUploadingAvatar(true);
@@ -106,9 +107,9 @@ function SettingsPage() {
       if (updateErr) throw updateErr;
       setAvatarUrl(publicUrl);
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success("Profile picture updated.");
+      setNotice({ tone: "success", title: "Profile picture updated", message: "Your avatar was updated." });
     } catch (err: any) {
-      toast.error(err?.message ?? "Could not upload image.");
+      setNotice({ tone: "error", title: "Upload failed", message: err?.message ?? "Could not upload image." });
     } finally {
       setUploadingAvatar(false);
       if (avatarInputRef.current) avatarInputRef.current.value = "";
@@ -195,7 +196,7 @@ function SettingsPage() {
         { onConflict: "user_id" },
       );
     }
-    toast.success("Notification preference saved.");
+    setNotice({ tone: "success", title: "Saved", message: "Notification preference saved." });
   }
 
   async function patchInvest(update: Partial<typeof investPrefs>) {
@@ -239,10 +240,10 @@ function SettingsPage() {
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success("Profile saved.");
+      setNotice({ tone: "success", title: "Profile saved", message: "Your profile changes were saved." });
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Could not save."),
+    onError: (e: any) => setNotice({ tone: "error", title: "Save failed", message: e?.message ?? "Could not save." }),
   });
 
   async function handleSignOut() {
@@ -254,6 +255,14 @@ function SettingsPage() {
     <AppLayout>
       <div className="min-h-full bg-background">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+          {notice && (
+            <div className="mb-6">
+              <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+                <AlertTitle>{notice.title}</AlertTitle>
+                <AlertDescription>{notice.message}</AlertDescription>
+              </Alert>
+            </div>
+          )}
 
           {/* Page title */}
           <div className="mb-8">
@@ -657,7 +666,7 @@ function SettingsPage() {
                     >
                       <button
                         type="button"
-                        onClick={() => toast.error("To delete your account, contact support@cofund.africa with your registered email.", { duration: 6000 })}
+                        onClick={() => setNotice({ tone: "error", title: "Account deletion", message: "To delete your account, contact support@cofund.africa with your registered email." })}
                         className="rounded-xl border border-destructive/40 px-4 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 transition"
                       >
                         Request deletion

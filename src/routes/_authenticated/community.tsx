@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useReferenceData, useRefValues } from "@/hooks/use-reference-data";
 import { AppLayout } from "@/components/app-layout";
-import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   MessageCircle,
   Heart,
@@ -143,10 +143,23 @@ async function fetchEnrichedPosts(
 function CommunityPage() {
   const [tab, setTab] = useState<Tab>("feed");
   const [circleFilter, setCircleFilter] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
+
+  function showNotice(tone: "success" | "error", title: string, message: string) {
+    setNotice({ tone, title, message });
+  }
 
   return (
     <AppLayout>
       <div className="flex min-h-full flex-col">
+        {notice && (
+          <div className="border-b border-border bg-background/95 px-4 py-4 sm:px-6 lg:px-8">
+            <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+              <AlertTitle>{notice.title}</AlertTitle>
+              <AlertDescription>{notice.message}</AlertDescription>
+            </Alert>
+          </div>
+        )}
 
         {/* ── Page header ── */}
         <div className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-xl">
@@ -185,12 +198,12 @@ function CommunityPage() {
               ))}
             </div>
 
-            {tab === "feed" && <FeedTab />}
-            {tab === "startup-hub" && <StartupHubTab />}
+            {tab === "feed" && <FeedTab onNotice={showNotice} />}
+            {tab === "startup-hub" && <StartupHubTab onNotice={showNotice} />}
             {tab === "trending" && <TrendingTab />}
             {tab === "knowledge" && <KnowledgeTab />}
             {tab === "circles" && (
-              <CirclesTab circleFilter={circleFilter} setCircleFilter={setCircleFilter} />
+              <CirclesTab circleFilter={circleFilter} setCircleFilter={setCircleFilter} onNotice={showNotice} />
             )}
           </div>
 
@@ -351,10 +364,12 @@ function XCompose({
   onPosted,
   defaultCategory = "discussion",
   placeholder,
+  onNotice,
 }: {
   onPosted: () => void;
   defaultCategory?: string;
   placeholder?: string;
+  onNotice: (tone: "success" | "error", title: string, message: string) => void;
 }) {
   const { user, profile } = useAuth();
   const [content, setContent] = useState("");
@@ -371,10 +386,10 @@ function XCompose({
       .from("posts")
       .insert({ author_id: user.id, content: content.trim(), category });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { onNotice("error", "Could not post", error.message); return; }
     setContent("");
     onPosted();
-    toast.success("Posted!");
+    onNotice("success", "Posted", "Your post is now live.");
   }
 
   return (
@@ -435,12 +450,14 @@ function CommentThread({
   userInitial,
   authorName,
   onCountChange,
+  onNotice,
 }: {
   postId: string;
   userId: string;
   userInitial: string;
   authorName: string;
   onCountChange: (fn: (n: number) => number) => void;
+  onNotice: (tone: "success" | "error", title: string, message: string) => void;
 }) {
   const qc = useQueryClient();
   const qk = ["comments", postId];
@@ -475,26 +492,28 @@ function CommentThread({
       .from("post_comments")
       .insert({ post_id: postId, author_id: userId, content: newComment.trim() });
     setSending(false);
-    if (error) { toast.error("Could not post reply."); return; }
+    if (error) { onNotice("error", "Reply failed", "Could not post reply."); return; }
     setNewComment("");
     qc.invalidateQueries({ queryKey: qk });
     onCountChange((n) => n + 1);
+    onNotice("success", "Reply posted", "Your reply has been added.");
   }
 
   async function saveEdit(id: string) {
     if (!editText.trim()) return;
     const { error } = await supabase.from("post_comments").update({ content: editText.trim() }).eq("id", id);
-    if (error) { toast.error("Could not update."); return; }
+    if (error) { onNotice("error", "Update failed", "Could not update."); return; }
     setEditingId(null);
     qc.invalidateQueries({ queryKey: qk });
+    onNotice("success", "Reply updated", "Your reply was updated.");
   }
 
   async function deleteComment(id: string) {
     const { error } = await supabase.from("post_comments").delete().eq("id", id);
-    if (error) { toast.error("Could not delete."); return; }
+    if (error) { onNotice("error", "Delete failed", "Could not delete."); return; }
     qc.invalidateQueries({ queryKey: qk });
     onCountChange((n) => Math.max(0, n - 1));
-    toast.success("Reply deleted.");
+    onNotice("success", "Reply deleted", "Your reply was removed.");
   }
 
   return (
@@ -605,11 +624,13 @@ function PostCard({
   userId,
   userInitial,
   qk,
+  onNotice,
 }: {
   post: PostData;
   userId: string;
   userInitial: string;
   qk: unknown[];
+  onNotice: (tone: "success" | "error", title: string, message: string) => void;
 }) {
   const qc = useQueryClient();
   const [liked, setLiked] = useState(post.liked_by_me);
@@ -628,7 +649,6 @@ function PostCard({
   async function toggleBookmark() {
     const was = bookmarked;
     setBookmarked(!was);
-    toast.success(was ? "Removed from bookmarks" : "Saved to bookmarks");
     if (was) {
       await supabase
         .from("post_bookmarks")
@@ -640,11 +660,12 @@ function PostCard({
         .from("post_bookmarks")
         .insert({ post_id: post.id, user_id: userId });
     }
+    onNotice("success", was ? "Removed bookmark" : "Saved bookmark", was ? "Post removed from bookmarks." : "Post saved to bookmarks.");
   }
 
   function sharePost() {
     const text = `${authorName} on CoFund: "${post.content.slice(0, 120)}${post.content.length > 120 ? "…" : ""}"`;
-    navigator.clipboard?.writeText(text).then(() => toast.success("Copied to clipboard"));
+    navigator.clipboard?.writeText(text).then(() => onNotice("success", "Copied", "Post text copied to clipboard."));
   }
 
   async function toggleLike() {
@@ -661,17 +682,17 @@ function PostCard({
   async function saveEdit() {
     if (!editText.trim() || editText.trim() === post.content) { setEditing(false); return; }
     const { error } = await supabase.from("posts").update({ content: editText.trim() }).eq("id", post.id);
-    if (error) { toast.error("Could not save."); return; }
+    if (error) { onNotice("error", "Could not save", "Could not save."); return; }
     setEditing(false);
     qc.invalidateQueries({ queryKey: qk });
-    toast.success("Post updated.");
+    onNotice("success", "Post updated", "Your post was updated.");
   }
 
   async function deletePost() {
     const { error } = await supabase.from("posts").delete().eq("id", post.id);
-    if (error) { toast.error("Could not delete."); return; }
+    if (error) { onNotice("error", "Could not delete", "Could not delete."); return; }
     qc.invalidateQueries({ queryKey: qk });
-    toast.success("Post deleted.");
+    onNotice("success", "Post deleted", "Your post was deleted.");
   }
 
   return (
@@ -832,6 +853,7 @@ function PostCard({
               userInitial={userInitial}
               authorName={authorName}
               onCountChange={setCommentCount}
+              onNotice={onNotice}
             />
           )}
         </div>
@@ -849,12 +871,14 @@ function PostList({
   userInitial,
   qk,
   emptyMessage,
+  onNotice,
 }: {
   posts: PostData[];
   userId: string;
   userInitial: string;
   qk: unknown[];
   emptyMessage?: string;
+  onNotice: (tone: "success" | "error", title: string, message: string) => void;
 }) {
   if (posts.length === 0) {
     return (
@@ -870,7 +894,7 @@ function PostList({
   return (
     <div>
       {posts.map((p) => (
-        <PostCard key={p.id} post={p} userId={userId} userInitial={userInitial} qk={qk} />
+        <PostCard key={p.id} post={p} userId={userId} userInitial={userInitial} qk={qk} onNotice={onNotice} />
       ))}
     </div>
   );
@@ -904,7 +928,7 @@ function FeedSkeleton() {
 // ─────────────────────────────────────────────────────────────
 //  Tab views
 // ─────────────────────────────────────────────────────────────
-function FeedTab() {
+function FeedTab({ onNotice }: { onNotice: (tone: "success" | "error", title: string, message: string) => void }) {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const userId = user?.id ?? "";
@@ -919,16 +943,16 @@ function FeedTab() {
 
   return (
     <div>
-      <XCompose onPosted={() => qc.invalidateQueries({ queryKey: qk })} />
+      <XCompose onPosted={() => qc.invalidateQueries({ queryKey: qk })} onNotice={onNotice} />
       {isLoading ? <FeedSkeleton /> : (
-        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk}
+        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk} onNotice={onNotice}
           emptyMessage="Be the first to share something with the community." />
       )}
     </div>
   );
 }
 
-function StartupHubTab() {
+function StartupHubTab({ onNotice }: { onNotice: (tone: "success" | "error", title: string, message: string) => void }) {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const userId = user?.id ?? "";
@@ -953,9 +977,10 @@ function StartupHubTab() {
         defaultCategory="startup"
         placeholder="Share your startup idea or connect with the ecosystem…"
         onPosted={() => qc.invalidateQueries({ queryKey: qk })}
+        onNotice={onNotice}
       />
       {isLoading ? <FeedSkeleton /> : (
-        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk}
+        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk} onNotice={onNotice}
           emptyMessage="No startup posts yet — share your idea first." />
       )}
     </div>
@@ -1048,9 +1073,11 @@ function KnowledgeTab() {
 function CirclesTab({
   circleFilter,
   setCircleFilter,
+  onNotice,
 }: {
   circleFilter: string | null;
   setCircleFilter: (v: string | null) => void;
+  onNotice: (tone: "success" | "error", title: string, message: string) => void;
 }) {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
@@ -1106,9 +1133,10 @@ function CirclesTab({
         defaultCategory={circle?.metadata?.cat ?? circleFilter.toLowerCase()}
         placeholder={`Post about ${circleFilter}…`}
         onPosted={() => qc.invalidateQueries({ queryKey: qk })}
+        onNotice={onNotice}
       />
       {isLoading ? <FeedSkeleton /> : (
-        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk}
+        <PostList posts={data} userId={userId} userInitial={userInitial} qk={qk} onNotice={onNotice}
           emptyMessage={`No posts in ${circleFilter} yet.`} />
       )}
     </div>

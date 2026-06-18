@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -47,6 +47,7 @@ function InvestmentCheckoutPage() {
   const [acceptRisk, setAcceptRisk] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [result, setResult] = useState<CheckoutResponse | null>(null);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
 
   const { data: opportunity, isLoading } = useQuery({
     queryKey: ["checkout", "opportunity", opportunityId],
@@ -122,12 +123,12 @@ function InvestmentCheckoutPage() {
     },
     onSuccess: (data) => {
       setResult(data);
-      toast.success(`${getRailLabel(data.rail)} instructions created`);
+      setNotice({ tone: "success", title: "Instructions created", message: `${getRailLabel(data.rail)} instructions created.` });
       void queryClient.invalidateQueries({ queryKey: ["portfolio", "commitments"] });
       void queryClient.invalidateQueries({ queryKey: ["checkout", "wallet", user?.id] });
     },
     onError: (error: any) => {
-      toast.error(error?.message ?? "We couldn't create that commitment.");
+      setNotice({ tone: "error", title: "Could not create commitment", message: error?.message ?? "We couldn't create that commitment." });
     },
   });
 
@@ -178,6 +179,14 @@ function InvestmentCheckoutPage() {
         </div>
 
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+          {notice && (
+            <div className="mb-6">
+              <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+                <AlertTitle>{notice.title}</AlertTitle>
+                <AlertDescription>{notice.message}</AlertDescription>
+              </Alert>
+            </div>
+          )}
           {/* Success state */}
           {result && (
             <SuccessPanel result={result} opportunityId={opportunityId} />

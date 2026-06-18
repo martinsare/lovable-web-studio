@@ -5,10 +5,10 @@ import { usePlatformStats, fmtInvestors } from "@/hooks/use-platform-stats";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import logo from "@/assets/icon.png";
 import { useAuth } from "@/hooks/use-auth";
 import { ShieldCheck, BadgeCheck, TrendingUp, ArrowRight, Eye, EyeOff, CheckCircle2, Circle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
@@ -44,6 +44,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [magicBusy, setMagicBusy] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
 
   const checks = getChecks(password);
   const strongEnough = checks.every((c) => c.valid);
@@ -56,6 +57,7 @@ function AuthPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setNotice(null);
     setBusy(true);
     try {
       if (mode === "signup") {
@@ -69,22 +71,25 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Account created! Check your email to verify.");
+        setNotice({ tone: "success", title: "Account created", message: "Check your email to verify your account." });
         navigate({ to: "/auth", search: { mode: "signin" } });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success("Welcome back!");
       }
     } catch (err: any) {
-      toast.error(err.message ?? "Authentication failed");
+      setNotice({ tone: "error", title: "Authentication failed", message: err.message ?? "Something went wrong." });
     } finally {
       setBusy(false);
     }
   }
 
   async function sendMagicLink() {
-    if (!email) { toast.error("Enter your email first"); return; }
+    if (!email) {
+      setNotice({ tone: "error", title: "Email required", message: "Enter your email first." });
+      return;
+    }
+    setNotice(null);
     setMagicBusy(true);
     try {
       const { error } = await supabase.auth.signInWithOtp({
@@ -92,25 +97,29 @@ function AuthPage() {
         options: { shouldCreateUser: false, emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
       });
       if (error) throw error;
-      toast.success("Magic link sent — check your inbox");
+      setNotice({ tone: "success", title: "Magic link sent", message: "Check your inbox for the sign-in link." });
     } catch (err: any) {
-      toast.error(err.message ?? "Could not send magic link");
+      setNotice({ tone: "error", title: "Could not send magic link", message: err.message ?? "Try again in a moment." });
     } finally {
       setMagicBusy(false);
     }
   }
 
   async function sendReset() {
-    if (!email) { toast.error("Enter your email first"); return; }
+    if (!email) {
+      setNotice({ tone: "error", title: "Email required", message: "Enter your email first." });
+      return;
+    }
+    setNotice(null);
     setResetBusy(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
       });
       if (error) throw error;
-      toast.success("Reset link sent — check your inbox");
+      setNotice({ tone: "success", title: "Reset link sent", message: "Check your inbox for the password reset email." });
     } catch (err: any) {
-      toast.error(err.message ?? "Could not send reset email");
+      setNotice({ tone: "error", title: "Could not send reset email", message: err.message ?? "Try again in a moment." });
     } finally {
       setResetBusy(false);
     }
@@ -235,6 +244,15 @@ function AuthPage() {
                 </motion.div>
               </AnimatePresence>
             </motion.div>
+
+            {notice && (
+              <motion.div variants={fadeUp} transition={{ duration: 0.35, ease: EASE }} className="mt-6">
+                <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+                  <AlertTitle>{notice.title}</AlertTitle>
+                  <AlertDescription>{notice.message}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
 
             <motion.form
               variants={fadeUp}

@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   ArrowLeft,
   ArrowRight,
@@ -57,6 +57,7 @@ function OfferingRoomPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [updateTitle, setUpdateTitle] = useState("");
   const [updateBody, setUpdateBody] = useState("");
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
 
   const { data: opportunity } = useQuery({
     queryKey: ["offering-room", "opportunity", opportunityId],
@@ -167,12 +168,10 @@ function OfferingRoomPage() {
       );
     },
     onSuccess: async () => {
-      toast.success("Offering document uploaded securely.");
+      setNotice({ tone: "success", title: "Document uploaded", message: "Offering document uploaded securely." });
       await queryClient.invalidateQueries({ queryKey: ["offering-room", "documents", opportunityId] });
     },
-    onError: (error: any) => {
-      toast.error(error?.message ?? "Unable to upload that offering document.");
-    },
+    onError: (error: any) => setNotice({ tone: "error", title: "Upload failed", message: error?.message ?? "Unable to upload that offering document." }),
   });
 
   const publishUpdate = useMutation({
@@ -212,14 +211,12 @@ function OfferingRoomPage() {
       );
     },
     onSuccess: async () => {
-      toast.success("Issuer update published and investors notified.");
+      setNotice({ tone: "success", title: "Update published", message: "Issuer update published and investors notified." });
       setUpdateTitle("");
       setUpdateBody("");
       await queryClient.invalidateQueries({ queryKey: ["offering-room", "updates", opportunityId] });
     },
-    onError: (error: any) => {
-      toast.error(error?.message ?? "Unable to publish that issuer update.");
-    },
+    onError: (error: any) => setNotice({ tone: "error", title: "Publish failed", message: error?.message ?? "Unable to publish that issuer update." }),
   });
 
   async function openDocument(doc: any) {
@@ -239,7 +236,7 @@ function OfferingRoomPage() {
       if (!signedUrl) throw new Error("This document does not have a stored file yet.");
       window.open(signedUrl, "_blank", "noopener,noreferrer");
     } catch (error: any) {
-      toast.error(error?.message ?? "Unable to open that document right now.");
+      setNotice({ tone: "error", title: "Open failed", message: error?.message ?? "Unable to open that document right now." });
     }
   }
 
@@ -276,6 +273,16 @@ function OfferingRoomPage() {
   return (
     <AppLayout>
       <div className="min-h-full bg-background">
+        {notice && (
+          <div className="border-b border-border/60 bg-background/95 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-6xl">
+              <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+                <AlertTitle>{notice.title}</AlertTitle>
+                <AlertDescription>{notice.message}</AlertDescription>
+              </Alert>
+            </div>
+          </div>
+        )}
 
         {/* ── Sticky top bar ── */}
         <div className="sticky top-0 z-20 border-b border-border/60 bg-background/90 backdrop-blur-xl">

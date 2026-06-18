@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   ArrowUpRight,
   CreditCard,
@@ -50,6 +50,7 @@ function PortfolioPage() {
   const readiness = buildInvestmentReadiness({ profile, roles, security });
   const workflow = getInvestmentWorkflow();
   const [docTab, setDocTab] = useState<DocTab>("statements");
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
 
   const { data: commitments = [] } = useQuery({
     enabled: !!user?.id,
@@ -128,7 +129,7 @@ function PortfolioPage() {
       if (!signedUrl) throw new Error("Statement file not available yet.");
       window.open(signedUrl, "_blank", "noopener,noreferrer");
     } catch (error: any) {
-      toast.error(error?.message ?? "Unable to open that statement.");
+      setNotice({ tone: "error", title: "Open failed", message: error?.message ?? "Unable to open that statement." });
     }
   }
 
@@ -147,6 +148,14 @@ function PortfolioPage() {
   return (
     <AppLayout>
       <div className="min-h-full bg-background pb-16">
+        {notice && (
+          <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+            <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+              <AlertTitle>{notice.title}</AlertTitle>
+              <AlertDescription>{notice.message}</AlertDescription>
+            </Alert>
+          </div>
+        )}
         <div className="relative overflow-hidden border-b border-border/40">
           <div className="absolute inset-0 gradient-hero opacity-70" />
           <div className="relative mx-auto max-w-6xl px-4 pt-8 pb-0 sm:px-6 lg:px-8">

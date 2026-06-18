@@ -3,7 +3,7 @@ import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Mail, MapPin, MessageSquare } from "lucide-react";
-import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -19,9 +19,18 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
+      {notice && (
+        <div className="mx-auto max-w-5xl px-4 pt-6 sm:px-6 lg:px-8">
+          <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+            <AlertTitle>{notice.title}</AlertTitle>
+            <AlertDescription>{notice.message}</AlertDescription>
+          </Alert>
+        </div>
+      )}
       <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 -z-10 gradient-mesh opacity-70" />
         <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
@@ -46,7 +55,7 @@ function ContactPage() {
               setBusy(true);
               setTimeout(() => {
                 setBusy(false);
-                toast.success("Thanks — we'll be in touch.");
+                setNotice({ tone: "success", title: "Message sent", message: "Thanks - we'll be in touch." });
                 (e.target as HTMLFormElement).reset();
               }, 600);
             }}

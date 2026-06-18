@@ -2,9 +2,9 @@
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Building2, CheckCircle2, CircleDollarSign, ExternalLink, FileCheck2, FileWarning, FolderOpen, GraduationCap, ShieldCheck, Users, XCircle } from "lucide-react";
 import { PageShell, EmptyState } from "@/components/page-shell";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +43,7 @@ function AdminOperationsPage() {
 
 function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
   const queryClient = useQueryClient();
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; title: string; message: string } | null>(null);
   const [statementTitle, setStatementTitle] = useState("");
   const [statementType, setStatementType] = useState("Investment statement");
   const [statementNote, setStatementNote] = useState("");
@@ -146,6 +147,10 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
 
   const pendingDocuments = useMemo(() => [...entityDocs, ...offeringDocs].filter((doc) => ["draft", "uploaded"].includes(doc.status)), [entityDocs, offeringDocs]);
 
+  function showNotice(tone: "success" | "error", title: string, message: string) {
+    setNotice({ tone, title, message });
+  }
+
   async function logAudit(payload: { targetTable: string; targetId?: string | null; action: string; severity?: string; note: string; suspicious?: boolean; metadata?: Record<string, unknown> }) {
     if (!actorUserId) return;
     await (supabase as any).from("admin_audit_events").insert({
@@ -166,7 +171,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       if (!signedUrl) throw new Error("This document is missing its stored file.");
       window.open(signedUrl, "_blank", "noopener,noreferrer");
     } catch (error: any) {
-      toast.error(error?.message ?? "Unable to open that document.");
+      showNotice("error", "Document open failed", error?.message ?? "Unable to open that document.");
     }
   }
 
@@ -179,7 +184,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       if (!signedUrl) throw new Error("This application is missing its uploaded proof.");
       window.open(signedUrl, "_blank", "noopener,noreferrer");
     } catch (error: any) {
-      toast.error(error?.message ?? "Unable to open mentor proof.");
+      showNotice("error", "Proof open failed", error?.message ?? "Unable to open mentor proof.");
     }
   }
 
@@ -191,7 +196,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
         response_payload: { ...(session.response_payload ?? {}), reviewed_from: "admin_console", reviewed_at: new Date().toISOString() },
       })
       .eq("id", session.id);
-    if (error) return toast.error(error.message);
+    if (error) return showNotice("error", "Verification update failed", error.message);
 
     if (session.subject_type === "business_entity" && session.business_entity_id) {
       await (supabase as any).from("business_entities").update({ verification_status: status }).eq("id", session.business_entity_id);
@@ -225,7 +230,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       suspicious: status === "rejected",
     });
 
-    toast.success(`Verification session marked ${status.replace("_", " ")}`);
+    showNotice("success", "Verification updated", `Session marked ${status.replace("_", " ")}.`);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["admin", "verification-sessions"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "business-entities"] }),
@@ -241,7 +246,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       .from(table)
       .update({ status, reviewed_by: actorUserId, reviewed_at: new Date().toISOString(), review_note: reviewNote })
       .eq("id", doc.id);
-    if (error) return toast.error(error.message);
+    if (error) return showNotice("error", "Document update failed", error.message);
 
     const recipientId = doc.uploader_user_id ?? doc.user_id;
     if (recipientId) {
@@ -265,7 +270,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       suspicious: status === "rejected",
     });
 
-    toast.success(`Document marked ${status}.`);
+    showNotice("success", "Document updated", `Document marked ${status}.`);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["admin", "entity-documents"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "offering-documents"] }),
@@ -292,7 +297,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", application.id);
-    if (error) return toast.error(error.message);
+    if (error) return showNotice("error", "Mentor application update failed", error.message);
 
     if (status === "approved") {
       const { data: existingRole } = await supabase
@@ -303,7 +308,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
         .maybeSingle();
       if (!existingRole) {
         const { error: roleError } = await supabase.from("user_roles").insert({ user_id: application.user_id, role: "mentor" });
-        if (roleError) return toast.error(roleError.message);
+        if (roleError) return showNotice("error", "Role update failed", roleError.message);
       }
     }
 
@@ -326,7 +331,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       suspicious: status === "rejected",
     });
 
-    toast.success(`Mentor application marked ${status.replaceAll("_", " ")}`);
+    showNotice("success", "Mentor application updated", `Application marked ${status.replaceAll("_", " ")}.`);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["admin", "mentor-applications"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "audit-events"] }),
@@ -345,7 +350,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       note: `Commitment moved to ${status.replaceAll("_", " ")} from admin console.`,
       metadata: { rail: commitment.rail },
     });
-    if (error) return toast.error(error.message);
+    if (error) return showNotice("error", "Commitment update failed", error.message);
 
     await (supabase as any)
       .from("investment_commitments")
@@ -372,7 +377,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       metadata: { rail: commitment.rail, amount: commitment.amount },
     });
 
-    toast.success(`Commitment marked ${status.replaceAll("_", " ")}`);
+    showNotice("success", "Commitment updated", `Commitment marked ${status.replaceAll("_", " ")}.`);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["admin", "commitments"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "reconciliation-events"] }),
@@ -428,7 +433,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
     },
     onSuccess: async () => {
       const recipientId = statementUserId;
-      toast.success("Investor statement uploaded and delivered.");
+      showNotice("success", "Investor statement uploaded", "Investor statement uploaded and delivered.");
       setStatementTitle("");
       setStatementType("Investment statement");
       setStatementNote("");
@@ -441,7 +446,7 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       ]);
     },
     onError: (error: any) => {
-      toast.error(error?.message ?? "Unable to upload that investor statement.");
+      showNotice("error", "Statement upload failed", error?.message ?? "Unable to upload that investor statement.");
     },
   });
 
@@ -450,6 +455,14 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
 
   return (
     <>
+      {notice && (
+        <div className="mb-6">
+          <Alert variant={notice.tone === "error" ? "destructive" : "default"}>
+            <AlertTitle>{notice.title}</AlertTitle>
+            <AlertDescription>{notice.message}</AlertDescription>
+          </Alert>
+        </div>
+      )}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={ShieldCheck} label="Verification queue" value={String(pendingSessions.length)} note="Sessions still being worked" />
         <StatCard icon={FolderOpen} label="Document review" value={String(pendingDocuments.length)} note="Uploads waiting on approval" />
