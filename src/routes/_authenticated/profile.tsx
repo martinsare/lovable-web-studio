@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Circle,
   ExternalLink,
+  Pencil,
   ShieldCheck,
   Star,
   TrendingUp,
@@ -252,15 +253,23 @@ function ProfilePage() {
                     <ShieldCheck className="h-3 w-3" /> Email verified
                   </span>
                 </div>
-                {profile?.username && (
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  {profile?.username && (
+                    <Link
+                      to="/users/$username"
+                      params={{ username: profile.username }}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-foreground transition-colors"
+                    >
+                      <ExternalLink className="h-3 w-3" /> View public profile
+                    </Link>
+                  )}
                   <Link
-                    to="/users/$username"
-                    params={{ username: profile.username }}
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-foreground transition-colors"
+                    to="/settings"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <ExternalLink className="h-3 w-3" /> View public profile
+                    <Pencil className="h-3 w-3" /> Edit profile
                   </Link>
-                )}
+                </div>
               </div>
             </div>
 
