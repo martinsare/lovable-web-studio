@@ -7,8 +7,6 @@ import {
   homeInvest,
   homeCapital,
   homeBuild,
-  homeBanner1,
-  homeBanner2,
 } from "@/assets/images";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -21,20 +19,21 @@ import {
   ArrowRight,
   MessageCircle,
   Users,
-  Coins,
+  CheckCircle2,
+  Star,
+  Globe,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "CoFund - Africa's Trusted Investment and Business Growth Platform" },
+      { title: "CoFund — Africa's Trusted Investment & Business Growth Platform" },
       {
         name: "description",
         content:
           "Invest in verified African businesses, raise capital, or build your startup. Escrow-protected and continuously monitored.",
       },
-      { property: "og:title", content: "CoFund - Together, We Grow" },
     ],
   }),
   component: PublicHome,
@@ -42,58 +41,76 @@ export const Route = createFileRoute("/")({
 
 const featuredOpportunities = [
   {
-    id: "featured-agri",
+    id: "opp-1",
     title: "Warehouse expansion for a fast-growing agri processor",
     industry: "Agriculture",
     businessName: "Harvest Loop Foods",
-    goalAmount: 120000000,
-    raisedAmount: 78000000,
+    goalAmount: 120_000_000,
+    raisedAmount: 78_000_000,
     targetReturnPct: 18,
+    daysLeft: 21,
+    risk: "Medium",
   },
   {
-    id: "featured-health",
+    id: "opp-2",
     title: "Working-capital line for a regional care network",
     industry: "Healthcare",
     businessName: "MediBridge Clinics",
-    goalAmount: 85000000,
-    raisedAmount: 41000000,
+    goalAmount: 85_000_000,
+    raisedAmount: 62_000_000,
     targetReturnPct: 16,
+    daysLeft: 9,
+    risk: "Low",
   },
   {
-    id: "featured-logistics",
+    id: "opp-3",
     title: "Fleet financing for intra-city delivery growth",
     industry: "Logistics",
     businessName: "SwiftRoute Africa",
-    goalAmount: 150000000,
-    raisedAmount: 98000000,
+    goalAmount: 150_000_000,
+    raisedAmount: 98_000_000,
     targetReturnPct: 21,
+    daysLeft: 14,
+    risk: "Medium",
   },
 ];
 
-const publicStats = [
-  { key: "investors", label: "Active investors", value: "2,400+" },
-  { key: "businesses", label: "Verified businesses", value: "180+" },
-  { key: "funded", label: "Capital raised", value: "NGN 2.1B+" },
-  { key: "returns", label: "Avg. target return", value: "22%" },
+const stats = [
+  { value: "₦2.1B+", label: "Capital deployed" },
+  { value: "180+", label: "Verified businesses" },
+  { value: "2,400+", label: "Active investors" },
+  { value: "22%", label: "Avg. target return" },
 ];
 
-const communityPreview = [
+const communityPosts = [
   {
-    id: "community-founder",
+    id: "p1",
     author: "Ada N.",
-    content: "We closed our first supplier milestone and posted the update room for investors this morning.",
+    role: "Founder",
+    content:
+      "We closed our first supplier milestone and posted the update for investors this morning. The escrow release was seamless.",
   },
   {
-    id: "community-investor",
+    id: "p2",
     author: "Kola A.",
-    content: "Looking at consumer, logistics, and climate opportunities with strong milestone reporting.",
+    role: "Angel Investor",
+    content:
+      "Looking at consumer, logistics, and climate opportunities with strong milestone reporting. CoFund's due diligence gives me confidence.",
   },
   {
-    id: "community-operator",
+    id: "p3",
     author: "Favour O.",
-    content: "The best founders here are already thinking like portfolio companies before the round closes.",
+    role: "Operator",
+    content:
+      "The best founders here think like portfolio companies before the round even closes. That discipline shows in their returns.",
   },
 ];
+
+function fmtCompact(n: number) {
+  if (n >= 1_000_000_000) return `₦${(n / 1_000_000_000).toFixed(1)}B`;
+  if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(0)}M`;
+  return `₦${(n / 1_000).toFixed(0)}K`;
+}
 
 function PublicHome() {
   const { user, loading, profile } = useAuth();
@@ -101,25 +118,20 @@ function PublicHome() {
 
   useEffect(() => {
     if (loading) return;
-    if (user && profile?.onboarded) {
-      void navigate({ to: "/home", replace: true });
-      return;
-    }
-    if (user && profile && !profile.onboarded) {
-      void navigate({ to: "/onboarding", replace: true });
-    }
+    if (user && profile?.onboarded) void navigate({ to: "/home", replace: true });
+    else if (user && profile && !profile.onboarded) void navigate({ to: "/onboarding", replace: true });
   }, [loading, navigate, profile, user]);
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <Hero />
-      <TrustBanner />
-      <PrimaryActions />
+      <TrustBar />
       <FeaturedOpportunities />
-      <ImageBanner />
+      <HowItWorks />
       <Stats />
-      <CommunityPreview />
+      <Roles />
+      <CommunitySection />
       <CTA />
       <SiteFooter />
     </div>
@@ -129,60 +141,92 @@ function PublicHome() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10 gradient-mesh" />
-      <div className="absolute inset-0 -z-10 [background-image:linear-gradient(to_right,oklch(1_0_0/0.025)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/0.025)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]" />
+      <div className="absolute inset-0 -z-10 gradient-hero" />
+      <div
+        className="absolute inset-0 -z-10 opacity-30"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, oklch(1 0 0 / 0.02) 1px, transparent 1px), linear-gradient(to bottom, oklch(1 0 0 / 0.02) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+        }}
+      />
 
-      <div className="mx-auto max-w-7xl px-4 pb-24 pt-16 sm:px-6 sm:pt-28 lg:px-8 lg:pb-32">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
-            <h1 className="font-display text-5xl font-bold leading-[1.06] sm:text-6xl lg:text-[3.75rem]">
-              Invest in Africa&apos;s{" "}
-              <span className="text-gradient-brand">next great businesses</span>
+      <div className="mx-auto max-w-7xl px-4 pb-28 pt-20 sm:px-6 lg:px-8 lg:pb-36">
+        <div className="grid items-center gap-16 lg:grid-cols-[1fr_0.9fr]">
+          <div className="max-w-2xl">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/8 px-3.5 py-1.5 text-xs font-semibold text-primary">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              </span>
+              Live opportunities available now
+            </div>
+
+            <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-[4rem]">
+              Where Africa's{" "}
+              <span className="text-gradient-brand">serious capital</span>{" "}
+              meets{" "}
+              <span className="text-gradient-brand">verified growth</span>
             </h1>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Connecting investors with verified businesses. Helping founders raise capital and build their legacy
-              through escrow-backed funding and stronger trust infrastructure.
+
+            <p className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg max-w-xl">
+              CoFund connects verified African businesses with institutional-grade investors through escrow-backed funding rounds, KYC verification, and real-time milestone tracking.
             </p>
+
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 to="/auth"
                 search={{ mode: "signup" }}
-                className="gradient-brand inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-brand transition hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-xl gradient-brand px-6 py-3 text-sm font-semibold text-primary-foreground shadow-brand transition hover:opacity-90 active:scale-[0.98]"
               >
-                Start investing <ArrowRight className="h-4 w-4" />
+                Start investing free <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/how-it-works"
-                className="inline-flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-semibold text-muted-foreground transition hover:text-foreground"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-semibold text-foreground/80 transition hover:border-foreground/30 hover:text-foreground"
               >
-                How it works
+                See how it works
               </Link>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5 text-brand-green" /> Escrow protected
-              </span>
-              <span className="flex items-center gap-1.5">
-                <BadgeCheck className="h-3.5 w-3.5 text-brand-green" /> KYC verified
-              </span>
-              <span className="flex items-center gap-1.5">
-                <BarChart3 className="h-3.5 w-3.5 text-brand-green" /> Continuously monitored
-              </span>
+
+            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
+              {[
+                { Icon: ShieldCheck, text: "Escrow protected" },
+                { Icon: BadgeCheck, text: "KYC/KYB verified" },
+                { Icon: BarChart3, text: "Real-time monitoring" },
+              ].map(({ Icon, text }) => (
+                <span key={text} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Icon className="h-4 w-4 text-brand-green" />
+                  {text}
+                </span>
+              ))}
             </div>
           </div>
 
           <div className="relative hidden lg:block">
-            <div className="relative overflow-hidden rounded-3xl shadow-soft">
-              <img src={homeHero} alt="African entrepreneurs" className="aspect-[4/3] w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+            <div className="relative overflow-hidden rounded-3xl border border-border/50 shadow-elevated">
+              <img
+                src={homeHero}
+                alt="African entrepreneurs"
+                className="aspect-[4/3] w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent" />
             </div>
-            <div className="absolute -bottom-4 -left-4 rounded-2xl border border-border bg-card/90 p-4 backdrop-blur shadow-soft">
-              <p className="text-xs text-muted-foreground">Active investors</p>
-              <p className="font-display text-2xl font-bold text-gradient-brand">2,400+</p>
+            <div className="absolute -bottom-5 -left-5 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-xl">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Capital raised</p>
+              <p className="mt-0.5 font-display text-2xl font-bold text-gradient-brand">₦2.1B+</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">across 180+ businesses</p>
             </div>
-            <div className="absolute -right-4 top-8 rounded-2xl border border-border bg-card/90 p-4 backdrop-blur shadow-soft">
-              <p className="text-xs text-muted-foreground">Businesses verified</p>
-              <p className="font-display text-2xl font-bold text-gradient-brand">180+</p>
+            <div className="absolute -right-5 top-10 rounded-2xl border border-border bg-card/95 p-4 shadow-elevated backdrop-blur-xl">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-green/15">
+                  <TrendingUp className="h-4 w-4 text-brand-green" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Avg. return</p>
+                  <p className="font-display text-lg font-bold text-brand-green">22% p.a.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -191,180 +235,171 @@ function Hero() {
   );
 }
 
-function TrustBanner() {
+function TrustBar() {
   return (
-    <section className="border-y border-border bg-card/40">
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+    <div className="border-y border-border/60 bg-card/30">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-muted-foreground">
           {[
             { Icon: ShieldCheck, text: "Escrow-protected transactions" },
-            { Icon: BadgeCheck, text: "Every business verified" },
+            { Icon: BadgeCheck, text: "Every business KYC/KYB verified" },
             { Icon: BarChart3, text: "Real-time milestone tracking" },
-            { Icon: Users, text: "Community-backed growth" },
+            { Icon: Globe, text: "Pan-African coverage" },
           ].map(({ Icon, text }) => (
             <span key={text} className="flex items-center gap-2">
-              <Icon className="h-4 w-4 text-primary" /> {text}
+              <Icon className="h-4 w-4 text-primary" />
+              {text}
             </span>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
-}
-
-function PrimaryActions() {
-  const actions = [
-    {
-      icon: TrendingUp,
-      title: "Invest",
-      desc: "Discover verified investment opportunities across multiple industries and sectors.",
-      img: homeInvest,
-    },
-    {
-      icon: Briefcase,
-      title: "Raise Capital",
-      desc: "Apply for funding to grow your business through CoFund&apos;s escrow-protected rounds.",
-      img: homeCapital,
-    },
-    {
-      icon: Rocket,
-      title: "Build an Idea",
-      desc: "Share your startup, find co-founders, mentors and capital on the Startup Hub.",
-      img: homeBuild,
-    },
-  ];
-
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-      <div className="mb-12 text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Three paths</p>
-        <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">Pick your role on CoFund</h2>
-      </div>
-      <div className="grid gap-6 md:grid-cols-3">
-        {actions.map((action) => (
-          <div
-            key={action.title}
-            className="group overflow-hidden rounded-3xl border border-border bg-card transition hover:-translate-y-1 hover:shadow-brand"
-          >
-            <div className="relative aspect-[16/9] overflow-hidden">
-              <img src={action.img} alt={action.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
-              <div className="absolute bottom-4 left-5 gradient-brand inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-brand">
-                <action.icon className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="p-6">
-              <h3 className="font-display text-xl font-bold">{action.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{action.desc}</p>
-              <Link
-                to="/auth"
-                search={{ mode: "signup" }}
-                className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition hover:gap-2.5"
-              >
-                Get started <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function formatCompactMoney(amount: number) {
-  if (amount >= 1_000_000_000) return `NGN ${(amount / 1_000_000_000).toFixed(1)}B`;
-  if (amount >= 1_000_000) return `NGN ${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `NGN ${(amount / 1_000).toFixed(0)}K`;
-  return `NGN ${amount}`;
 }
 
 function FeaturedOpportunities() {
   return (
-    <section className="border-y border-border bg-card/30 py-20">
+    <section className="py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-10 flex items-end justify-between gap-4">
+        <div className="mb-12 flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Live now</p>
-            <h2 className="mt-2 font-display text-3xl font-bold">Featured opportunities</h2>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Live now</p>
+            <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">Featured opportunities</h2>
+            <p className="mt-2 text-muted-foreground max-w-md">
+              Verified businesses actively raising capital. Backed by escrow and full due diligence.
+            </p>
           </div>
           <Link
             to="/auth"
             search={{ mode: "signup" }}
-            className="hidden items-center gap-1 text-sm font-semibold text-primary transition hover:text-foreground sm:flex"
+            className="hidden shrink-0 items-center gap-1.5 text-sm font-semibold text-primary transition hover:text-foreground sm:flex"
           >
             View all <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredOpportunities.map((opportunity) => {
-            const pct = Math.min(100, Math.round((opportunity.raisedAmount / opportunity.goalAmount) * 100));
+          {featuredOpportunities.map((opp) => {
+            const pct = Math.min(100, Math.round((opp.raisedAmount / opp.goalAmount) * 100));
             return (
-              <div key={opportunity.id} className="flex flex-col rounded-2xl border border-border bg-card p-5">
-                <div className="flex items-center gap-3">
-                  <div className="gradient-brand h-10 w-10 shrink-0 rounded-lg" />
-                  <div className="min-w-0">
-                    <p className="truncate text-xs text-muted-foreground">{opportunity.industry}</p>
-                    <p className="truncate text-sm font-semibold">{opportunity.businessName}</p>
+              <article
+                key={opp.id}
+                className="group flex flex-col rounded-2xl border border-border bg-card p-6 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-brand"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 shrink-0 rounded-xl gradient-brand" />
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-medium text-muted-foreground">{opp.industry}</p>
+                      <p className="truncate text-sm font-semibold">{opp.businessName}</p>
+                    </div>
                   </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    opp.risk === "Low" ? "bg-brand-green/10 text-brand-green" : "bg-gold/10 text-gold"
+                  }`}>
+                    {opp.risk} risk
+                  </span>
                 </div>
-                <h3 className="mt-4 font-display text-lg font-bold leading-tight">{opportunity.title}</h3>
-                <div className="mt-auto pt-5">
-                  <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
+
+                <h3 className="mt-5 font-display text-lg font-bold leading-snug group-hover:text-primary transition-colors">
+                  {opp.title}
+                </h3>
+
+                <div className="mt-auto pt-6">
+                  <div className="mb-2 flex justify-between text-xs text-muted-foreground">
                     <span>{pct}% funded</span>
-                    <span>{formatCompactMoney(opportunity.goalAmount)}</span>
+                    <span className="font-medium text-foreground">{fmtCompact(opp.goalAmount)}</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div className="gradient-brand h-full rounded-full" style={{ width: `${pct}%` }} />
+                  <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className="h-full rounded-full gradient-brand transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    Target return <span className="font-semibold text-brand-green">{opportunity.targetReturnPct}%</span>
-                  </p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[11px] text-muted-foreground">Target return</p>
+                      <p className="font-display text-xl font-bold text-brand-green">{opp.targetReturnPct}%</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] text-muted-foreground">Closes in</p>
+                      <p className="font-semibold text-sm">{opp.daysLeft} days</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </article>
             );
           })}
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link
+            to="/auth"
+            search={{ mode: "signup" }}
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-6 py-2.5 text-sm font-semibold text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+          >
+            Sign up to see all live opportunities <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>
   );
 }
 
-function ImageBanner() {
+function HowItWorks() {
+  const steps = [
+    {
+      n: "01",
+      title: "Create & verify your account",
+      desc: "Complete KYC verification and investor suitability assessment to unlock investment access.",
+      Icon: BadgeCheck,
+    },
+    {
+      n: "02",
+      title: "Browse verified opportunities",
+      desc: "Explore curated investment rounds across agriculture, health, logistics, fintech, and more.",
+      Icon: BarChart3,
+    },
+    {
+      n: "03",
+      title: "Commit via escrow",
+      desc: "Your funds are held securely in escrow until business milestones are verified and approved.",
+      Icon: ShieldCheck,
+    },
+    {
+      n: "04",
+      title: "Track & receive returns",
+      desc: "Monitor milestones in real time and receive structured returns as rounds complete.",
+      Icon: TrendingUp,
+    },
+  ];
+
   return (
-    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-      <div className="grid items-center gap-6 lg:grid-cols-2">
-        <div className="space-y-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Built on trust</p>
-            <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
-              Every business is verified. Every naira is protected.
-            </h2>
-            <p className="mt-4 leading-relaxed text-muted-foreground">
-              Before any business lists on CoFund, they pass through verification, due diligence, and trust scoring.
-              Your investment is held in escrow until agreed milestones are hit.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { Icon: ShieldCheck, label: "Escrow Protection", desc: "Funds held by banking partners" },
-              { Icon: BadgeCheck, label: "Full KYC", desc: "BVN, phone and address verified" },
-              { Icon: BarChart3, label: "Live Monitoring", desc: "Track milestones in real time" },
-              { Icon: Coins, label: "Structured Returns", desc: "Clear terms, no surprises" },
-            ].map(({ Icon, label, desc }) => (
-              <div key={label} className="rounded-2xl border border-border bg-card p-4">
-                <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <p className="text-sm font-semibold">{label}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>
-              </div>
-            ))}
-          </div>
+    <section className="border-y border-border/60 bg-card/20 py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-14 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Process</p>
+          <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">How CoFund works</h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            A structured, secure process from account creation to receiving returns.
+          </p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <img src={homeBanner1} alt="" className="aspect-square w-full rounded-2xl object-cover" />
-          <img src={homeBanner2} alt="" className="mt-8 aspect-square w-full rounded-2xl object-cover" />
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step) => (
+            <div key={step.n} className="relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="font-display text-4xl font-bold text-primary/15">{step.n}</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <step.Icon className="h-5 w-5" />
+                </div>
+              </div>
+              <div>
+                <h3 className="font-display text-base font-bold">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -373,13 +408,90 @@ function ImageBanner() {
 
 function Stats() {
   return (
-    <section className="border-y border-border bg-card/30 py-16">
+    <section className="py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-          {publicStats.map((stat) => (
-            <div key={stat.key} className="text-center">
-              <p className="font-display text-4xl font-bold text-gradient-brand">{stat.value}</p>
-              <p className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">{stat.label}</p>
+        <div className="overflow-hidden rounded-3xl border border-primary/15 bg-card shadow-brand">
+          <div className="grid grid-cols-2 divide-x divide-y divide-border/60 lg:grid-cols-4 lg:divide-y-0">
+            {stats.map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="font-display text-4xl font-bold text-gradient-brand sm:text-5xl">{stat.value}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Roles() {
+  const roles = [
+    {
+      icon: TrendingUp,
+      title: "Invest",
+      color: "text-primary bg-primary/10",
+      desc: "Discover vetted investment opportunities across sectors. Deploy capital into escrow-backed rounds with structured returns.",
+      img: homeInvest,
+      cta: "Start investing",
+    },
+    {
+      icon: Briefcase,
+      title: "Raise Capital",
+      color: "text-gold bg-gold/10",
+      desc: "Apply for funding to grow your business. Get matched with serious investors and manage your round through the platform.",
+      img: homeCapital,
+      cta: "List your business",
+    },
+    {
+      icon: Rocket,
+      title: "Build",
+      color: "text-brand-green bg-brand-green/10",
+      desc: "Share your startup idea, find co-founders and mentors, and access community capital through the CoFund Startup Hub.",
+      img: homeBuild,
+      cta: "Join the hub",
+    },
+  ];
+
+  return (
+    <section className="py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-14 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Three paths</p>
+          <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">Your role on CoFund</h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            Whether you're deploying capital, raising it, or building from scratch — CoFund has a home for you.
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {roles.map((role) => (
+            <div
+              key={role.title}
+              className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-card transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated"
+            >
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <img
+                  src={role.img}
+                  alt={role.title}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+                <div className={`absolute bottom-4 left-5 flex h-10 w-10 items-center justify-center rounded-xl ${role.color}`}>
+                  <role.icon className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="font-display text-xl font-bold">{role.title}</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{role.desc}</p>
+                <Link
+                  to="/auth"
+                  search={{ mode: "signup" }}
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-all hover:gap-3"
+                >
+                  {role.cta} <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
           ))}
         </div>
@@ -388,37 +500,62 @@ function Stats() {
   );
 }
 
-function CommunityPreview() {
+function CommunitySection() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-      <div className="grid items-center gap-12 lg:grid-cols-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">Community</p>
-          <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">Founders and investors, together</h2>
-          <p className="mt-4 leading-relaxed text-muted-foreground">
-            The CoFund community is where deals get discovered, knowledge gets shared, and partnerships form. Join
-            thousands of operators across Africa.
-          </p>
-          <Link
-            to="/auth"
-            search={{ mode: "signup" }}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-brand transition hover:opacity-90"
-          >
-            Join the community <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        <div className="space-y-3">
-          {communityPreview.map((post) => (
-            <div key={post.id} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
-              <div className="gradient-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
-                {post.author.charAt(0)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{post.author}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">{post.content}</p>
-              </div>
+    <section className="border-y border-border/60 bg-card/20 py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-16 lg:grid-cols-2">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Community</p>
+            <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">
+              Founders and investors, building Africa together
+            </h2>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
+              The CoFund community is where deals get discovered, knowledge gets shared, and partnerships form. Join thousands of operators across Africa.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {[
+                { Icon: Users, label: "2,400+ active members" },
+                { Icon: MessageCircle, label: "Active discussion forums" },
+                { Icon: Star, label: "Verified mentor network" },
+                { Icon: CheckCircle2, label: "Deal syndication tools" },
+              ].map(({ Icon, label }) => (
+                <div key={label} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                  <Icon className="h-4 w-4 shrink-0 text-primary" />
+                  {label}
+                </div>
+              ))}
             </div>
-          ))}
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
+              className="mt-8 inline-flex items-center gap-2 rounded-xl gradient-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-brand transition hover:opacity-90"
+            >
+              Join the community <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {communityPosts.map((post) => (
+              <div
+                key={post.id}
+                className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-card"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-brand text-sm font-bold text-primary-foreground">
+                  {post.author.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold">{post.author}</p>
+                    <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                      {post.role}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{post.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -427,28 +564,40 @@ function CommunityPreview() {
 
 function CTA() {
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
-      <div className="relative overflow-hidden rounded-3xl px-8 py-16 text-center shadow-brand gradient-brand">
-        <div className="absolute inset-0 [background-image:linear-gradient(to_right,oklch(1_0_0/0.04)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/0.04)_1px,transparent_1px)] [background-size:40px_40px]" />
-        <div className="relative">
-          <h2 className="font-display text-4xl font-bold text-white sm:text-5xl">Together, we grow.</h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">
-            Join Africa&apos;s business ecosystem and start your CoFund journey today.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to="/auth"
-              search={{ mode: "signup" }}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-primary shadow-soft transition hover:bg-white/95"
-            >
-              Create your account <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/how-it-works"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              Learn more
-            </Link>
+    <section className="py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl px-8 py-20 text-center gradient-brand shadow-brand">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, oklch(1 0 0 / 0.04) 1px, transparent 1px), linear-gradient(to bottom, oklch(1 0 0 / 0.04) 1px, transparent 1px)",
+              backgroundSize: "48px 48px",
+            }}
+          />
+          <div className="relative">
+            <p className="text-sm font-semibold uppercase tracking-widest text-white/70">Ready to start?</p>
+            <h2 className="mt-3 font-display text-4xl font-bold text-white sm:text-5xl">
+              Together, we grow.
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-lg text-white/80">
+              Join Africa's business ecosystem and start your CoFund journey — as an investor, founder, or builder.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-bold text-primary shadow-soft transition hover:bg-white/95 active:scale-[0.98]"
+              >
+                Create your free account <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/how-it-works"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Learn more
+              </Link>
+            </div>
           </div>
         </div>
       </div>

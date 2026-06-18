@@ -1,10 +1,9 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Calendar, ExternalLink, MapPin, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { PageShell } from "@/components/page-shell";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -158,50 +157,19 @@ function ProfilePage() {
 
   const currentStatus = mentorApplication?.status ?? "not_started";
 
+  const memberSince = new Date(profile?.created_at ?? user?.created_at ?? Date.now()).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-
-      <header className="relative overflow-hidden border-b border-white/[0.06]">
-        <div className="absolute inset-0 -z-10 gradient-mesh opacity-60" />
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-5">
-            <div className="gradient-brand flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-3xl font-bold text-white shadow-brand sm:h-24 sm:w-24">
-              {initials}
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display text-3xl font-bold sm:text-4xl">{profile?.full_name ?? "Your profile"}</h1>
-                <BadgeCheck className="h-6 w-6 text-brand-green" />
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
-              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" /> Nigeria
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" />
-                  Member since {new Date(profile?.created_at ?? user?.created_at ?? Date.now()).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-brand-green" /> Verified email
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-6 md:grid-cols-3">
-          <section className="space-y-5 md:col-span-2">
+    <PageShell eyebrow="Account" title={profile?.full_name ?? "Your profile"} description={`Member since ${memberSince} · ${user?.email ?? ""}`}>
+      <div className="grid gap-6 md:grid-cols-3">
+        <section className="space-y-5 md:col-span-2">
             <Card title="Active roles">
               <div className="flex flex-wrap gap-2">
                 {roles.length === 0 ? (
                   <span className="text-sm text-muted-foreground">No roles selected yet.</span>
                 ) : (
                   roles.map((r) => (
-                    <span key={r} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium capitalize text-foreground">
+                    <span key={r} className="rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-xs font-semibold capitalize text-primary">
                       {r.replace("_", " ")}
                     </span>
                   ))
@@ -315,15 +283,13 @@ function ProfilePage() {
             </Card>
           </aside>
         </div>
-      </main>
-      <SiteFooter />
-    </div>
+    </PageShell>
   );
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-card p-6">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
       <h2 className="font-display text-base font-bold">{title}</h2>
       <div className="mt-4">{children}</div>
     </div>

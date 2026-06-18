@@ -18,23 +18,13 @@ function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect x="2" y="2" width="20" height="20" rx="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z" />
-      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-    </svg>
-  );
-}
-
 type Item = { label: string; to: string };
 
 const platform: Item[] = [
   { label: "Invest", to: "/how-it-works" },
   { label: "Raise Capital", to: "/how-it-works" },
-  { label: "Startup Hub", to: "/community" },
   { label: "Community", to: "/community" },
+  { label: "Browse", to: "/browse" },
 ];
 
 const company: Item[] = [
@@ -44,30 +34,29 @@ const company: Item[] = [
 ];
 
 const legal: Item[] = [
-  { label: "Privacy", to: "/privacy" },
-  { label: "Terms", to: "/terms" },
+  { label: "Privacy Policy", to: "/privacy" },
+  { label: "Terms of Use", to: "/terms" },
   { label: "Escrow Policy", to: "/escrow" },
   { label: "Risk Disclosure", to: "/risk" },
 ];
 
 export function SiteFooter() {
   return (
-    <footer className="mt-20 border-t border-border/80 bg-card/20">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+    <footer className="border-t border-border/60 bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center gap-2.5">
-              <img src={logo} alt="" className="h-9 w-9 object-contain" />
+            <Link to="/" className="inline-flex items-center gap-2.5">
+              <img src={logo} alt="" className="h-8 w-8 object-contain" />
               <span className="font-display text-[17px] font-bold">CoFund</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              A private investment and business growth platform for serious founders and investors.
+              Africa's most trusted private investment and business growth platform — connecting verified businesses with serious capital.
             </p>
-            <div className="mt-5 flex items-center gap-2">
+            <div className="mt-6 flex items-center gap-2">
               {[
                 { href: "https://twitter.com", Icon: XIcon, label: "X" },
                 { href: "https://linkedin.com", Icon: LinkedinIcon, label: "LinkedIn" },
-                { href: "https://instagram.com", Icon: InstagramIcon, label: "Instagram" },
                 { href: "mailto:hello@cofund.africa", Icon: Mail, label: "Email" },
               ].map(({ href, Icon, label }) => (
                 <a
@@ -76,20 +65,30 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition hover:border-primary/40 hover:text-primary"
                 >
                   <Icon className="h-4 w-4" />
                 </a>
               ))}
             </div>
           </div>
-          {[{ title: "Platform", items: platform }, { title: "Company", items: company }, { title: "Legal", items: legal }].map((col) => (
+
+          {[
+            { title: "Platform", items: platform },
+            { title: "Company", items: company },
+            { title: "Legal", items: legal },
+          ].map((col) => (
             <div key={col.title}>
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{col.title}</h4>
+              <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {col.title}
+              </h4>
               <ul className="mt-4 space-y-2.5">
                 {col.items.map((i) => (
                   <li key={i.label}>
-                    <Link to={i.to as never} className="text-sm text-foreground/70 transition hover:text-foreground">
+                    <Link
+                      to={i.to as never}
+                      className="text-sm text-foreground/60 transition hover:text-foreground"
+                    >
                       {i.label}
                     </Link>
                   </li>
@@ -98,9 +97,14 @@ export function SiteFooter() {
             </div>
           ))}
         </div>
-        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center">
-          <p>© {new Date().getFullYear()} CoFund. Together, we grow.</p>
-          <p className="max-w-sm text-right text-[11px] opacity-60">Investing involves risk including possible loss of principal.</p>
+
+        <div className="mt-14 flex flex-col items-start justify-between gap-3 border-t border-border/60 pt-6 sm:flex-row sm:items-center">
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} CoFund. Together, we grow.
+          </p>
+          <p className="text-[11px] text-muted-foreground/50">
+            Investing involves risk, including possible loss of principal. Past performance is not indicative of future results.
+          </p>
         </div>
       </div>
     </footer>
