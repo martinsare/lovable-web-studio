@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { howInvest, howRaise, howBuild } from "@/assets/images";
@@ -7,7 +8,7 @@ import { TrendingUp, Briefcase, Rocket, ArrowRight, UserPlus, ShieldCheck, LineC
 export const Route = createFileRoute("/how-it-works")({
   head: () => ({
     meta: [
-      { title: "How it works — CoFund" },
+      { title: "How it works - CoFund" },
       { name: "description", content: "Three ways to grow with CoFund: invest, raise capital, or build a startup." },
     ],
   }),
@@ -23,7 +24,7 @@ const tracks = [
     steps: [
       "Complete KYC and set your investment interests",
       "Browse verified, due-diligenced opportunities",
-      "Fund via escrow — money held safely until milestones",
+      "Fund via escrow - money held safely until milestones",
       "Track performance and receive returns",
     ],
   },
@@ -54,28 +55,47 @@ const tracks = [
 ];
 
 function HowItWorks() {
+  const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.09 } } } as const;
+  const fadeUp = { hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0 } } as const;
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <section className="relative overflow-hidden border-b border-border">
+      <motion.section
+        className="relative overflow-hidden border-b border-border"
+        initial={{ opacity: 0, y: 22, scale: 0.995 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
         <div className="absolute inset-0 -z-10 gradient-mesh" />
-        <div className="mx-auto max-w-5xl px-4 py-24 text-center sm:px-6 lg:px-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">How it works</p>
-          <h1 className="font-display text-5xl font-bold leading-[1.06] sm:text-6xl">
-            Three ways to grow with{" "}
-            <span className="text-gradient-brand">CoFund</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Pick your path — or enable every role on one account. The platform adapts to you.
-          </p>
-        </div>
-      </section>
+        <motion.div className="mx-auto max-w-5xl px-4 py-24 text-center sm:px-6 lg:px-8" variants={stagger} initial="hidden" animate="visible">
+          <motion.p variants={fadeUp} className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">How it works</motion.p>
+          <motion.h1 variants={fadeUp} className="font-display text-5xl font-bold leading-[1.06] sm:text-6xl">
+            Three ways to grow with <span className="text-gradient-brand">CoFund</span>
+          </motion.h1>
+          <motion.p variants={fadeUp} className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+            Pick your path - or enable every role on one account. The platform adapts to you.
+          </motion.p>
+        </motion.div>
+      </motion.section>
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="space-y-6">
+      <motion.section
+        className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8"
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
+        <motion.div className="space-y-6" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
           {tracks.map((t, i) => (
-            <div key={t.title} className={`grid gap-8 rounded-3xl border border-border bg-card overflow-hidden md:grid-cols-2 ${i % 2 === 1 ? "md:[&>*:first-child]:order-last" : ""}`}>
+            <motion.div
+              key={t.title}
+              variants={fadeUp}
+              className={`grid gap-8 rounded-3xl border border-border bg-card overflow-hidden md:grid-cols-2 ${
+                i % 2 === 1 ? "md:[&>*:first-child]:order-last" : ""
+              }`}
+            >
               <div className="relative overflow-hidden aspect-[16/10]">
                 <img src={t.img} alt={t.title} className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-r from-card/50 to-transparent" />
@@ -96,44 +116,48 @@ function HowItWorks() {
                     </li>
                   ))}
                 </ol>
-                <Link to="/auth" search={{ mode: "signup" }}
-                  className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-foreground transition">
+                <Link to="/auth" search={{ mode: "signup" }} className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-foreground transition">
                   Get started <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
-      <section className="bg-card/40 border-y border-white/[0.06] py-20">
+      <motion.section
+        className="bg-card/40 border-y border-white/[0.06] py-20"
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
+          <motion.div className="mb-12 text-center" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}>
             <h2 className="font-display text-3xl font-bold">Built on trust</h2>
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
+          </motion.div>
+          <motion.div className="grid gap-5 md:grid-cols-3" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
             {[
-              { icon: UserPlus, t: "Verified identities", d: "BVN, phone, email, address — every member is real." },
+              { icon: UserPlus, t: "Verified identities", d: "BVN, phone, email, address - every member is real." },
               { icon: ShieldCheck, t: "Escrow protection", d: "Funds are securely managed through banking partners." },
               { icon: LineChart, t: "Continuous monitoring", d: "Track milestones, reporting and trust scores live." },
             ].map((v) => (
-              <div key={v.t} className="rounded-2xl border border-white/[0.06] bg-card p-7">
+              <motion.div key={v.t} variants={fadeUp} className="rounded-2xl border border-white/[0.06] bg-card p-7">
                 <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <v.icon className="h-5 w-5" />
                 </div>
                 <h3 className="font-display text-lg font-bold">{v.t}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{v.d}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
-          <div className="mt-12 text-center">
-            <Link to="/auth" search={{ mode: "signup" }}
-              className="gradient-brand inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition">
+          </motion.div>
+          <motion.div className="mt-12 text-center" initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}>
+            <Link to="/auth" search={{ mode: "signup" }} className="gradient-brand inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition">
               Get started <ArrowRight className="h-4 w-4" />
             </Link>
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       <SiteFooter />
     </div>

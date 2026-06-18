@@ -32,7 +32,7 @@ import { useAuth, type AppRole } from "@/hooks/use-auth";
 import logo from "@/assets/icon.png";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-export const Route = createFileRoute("/onboarding")({ ssr: false, head: () => ({ meta: [{ title: "Get started Ãƒâ€šÃ‚Â· CoFund" }] }), component: Onboarding });
+export const Route = createFileRoute("/onboarding")({ ssr: false, head: () => ({ meta: [{ title: "Get started · CoFund" }] }), component: Onboarding });
 
 const ONBOARDING_STORAGE_KEY = "cofund:onboarding-draft";
 

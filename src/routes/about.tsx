@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { aboutHero, aboutGrid1, aboutGrid2, aboutGrid3 } from "@/assets/images";
@@ -15,15 +16,22 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
+  const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } } as const;
+  const fadeUp = { hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0 } } as const;
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
       <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 -z-10 gradient-mesh" />
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
-          <div className="grid gap-12 lg:grid-cols-2 items-center">
-            <div>
+        <motion.div
+          className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:py-32"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
+          <motion.div className="grid gap-12 lg:grid-cols-2 items-center" variants={stagger} initial="hidden" animate="visible">
+            <motion.div variants={fadeUp}>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">Our story</p>
               <h1 className="font-display text-5xl font-bold leading-[1.06] sm:text-6xl">
                 Building Africa's{" "}
@@ -36,21 +44,27 @@ function AboutPage() {
                 className="mt-8 inline-flex items-center gap-2 gradient-brand rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition">
                 Join the ecosystem <ArrowRight className="h-4 w-4" />
               </Link>
-            </div>
-            <div className="relative hidden lg:block">
+            </motion.div>
+            <motion.div className="relative hidden lg:block" initial={{ opacity: 0, x: 30, scale: 0.97 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.8, delay: 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}>
               <img src={aboutHero} alt="Team collaboration" className="rounded-3xl aspect-[4/3] w-full object-cover shadow-soft" />
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="grid gap-12 md:grid-cols-2 items-start">
-          <div>
+      <motion.section
+        className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8"
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
+        <motion.div className="grid gap-12 md:grid-cols-2 items-start" variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }}>
+          <motion.div variants={fadeUp}>
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Mission</p>
             <h2 className="font-display text-3xl font-bold">Verified, protected, and built to last.</h2>
-          </div>
-          <div className="space-y-4 text-muted-foreground leading-relaxed">
+          </motion.div>
+          <motion.div variants={fadeUp} className="space-y-4 text-muted-foreground leading-relaxed">
             <p>
               We exist to make private investment in Africa safer, more transparent, and more accessible.
               Every business on CoFund is verified. Every transaction is escrow-protected.
@@ -58,11 +72,17 @@ function AboutPage() {
             <p>
               Every relationship is built on a real, traceable trust score — not promises. We believe Africa's next generation of great businesses deserves the same institutional-grade infrastructure that global markets take for granted.
             </p>
-          </div>
-        </div>
-      </section>
+          </motion.div>
+        </motion.div>
+      </motion.section>
 
-      <section className="bg-card/40 border-y border-border py-20">
+      <motion.section
+        className="bg-card/40 border-y border-border py-20"
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12 text-center">
             <h2 className="font-display text-3xl font-bold">What we believe</h2>
@@ -83,17 +103,29 @@ function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <motion.section
+        className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8"
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <img src={aboutGrid1} alt="" className="rounded-2xl aspect-[4/3] w-full object-cover" />
           <img src={aboutGrid2} alt="" className="rounded-2xl aspect-[4/3] w-full object-cover lg:mt-8" />
           <img src={aboutGrid3} alt="" className="rounded-2xl aspect-[4/3] w-full object-cover sm:col-span-2 lg:col-span-1" />
         </div>
-      </section>
+      </motion.section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
+      <motion.section
+        className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8"
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
         <div className="relative overflow-hidden rounded-3xl gradient-brand px-8 py-16 text-center shadow-brand">
           <div className="absolute inset-0 [background-image:linear-gradient(to_right,oklch(1_0_0/0.04)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/0.04)_1px,transparent_1px)] [background-size:40px_40px]" />
           <div className="relative">
@@ -107,7 +139,7 @@ function AboutPage() {
             </Link>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <SiteFooter />
     </div>
