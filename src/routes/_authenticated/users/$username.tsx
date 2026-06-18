@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { SiteHeader } from "@/components/site-header";
@@ -34,19 +34,38 @@ function UserProfilePage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<ProfileTab>("overview");
-  const [followLoading, setFollowLoading] = useState(false);
+
+  const profileQK = ["user-profile", username];
+  const followQK = ["is-following", user?.id, username];
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: ["user-profile", username],
+    queryKey: profileQK,
     queryFn: async () => {
       const { data, error } = await db
         .from("profiles")
-        .select("id,full_name,username,avatar_url,bio,location,city,country,occupation,linkedin_url,website_url,created_at,followers_count,following_count")
+        .select(
+          "id,full_name,username,avatar_url,bio,location,city,country,occupation,linkedin_url,website_url,created_at,followers_count,following_count",
+        )
         .eq("username", username)
         .maybeSingle();
       if (error) throw error;
       if (!data) throw notFound();
-      return data;
+      return data as {
+        id: string;
+        full_name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+        bio: string | null;
+        location: string | null;
+        city: string | null;
+        country: string | null;
+        occupation: string | null;
+        linkedin_url: string | null;
+        website_url: string | null;
+        created_at: string;
+        followers_count: number;
+        following_count: number;
+      };
     },
   });
 
@@ -58,26 +77,13 @@ function UserProfilePage() {
         .from("user_roles")
         .select("role")
         .eq("user_id", profile!.id);
-      return (data ?? []).map((r: any) => r.role as string);
+      return (data ?? []).map((r) => r.role as string);
     },
   });
 
-  const { data: investmentCount = 0 } = useQuery({
-    enabled: !!profile?.id,
-    queryKey: ["user-investment-count", profile?.id],
-    queryFn: async () => {
-      const { count } = await (supabase as any)
-        .from("investment_commitments")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", profile!.id)
-        .in("status", ["funded", "in_escrow", "released"]);
-      return count as number ?? 0;
-    },
-  });
-
-  const { data: isFollowing = false, refetch: refetchFollow } = useQuery({
+  const { data: isFollowing = false } = useQuery({
     enabled: !!user?.id && !!profile?.id && user.id !== profile?.id,
-    queryKey: ["is-following", user?.id, profile?.id],
+    queryKey: followQK,
     queryFn: async () => {
       const { data } = await db
         .from("user_follows")
@@ -89,41 +95,48 @@ function UserProfilePage() {
     },
   });
 
-  async function toggleFollow() {
-    if (!user?.id || !profile?.id) return;
-    setFollowLoading(true);
-    try {
-      if (isFollowing) {
+  const followMutation = useMutation({
+    mutationFn: async (shouldFollow: boolean) => {
+      if (shouldFollow) {
         const { error } = await db
           .from("user_follows")
-          .delete()
-          .eq("follower_id", user.id)
-          .eq("following_id", profile.id);
+          .insert({ follower_id: user!.id, following_id: profile!.id });
         if (error) throw error;
-        const myProfile = await db.from("profiles").select("following_count").eq("id", user.id).maybeSingle();
-        await Promise.all([
-          db.from("profiles").update({ followers_count: Math.max(0, (profile.followers_count ?? 0) - 1) }).eq("id", profile.id),
-          db.from("profiles").update({ following_count: Math.max(0, (myProfile.data?.following_count ?? 0) - 1) }).eq("id", user.id),
-        ]);
       } else {
         const { error } = await db
           .from("user_follows")
-          .insert({ follower_id: user.id, following_id: profile.id });
+          .delete()
+          .eq("follower_id", user!.id)
+          .eq("following_id", profile!.id);
         if (error) throw error;
-        const myProfile = await db.from("profiles").select("following_count").eq("id", user.id).maybeSingle();
-        await Promise.all([
-          db.from("profiles").update({ followers_count: (profile.followers_count ?? 0) + 1 }).eq("id", profile.id),
-          db.from("profiles").update({ following_count: (myProfile.data?.following_count ?? 0) + 1 }).eq("id", user.id),
-        ]);
       }
-      await qc.invalidateQueries({ queryKey: ["user-profile", username] });
-      await refetchFollow();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not update follow status.");
-    } finally {
-      setFollowLoading(false);
-    }
-  }
+    },
+    onMutate: async (shouldFollow) => {
+      await qc.cancelQueries({ queryKey: profileQK });
+      await qc.cancelQueries({ queryKey: followQK });
+
+      const prevProfile = qc.getQueryData(profileQK);
+      const prevFollow = qc.getQueryData(followQK);
+
+      qc.setQueryData(profileQK, (old: any) =>
+        old
+          ? { ...old, followers_count: Math.max(0, old.followers_count + (shouldFollow ? 1 : -1)) }
+          : old,
+      );
+      qc.setQueryData(followQK, shouldFollow);
+
+      return { prevProfile, prevFollow };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevProfile) qc.setQueryData(profileQK, ctx.prevProfile);
+      if (ctx?.prevFollow !== undefined) qc.setQueryData(followQK, ctx.prevFollow);
+      toast.error("Could not update follow status.");
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: profileQK });
+      qc.invalidateQueries({ queryKey: followQK });
+    },
+  });
 
   if (isLoading) return <ProfileSkeleton />;
   if (!profile) return null;
@@ -132,12 +145,21 @@ function UserProfilePage() {
   const displayName = profile.full_name ?? profile.username ?? "Anonymous";
   const initial = displayName.charAt(0).toUpperCase();
   const locationStr = [profile.city, profile.country, profile.location].filter(Boolean).join(", ");
-  const memberSince = new Date(profile.created_at).toLocaleDateString("en-NG", { month: "long", year: "numeric" });
+  const memberSince = new Date(profile.created_at).toLocaleDateString("en-NG", {
+    month: "long",
+    year: "numeric",
+  });
 
   const TABS: { key: ProfileTab; label: string }[] = [
     { key: "overview", label: "Overview" },
-    { key: "followers", label: `Followers${profile.followers_count ? ` (${profile.followers_count})` : ""}` },
-    { key: "following", label: `Following${profile.following_count ? ` (${profile.following_count})` : ""}` },
+    {
+      key: "followers",
+      label: `Followers${profile.followers_count ? ` (${profile.followers_count})` : ""}`,
+    },
+    {
+      key: "following",
+      label: `Following${profile.following_count ? ` (${profile.following_count})` : ""}`,
+    },
   ];
 
   return (
@@ -160,7 +182,7 @@ function UserProfilePage() {
 
       {/* Identity bar */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6 -mt-12 relative z-10 pb-6">
+        <div className="-mt-12 relative z-10 flex flex-col gap-4 pb-6 sm:flex-row sm:items-end sm:gap-6">
           {profile.avatar_url ? (
             <img
               src={profile.avatar_url}
@@ -168,7 +190,7 @@ function UserProfilePage() {
               className="h-24 w-24 rounded-2xl border-4 border-background object-cover shadow-soft"
             />
           ) : (
-            <div className="gradient-brand flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-background shadow-soft text-3xl font-bold text-primary-foreground">
+            <div className="gradient-brand flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-background text-3xl font-bold text-primary-foreground shadow-soft">
               {initial}
             </div>
           )}
@@ -200,8 +222,8 @@ function UserProfilePage() {
               </Link>
             ) : (
               <button
-                onClick={toggleFollow}
-                disabled={followLoading}
+                onClick={() => followMutation.mutate(!isFollowing)}
+                disabled={followMutation.isPending}
                 className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${
                   isFollowing
                     ? "border-brand-green bg-brand-green/10 text-brand-green"
@@ -209,9 +231,13 @@ function UserProfilePage() {
                 }`}
               >
                 {isFollowing ? (
-                  <><UserCheck className="h-4 w-4" /> Following</>
+                  <>
+                    <UserCheck className="h-4 w-4" /> Following
+                  </>
                 ) : (
-                  <><UserPlus className="h-4 w-4" /> Follow</>
+                  <>
+                    <UserPlus className="h-4 w-4" /> Follow
+                  </>
                 )}
               </button>
             )}
@@ -219,21 +245,25 @@ function UserProfilePage() {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 divide-x divide-border rounded-2xl border border-border bg-card overflow-hidden mb-6">
+        <div className="mb-6 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card">
           {[
-            { label: "Followers", value: profile.followers_count ?? 0 },
-            { label: "Following", value: profile.following_count ?? 0 },
-            { label: "Investments", value: investmentCount },
-          ].map(({ label, value }) => (
-            <div key={label} className="py-4 text-center">
+            { label: "Followers", value: profile.followers_count ?? 0, tab: "followers" as ProfileTab },
+            { label: "Following", value: profile.following_count ?? 0, tab: "following" as ProfileTab },
+            { label: "Investments", value: "—", tab: null },
+          ].map(({ label, value, tab: t }) => (
+            <button
+              key={label}
+              onClick={() => t && setTab(t)}
+              className={`py-4 text-center transition ${t ? "hover:bg-secondary/40 cursor-pointer" : "cursor-default"}`}
+            >
               <p className="font-display text-2xl font-bold">{value}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tab bar */}
       <div className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur-md">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-1 overflow-x-auto py-2 scrollbar-hide">
@@ -258,9 +288,23 @@ function UserProfilePage() {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
           <div className="min-w-0">
-            {tab === "overview" && <OverviewTab profile={profile} roles={roles} investmentCount={investmentCount} />}
-            {tab === "followers" && <FollowersList profileId={profile.id} currentUserId={user?.id} type="followers" />}
-            {tab === "following" && <FollowersList profileId={profile.id} currentUserId={user?.id} type="following" />}
+            {tab === "overview" && (
+              <OverviewTab profile={profile} roles={roles} />
+            )}
+            {tab === "followers" && (
+              <FollowersList
+                profileId={profile.id}
+                currentUserId={user?.id}
+                type="followers"
+              />
+            )}
+            {tab === "following" && (
+              <FollowersList
+                profileId={profile.id}
+                currentUserId={user?.id}
+                type="following"
+              />
+            )}
           </div>
           <aside className="hidden lg:block">
             <ProfileSidebar profile={profile} roles={roles} />
@@ -273,7 +317,15 @@ function UserProfilePage() {
   );
 }
 
-function OverviewTab({ profile, roles, investmentCount }: { profile: any; roles: string[]; investmentCount: number }) {
+function RoleChip({ role }: { role: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-2.5 py-0.5 text-[10px] font-semibold capitalize text-primary">
+      {role.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function OverviewTab({ profile, roles }: { profile: any; roles: string[] }) {
   const { data: recentPosts = [] } = useQuery({
     queryKey: ["user-posts", profile.id],
     queryFn: async () => {
@@ -281,7 +333,6 @@ function OverviewTab({ profile, roles, investmentCount }: { profile: any; roles:
         .from("posts")
         .select("id,content,created_at,category")
         .eq("author_id", profile.id)
-        .is("business_id", null)
         .order("created_at", { ascending: false })
         .limit(10);
       if (error) throw error;
@@ -294,35 +345,32 @@ function OverviewTab({ profile, roles, investmentCount }: { profile: any; roles:
       {/* Bio */}
       {profile.bio && (
         <section>
-          <h2 className="font-display text-lg font-bold mb-3">About</h2>
-          <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">{profile.bio}</p>
+          <h2 className="mb-3 font-display text-lg font-bold">About</h2>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+            {profile.bio}
+          </p>
         </section>
       )}
 
       {/* Roles */}
       {roles.length > 0 && (
         <section>
-          <h2 className="font-display text-lg font-bold mb-3">Roles</h2>
+          <h2 className="mb-3 font-display text-lg font-bold">Roles</h2>
           <div className="flex flex-wrap gap-2">
             {roles.map((r) => (
-              <span
-                key={r}
-                className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-4 py-1.5 text-xs font-semibold capitalize text-primary"
-              >
-                {r.replace(/_/g, " ")}
-              </span>
+              <RoleChip key={r} role={r} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Stats */}
+      {/* Activity stats */}
       <section>
-        <h2 className="font-display text-lg font-bold mb-3">Activity</h2>
+        <h2 className="mb-3 font-display text-lg font-bold">Activity</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {[
-            { icon: TrendingUp, label: "Investments", value: investmentCount },
             { icon: Users, label: "Followers", value: profile.followers_count ?? 0 },
+            { icon: TrendingUp, label: "Following", value: profile.following_count ?? 0 },
             { icon: MessageCircle, label: "Posts", value: recentPosts.length },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="rounded-2xl border border-border bg-card p-4 shadow-card">
@@ -339,16 +387,26 @@ function OverviewTab({ profile, roles, investmentCount }: { profile: any; roles:
       {/* Recent posts */}
       {recentPosts.length > 0 && (
         <section>
-          <h2 className="font-display text-lg font-bold mb-4">Recent posts</h2>
-          <div className="divide-y divide-border/60 rounded-2xl border border-border bg-card overflow-hidden">
+          <h2 className="mb-4 font-display text-lg font-bold">Recent posts</h2>
+          <div className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border bg-card">
             {recentPosts.map((post: any) => (
               <div key={post.id} className="px-5 py-4">
-                <p className="text-sm leading-relaxed text-foreground line-clamp-3">{post.content}</p>
+                <p className="line-clamp-3 text-sm leading-relaxed text-foreground">
+                  {post.content}
+                </p>
                 <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
                   {post.category && (
-                    <span className="rounded-full border border-border px-2 py-0.5 capitalize">{post.category}</span>
+                    <span className="rounded-full border border-border px-2 py-0.5 capitalize">
+                      {post.category}
+                    </span>
                   )}
-                  <span>{new Date(post.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  <span>
+                    {new Date(post.created_at).toLocaleDateString("en-NG", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
                 </div>
               </div>
             ))}
@@ -360,7 +418,9 @@ function OverviewTab({ profile, roles, investmentCount }: { profile: any; roles:
         <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center">
           <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
           <p className="text-sm font-semibold">Nothing here yet</p>
-          <p className="mt-1 text-xs text-muted-foreground">This user hasn't shared anything yet.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This user hasn't shared anything yet.
+          </p>
         </div>
       )}
     </div>
@@ -379,23 +439,47 @@ function FollowersList({
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["user-follows-list", profileId, type],
     queryFn: async () => {
+      let profiles: any[] = [];
+
       if (type === "followers") {
         const { data } = await db
           .from("user_follows")
-          .select("follower_id, profiles!user_follows_follower_id_fkey(id,full_name,username,avatar_url,bio,followers_count)")
+          .select(
+            "follower_id, profiles!user_follows_follower_id_fkey(id,full_name,username,avatar_url,bio,followers_count)",
+          )
           .eq("following_id", profileId)
           .order("created_at", { ascending: false })
           .limit(50);
-        return (data ?? []).map((r: any) => r.profiles).filter(Boolean);
+        profiles = (data ?? []).map((r: any) => r.profiles).filter(Boolean);
       } else {
         const { data } = await db
           .from("user_follows")
-          .select("following_id, profiles!user_follows_following_id_fkey(id,full_name,username,avatar_url,bio,followers_count)")
+          .select(
+            "following_id, profiles!user_follows_following_id_fkey(id,full_name,username,avatar_url,bio,followers_count)",
+          )
           .eq("follower_id", profileId)
           .order("created_at", { ascending: false })
           .limit(50);
-        return (data ?? []).map((r: any) => r.profiles).filter(Boolean);
+        profiles = (data ?? []).map((r: any) => r.profiles).filter(Boolean);
       }
+
+      if (!profiles.length) return [];
+
+      // Batch-fetch roles for all users
+      const ids = profiles.map((p: any) => p.id);
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("user_id,role")
+        .in("user_id", ids);
+
+      const rolesMap = new Map<string, string[]>();
+      for (const r of rolesData ?? []) {
+        const list = rolesMap.get(r.user_id) ?? [];
+        list.push(r.role);
+        rolesMap.set(r.user_id, list);
+      }
+
+      return profiles.map((p: any) => ({ ...p, roles: rolesMap.get(p.id) ?? [] }));
     },
   });
 
@@ -403,7 +487,10 @@ function FollowersList({
     return (
       <div className="space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
+          >
             <div className="h-12 w-12 animate-pulse rounded-full bg-secondary" />
             <div className="flex-1 space-y-2">
               <div className="h-3 w-32 animate-pulse rounded bg-secondary" />
@@ -419,9 +506,13 @@ function FollowersList({
     return (
       <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center">
         <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-        <p className="text-sm font-semibold">{type === "followers" ? "No followers yet" : "Not following anyone yet"}</p>
+        <p className="text-sm font-semibold">
+          {type === "followers" ? "No followers yet" : "Not following anyone yet"}
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {type === "followers" ? "Be the first to follow this user." : "They haven't followed anyone yet."}
+          {type === "followers"
+            ? "Be the first to follow this user."
+            : "They haven't followed anyone yet."}
         </p>
       </div>
     );
@@ -436,14 +527,19 @@ function FollowersList({
   );
 }
 
-function UserCard({ user, currentUserId }: { user: any; currentUserId: string | undefined }) {
-  const db = supabase as any;
+function UserCard({
+  user,
+  currentUserId,
+}: {
+  user: { id: string; full_name: string | null; username: string | null; avatar_url: string | null; bio: string | null; followers_count: number; roles: string[] };
+  currentUserId: string | undefined;
+}) {
   const qc = useQueryClient();
-  const [followLoading, setFollowLoading] = useState(false);
+  const followQK = ["is-following", currentUserId, user.id];
 
   const { data: isFollowing = false } = useQuery({
     enabled: !!currentUserId && currentUserId !== user.id,
-    queryKey: ["is-following", currentUserId, user.id],
+    queryKey: followQK,
     queryFn: async () => {
       const { data } = await db
         .from("user_follows")
@@ -455,65 +551,105 @@ function UserCard({ user, currentUserId }: { user: any; currentUserId: string | 
     },
   });
 
-  async function toggleFollow() {
-    if (!currentUserId) return;
-    setFollowLoading(true);
-    try {
-      if (isFollowing) {
-        await db.from("user_follows").delete().eq("follower_id", currentUserId).eq("following_id", user.id);
+  const followMutation = useMutation({
+    mutationFn: async (shouldFollow: boolean) => {
+      if (shouldFollow) {
+        const { error } = await db
+          .from("user_follows")
+          .insert({ follower_id: currentUserId, following_id: user.id });
+        if (error) throw error;
       } else {
-        await db.from("user_follows").insert({ follower_id: currentUserId, following_id: user.id });
+        const { error } = await db
+          .from("user_follows")
+          .delete()
+          .eq("follower_id", currentUserId)
+          .eq("following_id", user.id);
+        if (error) throw error;
       }
-      await qc.invalidateQueries({ queryKey: ["is-following", currentUserId, user.id] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not update follow status.");
-    } finally {
-      setFollowLoading(false);
-    }
-  }
+    },
+    onMutate: async (shouldFollow) => {
+      await qc.cancelQueries({ queryKey: followQK });
+      const prev = qc.getQueryData(followQK);
+      qc.setQueryData(followQK, shouldFollow);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev !== undefined) qc.setQueryData(followQK, ctx.prev);
+      toast.error("Could not update follow status.");
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: followQK });
+    },
+  });
 
   const displayName = user.full_name ?? user.username ?? "Member";
   const initial = displayName.charAt(0).toUpperCase();
   const isOwnCard = currentUserId === user.id;
 
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+    <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-4 shadow-card">
       {user.avatar_url ? (
-        <img src={user.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover shrink-0" />
+        <img
+          src={user.avatar_url}
+          alt=""
+          className="h-12 w-12 shrink-0 rounded-full object-cover"
+        />
       ) : (
         <div className="gradient-brand flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
           {initial}
         </div>
       )}
+
       <div className="min-w-0 flex-1">
         {user.username ? (
           <Link
             to="/users/$username"
             params={{ username: user.username }}
-            className="font-semibold hover:text-primary transition-colors"
+            className="font-semibold transition-colors hover:text-primary"
           >
             {displayName}
           </Link>
         ) : (
           <p className="font-semibold">{displayName}</p>
         )}
-        {user.username && <p className="text-xs text-muted-foreground">@{user.username}</p>}
-        {user.bio && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{user.bio}</p>}
+        {user.username && (
+          <p className="text-xs text-muted-foreground">@{user.username}</p>
+        )}
+        {/* Role chips */}
+        {user.roles.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {user.roles.slice(0, 3).map((r) => (
+              <RoleChip key={r} role={r} />
+            ))}
+          </div>
+        )}
+        {user.bio && (
+          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{user.bio}</p>
+        )}
         {user.followers_count > 0 && (
           <p className="mt-0.5 text-xs text-muted-foreground">{user.followers_count} followers</p>
         )}
       </div>
-      {!isOwnCard && currentUserId && (
+
+      {!isOwnCard && !!currentUserId && (
         <button
-          onClick={toggleFollow}
-          disabled={followLoading}
-          className={`shrink-0 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+          onClick={() => followMutation.mutate(!isFollowing)}
+          disabled={followMutation.isPending}
+          className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
             isFollowing
               ? "border-brand-green bg-brand-green/10 text-brand-green"
               : "border-border bg-background hover:bg-secondary"
           }`}
         >
-          {isFollowing ? <><UserCheck className="h-3.5 w-3.5" /> Following</> : <><UserPlus className="h-3.5 w-3.5" /> Follow</>}
+          {isFollowing ? (
+            <>
+              <UserCheck className="h-3.5 w-3.5" /> Following
+            </>
+          ) : (
+            <>
+              <UserPlus className="h-3.5 w-3.5" /> Follow
+            </>
+          )}
         </button>
       )}
     </div>
@@ -524,7 +660,9 @@ function ProfileSidebar({ profile, roles }: { profile: any; roles: string[] }) {
   return (
     <div className="sticky top-24 space-y-4">
       <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">About</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          About
+        </p>
         <dl className="flex flex-col gap-3">
           {profile.occupation && (
             <div className="flex items-start gap-2.5">
@@ -535,13 +673,20 @@ function ProfileSidebar({ profile, roles }: { profile: any; roles: string[] }) {
           {(profile.city || profile.country || profile.location) && (
             <div className="flex items-start gap-2.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm">{[profile.city, profile.country, profile.location].filter(Boolean).join(", ")}</span>
+              <span className="text-sm">
+                {[profile.city, profile.country, profile.location].filter(Boolean).join(", ")}
+              </span>
             </div>
           )}
           {profile.website_url && (
             <div className="flex items-start gap-2.5">
               <Globe className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate">
+              <a
+                href={profile.website_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="truncate text-sm text-primary hover:underline"
+              >
                 {profile.website_url.replace(/^https?:\/\//, "")}
               </a>
             </div>
@@ -549,7 +694,12 @@ function ProfileSidebar({ profile, roles }: { profile: any; roles: string[] }) {
           {profile.linkedin_url && (
             <div className="flex items-start gap-2.5">
               <Linkedin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+              <a
+                href={profile.linkedin_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline"
+              >
                 LinkedIn
               </a>
             </div>
@@ -559,15 +709,12 @@ function ProfileSidebar({ profile, roles }: { profile: any; roles: string[] }) {
 
       {roles.length > 0 && (
         <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Roles</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Roles
+          </p>
           <div className="flex flex-wrap gap-2">
             {roles.map((r) => (
-              <span
-                key={r}
-                className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-3 py-1 text-xs font-semibold capitalize text-primary"
-              >
-                {r.replace(/_/g, " ")}
-              </span>
+              <RoleChip key={r} role={r} />
             ))}
           </div>
         </div>
@@ -580,16 +727,16 @@ function ProfileSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <div className="gradient-mesh h-40 w-full sm:h-52 animate-pulse" />
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
+      <div className="gradient-mesh h-40 w-full animate-pulse sm:h-52" />
+      <div className="relative z-10 mx-auto -mt-12 max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-end gap-4 pb-6">
-          <div className="h-24 w-24 rounded-2xl animate-pulse bg-secondary border-4 border-background" />
+          <div className="h-24 w-24 animate-pulse rounded-2xl border-4 border-background bg-secondary" />
           <div className="flex-1 space-y-2 pb-2">
             <div className="h-7 w-48 animate-pulse rounded bg-secondary" />
             <div className="h-4 w-32 animate-pulse rounded bg-secondary" />
           </div>
         </div>
-        <div className="h-20 rounded-2xl animate-pulse bg-secondary mb-6" />
+        <div className="mb-6 h-20 animate-pulse rounded-2xl bg-secondary" />
       </div>
     </div>
   );

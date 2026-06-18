@@ -26,3 +26,29 @@ CREATE POLICY "user_follows_self_insert" ON public.user_follows
 
 CREATE POLICY "user_follows_self_delete" ON public.user_follows
   FOR DELETE USING (auth.uid() = follower_id);
+
+-- Trigger: increment counts when a follow is created
+CREATE OR REPLACE FUNCTION public.handle_follow_insert()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE public.profiles SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
+  UPDATE public.profiles SET following_count = following_count + 1 WHERE id = NEW.follower_id;
+  RETURN NEW;
+END; $$;
+
+CREATE TRIGGER trg_user_follows_after_insert
+AFTER INSERT ON public.user_follows
+FOR EACH ROW EXECUTE FUNCTION public.handle_follow_insert();
+
+-- Trigger: decrement counts when a follow is removed
+CREATE OR REPLACE FUNCTION public.handle_follow_delete()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE public.profiles SET followers_count = GREATEST(0, followers_count - 1) WHERE id = OLD.following_id;
+  UPDATE public.profiles SET following_count = GREATEST(0, following_count - 1) WHERE id = OLD.follower_id;
+  RETURN OLD;
+END; $$;
+
+CREATE TRIGGER trg_user_follows_after_delete
+AFTER DELETE ON public.user_follows
+FOR EACH ROW EXECUTE FUNCTION public.handle_follow_delete();

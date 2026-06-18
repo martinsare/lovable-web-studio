@@ -1,5 +1,3 @@
-- [Design system](design-system.md) — premium ultra-dark design with oklch tokens; key utilities and fonts documented
-- [Router generator JSX quirk](router-generator-jsx.md) — TanStack router-generator fails on JSX variables defined before the return statement in route files
-- [Animated illustrations](animated-illustrations.md) — CSS-animated SVG components in src/components/animated-illustration.tsx; no external Lottie package needed.
-- [Community layout](community-layout.md) — flex fill-width (no max-w outer wrapper); border-r separates feed from right sidebar; right sidebar w-[300px] hidden below xl.
-- [Mobile bottom nav](mobile-nav.md) — MobileBottomNav uses useRouterState (not window.location) to avoid SSR hydration mismatch; pb-16 md:pb-0 on main to clear the bar.
+- [Follow counter RLS pattern](follow-counter-rls.md) — client cannot update another user's profile row; use SECURITY DEFINER triggers on the junction table instead.
+- [TanStack route JSX constraint](tanstack-route-jsx.md) — never define JSX variables before return in route files; always use sub-components.
+- [New tables not in types.ts](new-tables-cast.md) — user_follows, reference_data etc. are not in generated types; use (supabase as any) cast throughout.
