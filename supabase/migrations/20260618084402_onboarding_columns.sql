@@ -1,0 +1,10 @@
+-- Add comprehensive onboarding columns to profiles
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS phone TEXT,
+  ADD COLUMN IF NOT EXISTS country TEXT,
+  ADD COLUMN IF NOT EXISTS city TEXT,
+  ADD COLUMN IF NOT EXISTS website_url TEXT,
+  ADD COLUMN IF NOT EXISTS linkedin_url TEXT,
+  ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::JSONB,
+  ADD COLUMN IF NOT EXISTS agreed_terms BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS onboarding_step INTEGER NOT NULL DEFAULT 0;
