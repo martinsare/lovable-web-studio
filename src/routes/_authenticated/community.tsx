@@ -146,14 +146,26 @@ function CommunityPage() {
 
   return (
     <AppLayout>
-      <div className="flex min-h-full">
-        <div className="flex w-full">
+      <div className="flex min-h-full flex-col">
+
+        {/* ── Page header ── */}
+        <div className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-xl">
+          <div className="px-4 py-4 sm:px-6 lg:px-8">
+            <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Community</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight">CoFund Community</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground leading-relaxed">
+              Connect with founders, investors, and mentors across Africa's investment ecosystem.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-1 min-w-0">
 
           {/* ── Center column ── */}
           <div className="flex-1 min-w-0 border-r border-border">
 
             {/* Sticky tab bar */}
-            <div className="sticky top-0 z-10 flex border-b border-border bg-background/95 backdrop-blur-xl">
+            <div className="sticky top-[77px] z-10 flex border-b border-border bg-background/95 backdrop-blur-xl">
               {TABS.map((t) => (
                 <button
                   key={t.id}
@@ -184,7 +196,7 @@ function CommunityPage() {
 
           {/* ── Right sidebar ── */}
           <aside className="hidden xl:block w-[300px] shrink-0">
-            <div className="sticky top-0 max-h-screen overflow-y-auto p-5 space-y-4">
+            <div className="sticky top-[77px] max-h-[calc(100vh-77px)] overflow-y-auto p-5 space-y-4">
               <RightSidebar />
             </div>
           </aside>

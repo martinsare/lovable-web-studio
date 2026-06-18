@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, ShieldCheck, ChevronRight } from "lucide-react";
-import { AppLayout } from "@/components/app-layout";
+import { PageShell } from "@/components/page-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -131,18 +131,12 @@ function SuitabilityPage() {
         : "bg-destructive/10";
 
   return (
-    <AppLayout>
-      <div className="min-h-full bg-background">
-        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-
-          {/* Header */}
-          <div className="mb-8">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary mb-2">Investor controls</p>
-            <h1 className="font-display text-2xl font-bold">Suitability assessment</h1>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-xl">
-              Private-market investing stays behind a real suitability screen. This records your experience, loss capacity, time horizon, and risk tolerance before capital moves.
-            </p>
-          </div>
+    <PageShell
+      eyebrow="Investor Controls"
+      title="Suitability Assessment"
+      description="Private-market investing stays behind a real suitability screen. This records your experience, loss capacity, time horizon, and risk tolerance before capital moves."
+    >
+      <div className="max-w-4xl">
 
           {/* Previous assessment banner */}
           {latestAssessment && (
@@ -369,8 +363,7 @@ function SuitabilityPage() {
             </div>
           </div>
         </div>
-      </div>
-    </AppLayout>
+    </PageShell>
   );
 }
 

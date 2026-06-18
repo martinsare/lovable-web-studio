@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { DocumentUploadDialog } from "@/components/document-upload-dialog";
 import { AppLayout } from "@/components/app-layout";
+import { PageShell } from "@/components/page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -224,70 +225,72 @@ function MyBusiness() {
 
   if (isLoading) {
     return (
-      <AppLayout>
-        <div className="min-h-full bg-background">
+      <PageShell eyebrow="Founder" title="My Business" noPadding>
+        <div className="bg-background">
           <div className="h-64 animate-pulse bg-secondary" />
           <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="h-32 animate-pulse rounded-2xl bg-card" />
           </div>
         </div>
-      </AppLayout>
+      </PageShell>
     );
   }
 
   if (!businesses || businesses.length === 0) {
     return (
-      <AppLayout>
-        <div className="min-h-full bg-background">
-          <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 text-center">
-            <div className="gradient-brand mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl text-primary-foreground shadow-brand">
-              <Building2 className="h-10 w-10" />
-            </div>
-            <h1 className="font-display text-3xl font-bold">Start your Business Passport</h1>
-            <p className="mt-4 text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
-              Your Business Passport is a verified profile on CoFund — with branding, reporting, docs,
-              trust signals, and funding history in one place.
-            </p>
-            <button
-              type="button"
-              className="mt-8 inline-flex items-center gap-2 gradient-brand rounded-2xl px-8 py-4 font-bold text-primary-foreground shadow-brand"
-            >
-              <Plus className="h-5 w-5" /> Register your business
-            </button>
+      <PageShell
+        eyebrow="Founder"
+        title="My Business"
+        description="Set up your verified Business Passport to start raising capital on CoFund."
+      >
+        <div className="mx-auto max-w-2xl py-8 text-center">
+          <div className="gradient-brand mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl text-primary-foreground shadow-brand">
+            <Building2 className="h-10 w-10" />
+          </div>
+          <h2 className="font-display text-2xl font-bold">Start your Business Passport</h2>
+          <p className="mt-4 text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
+            Your Business Passport is a verified profile on CoFund — with branding, reporting, docs,
+            trust signals, and funding history in one place.
+          </p>
+          <button
+            type="button"
+            className="mt-8 inline-flex items-center gap-2 gradient-brand rounded-2xl px-8 py-4 font-bold text-primary-foreground shadow-brand"
+          >
+            <Plus className="h-5 w-5" /> Register your business
+          </button>
 
-            <div className="mt-16 grid gap-5 sm:grid-cols-3 text-left">
-              {[
-                {
-                  icon: Building2,
-                  color: "text-primary bg-primary/10",
-                  title: "Business Passport",
-                  desc: "Logo, story, products, team and operating footprint.",
-                },
-                {
-                  icon: ShieldCheck,
-                  color: "text-brand-green bg-brand-green/10",
-                  title: "Trust Score",
-                  desc: "Verification, reporting, and milestones build your credibility.",
-                },
-                {
-                  icon: Coins,
-                  color: "text-gold bg-gold/10",
-                  title: "Funding Rounds",
-                  desc: "Create and manage rounds with escrow protection.",
-                },
-              ].map((card) => (
-                <div key={card.title} className="rounded-2xl border border-border bg-card p-5">
-                  <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ${card.color}`}>
-                    <card.icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="font-display text-sm font-bold">{card.title}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{card.desc}</p>
+          <div className="mt-16 grid gap-5 sm:grid-cols-3 text-left">
+            {[
+              {
+                icon: Building2,
+                color: "text-primary bg-primary/10",
+                title: "Business Passport",
+                desc: "Logo, story, products, team and operating footprint.",
+              },
+              {
+                icon: ShieldCheck,
+                color: "text-brand-green bg-brand-green/10",
+                title: "Trust Score",
+                desc: "Verification, reporting, and milestones build your credibility.",
+              },
+              {
+                icon: Coins,
+                color: "text-gold bg-gold/10",
+                title: "Funding Rounds",
+                desc: "Create and manage rounds with escrow protection.",
+              },
+            ].map((card) => (
+              <div key={card.title} className="rounded-2xl border border-border bg-card p-5">
+                <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ${card.color}`}>
+                  <card.icon className="h-5 w-5" />
                 </div>
-              ))}
-            </div>
+                <h3 className="font-display text-sm font-bold">{card.title}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{card.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </AppLayout>
+      </PageShell>
     );
   }
 
@@ -295,8 +298,24 @@ function MyBusiness() {
   const uploadedTypes = new Set(entityDocuments.map((d: any) => d.document_type.toLowerCase()));
 
   return (
-    <AppLayout>
-      <div className="min-h-full bg-background pb-16">
+    <PageShell
+      eyebrow="Founder"
+      title={primary.name ?? "My Business"}
+      description={primary.tagline ?? primary.industry ?? "Manage your business passport, KYB verification, and funding activity."}
+      noPadding
+      actions={
+        primary.slug ? (
+          <Link
+            to="/business/$slug"
+            params={{ slug: primary.slug }}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition"
+          >
+            Public view <ExternalLink className="h-3.5 w-3.5" />
+          </Link>
+        ) : undefined
+      }
+    >
+      <div className="bg-background pb-16">
         {/* Business passport header */}
         {businesses.map((business: any) => (
           <div key={business.id} className="relative">
@@ -402,15 +421,6 @@ function MyBusiness() {
                     <p className="font-display text-xl font-bold">{business.founded_year ?? "—"}</p>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Founded</p>
                   </div>
-                  {business.slug && (
-                    <Link
-                      to="/business/$slug"
-                      params={{ slug: business.slug }}
-                      className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition"
-                    >
-                      Public view <ExternalLink className="h-3.5 w-3.5" />
-                    </Link>
-                  )}
                 </div>
               </div>
             </div>
@@ -566,6 +576,6 @@ function MyBusiness() {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </PageShell>
   );
 }
