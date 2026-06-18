@@ -22,6 +22,7 @@ import {
   Send,
   X,
 } from "lucide-react";
+import { EmptyFeedIllustration } from "@/components/animated-illustration";
 
 export const Route = createFileRoute("/_authenticated/community")({
   head: () => ({ meta: [{ title: "Community · CoFund" }] }),
@@ -159,8 +160,8 @@ function CommunityPage() {
 
   return (
     <AppLayout>
-      <div className="flex min-h-full justify-center">
-        <div className="flex w-full max-w-[960px]">
+      <div className="flex min-h-full">
+        <div className="flex w-full">
 
           {/* ── Center column ── */}
           <div className="flex-1 min-w-0 border-r border-border">
@@ -815,10 +816,12 @@ function PostList({
 }) {
   if (posts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <MessageCircle className="mb-4 h-12 w-12 text-muted-foreground/20" />
-        <p className="font-display text-base font-semibold">Nothing here yet</p>
-        <p className="mt-2 text-sm text-muted-foreground">{emptyMessage ?? "Be the first to post."}</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <EmptyFeedIllustration />
+        <p className="mt-5 font-display text-base font-semibold">Nothing here yet</p>
+        <p className="mt-2 text-sm text-muted-foreground max-w-xs leading-relaxed">
+          {emptyMessage ?? "Be the first to post."}
+        </p>
       </div>
     );
   }

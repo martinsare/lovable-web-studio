@@ -21,6 +21,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
+import { EmptyPortfolioIllustration } from "@/components/animated-illustration";
 import { useAuth } from "@/hooks/use-auth";
 import { useSecurity } from "@/hooks/use-security";
 import { buildInvestmentReadiness } from "@/lib/investment-readiness";
@@ -219,9 +220,9 @@ function PortfolioPage() {
             </div>
 
             {!commitments.length ? (
-              <div className="rounded-2xl border border-dashed border-border/60 py-16 text-center">
-                <TrendingUp className="mx-auto mb-4 h-10 w-10 text-muted-foreground/30" />
-                <p className="font-display text-base font-semibold">No investments yet</p>
+              <div className="rounded-2xl border border-border/40 py-14 text-center">
+                <EmptyPortfolioIllustration />
+                <p className="mt-5 font-display text-base font-semibold">No investments yet</p>
                 <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
                   Browse verified opportunities and back the businesses building Africa's future.
                 </p>

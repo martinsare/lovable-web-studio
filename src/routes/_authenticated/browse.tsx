@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/app-layout";
+import { EmptySearchIllustration } from "@/components/animated-illustration";
 import {
   Search,
   BadgeCheck,
@@ -256,9 +257,9 @@ function Opportunities({
 
   if (!filtered.length)
     return (
-      <div className="py-20 text-center">
-        <TrendingUp className="mx-auto mb-4 h-12 w-12 text-muted-foreground/20" />
-        <p className="font-display text-base font-semibold">No opportunities found</p>
+      <div className="py-14 text-center">
+        <EmptySearchIllustration />
+        <p className="mt-5 font-display text-base font-semibold">No opportunities found</p>
         <p className="mt-2 text-sm text-muted-foreground">
           {q || industry !== "All" ? "Try a different search or filter." : "As businesses list funding rounds, they'll appear here."}
         </p>
@@ -432,9 +433,9 @@ function Businesses({ q, industry }: { q: string; industry: string }) {
 
   if (!filtered.length)
     return (
-      <div className="py-20 text-center">
-        <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground/20" />
-        <p className="font-display text-base font-semibold">No businesses found</p>
+      <div className="py-14 text-center">
+        <EmptySearchIllustration />
+        <p className="mt-5 font-display text-base font-semibold">No businesses found</p>
         <p className="mt-2 text-sm text-muted-foreground">
           {q || industry !== "All" ? "Try a different search or filter." : "Verified businesses will appear here."}
         </p>

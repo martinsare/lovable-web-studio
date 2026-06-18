@@ -23,6 +23,7 @@ import {
   ChevronRight,
   BarChart3,
   Star,
+  Home,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -55,6 +56,41 @@ function buildNav(roles: AppRole[], unreadCount: number): NavItem[] {
     items.push({ to: "/admin", icon: ShieldCheck, label: "Admin" });
   }
   return items;
+}
+
+const MOBILE_NAV = [
+  { to: "/home", icon: Home, label: "Home" },
+  { to: "/browse", icon: Search, label: "Browse" },
+  { to: "/community", icon: MessageCircle, label: "Community" },
+  { to: "/portfolio", icon: BarChart3, label: "Portfolio" },
+  { to: "/settings", icon: Settings, label: "More" },
+] as const;
+
+function MobileBottomNav() {
+  const routerState = useRouterState();
+  const pathname = routerState.location.pathname;
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex h-16 items-stretch border-t border-border bg-background/95 backdrop-blur-xl">
+      {MOBILE_NAV.map((item) => {
+        const active =
+          pathname === item.to ||
+          (item.to !== "/home" && pathname.startsWith(item.to));
+        return (
+          <Link
+            key={item.to}
+            to={item.to}
+            className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
+              active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <item.icon className="h-5 w-5" />
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
 
 function NavLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
@@ -222,9 +258,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           {children}
         </main>
+
+        {/* Mobile bottom navigation */}
+        <MobileBottomNav />
       </div>
     </div>
   );
