@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, ExternalLink, FileText, History, MessageCircle, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BookOpen, ExternalLink, FileText, History, MessageCircle, ShieldCheck } from "lucide-react";
 import { DocumentUploadDialog } from "@/components/document-upload-dialog";
 import { PageShell } from "@/components/page-shell";
 import { useAuth } from "@/hooks/use-auth";
@@ -255,6 +255,16 @@ function OfferingRoomPage() {
         </div>
       }
     >
+      {/* Back breadcrumb */}
+      <div className="mb-6">
+        <Link
+          to="/browse"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-semibold text-muted-foreground transition hover:border-primary/30 hover:bg-secondary hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to Browse
+        </Link>
+      </div>
+
       <section className="grid gap-4 md:grid-cols-4">
         <Metric label="Business" value={opportunity.businesses?.name ?? "-"} />
         <Metric label="Goal" value={formatMoney(Number(opportunity.goal_amount ?? 0))} />

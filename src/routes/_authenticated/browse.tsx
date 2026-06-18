@@ -298,6 +298,14 @@ function Opportunities({
             key={o.id}
             className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-brand"
           >
+            {/* Card-level link — covers the whole card below interactive elements */}
+            <Link
+              to="/offerings/$opportunityId"
+              params={{ opportunityId: o.id }}
+              className="absolute inset-0 z-0 rounded-2xl"
+              aria-label={`View ${o.title} offering details`}
+            />
+
             {/* Cover / banner area */}
             <div className="relative h-24 overflow-hidden">
               {o.businesses?.cover_url ? (
@@ -310,8 +318,8 @@ function Opportunities({
               {/* Watchlist */}
               <button
                 type="button"
-                onClick={(e) => { e.preventDefault(); onToggle(o.id); }}
-                className={`absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full transition ${
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); onToggle(o.id); }}
+                className={`relative z-10 absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full transition ${
                   isWatched
                     ? "bg-primary text-primary-foreground"
                     : "bg-black/40 text-white hover:bg-black/60"
@@ -394,7 +402,8 @@ function Opportunities({
                   <Link
                     to="/invest/$opportunityId"
                     params={{ opportunityId: o.id }}
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90"
+                    onClick={(e) => e.stopPropagation()}
+                    className="relative z-10 shrink-0 inline-flex items-center gap-1.5 rounded-xl gradient-brand px-4 py-2 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90"
                   >
                     Invest <ArrowRight className="h-3.5 w-3.5" />
                   </Link>

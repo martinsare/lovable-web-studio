@@ -328,7 +328,8 @@ function FeaturedOpportunity() {
               </div>
             </div>
             <Link
-              to="/browse"
+              to="/offerings/$opportunityId"
+              params={{ opportunityId: (data as any).id }}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl gradient-brand py-3 text-sm font-bold text-primary-foreground shadow-brand transition hover:opacity-90"
             >
               View opportunity <ArrowRight className="h-4 w-4" />
