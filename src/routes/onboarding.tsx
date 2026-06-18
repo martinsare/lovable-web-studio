@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Check,
@@ -8,7 +8,6 @@ import {
   Briefcase,
   Building2,
   FileText,
-  GraduationCap,
   Link2,
   MapPin,
   Phone,
@@ -32,9 +31,9 @@ import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import logo from "@/assets/icon.png";
 
-export const Route = createFileRoute("/onboarding")({ ssr: false, head: () => ({ meta: [{ title: "Get started Ã‚Â· CoFund" }] }), component: Onboarding });
+export const Route = createFileRoute("/onboarding")({ ssr: false, head: () => ({ meta: [{ title: "Get started Ãƒâ€šÃ‚Â· CoFund" }] }), component: Onboarding });
 
-const AFRICAN_COUNTRIES = ["Nigeria","South Africa","Kenya","Ghana","Ethiopia","Tanzania","Uganda","Rwanda","Senegal","Ivory Coast","Cameroon","Angola","Mozambique","Zambia","Zimbabwe","Botswana","Namibia","Mauritius","Morocco","Egypt","Tunisia","Algeria","Libya","Sudan","Somalia","DRC","Gabon","Congo","Mali","Burkina Faso","Niger","Chad","Sierra Leone","Liberia","Guinea","Benin","Togo","Malawi","Lesotho","Eswatini","Eritrea","Djibouti","Comoros","Cape Verde","SÃƒÂ£o TomÃƒÂ© and PrÃƒÂ­ncipe","Equatorial Guinea","South Sudan","Madagascar","Seychelles","Gambia","Guinea-Bissau"];
+const AFRICAN_COUNTRIES = ["Nigeria","South Africa","Kenya","Ghana","Ethiopia","Tanzania","Uganda","Rwanda","Senegal","Ivory Coast","Cameroon","Angola","Mozambique","Zambia","Zimbabwe","Botswana","Namibia","Mauritius","Morocco","Egypt","Tunisia","Algeria","Libya","Sudan","Somalia","DRC","Gabon","Congo","Mali","Burkina Faso","Niger","Chad","Sierra Leone","Liberia","Guinea","Benin","Togo","Malawi","Lesotho","Eswatini","Eritrea","Djibouti","Comoros","Cape Verde","SÃƒÆ’Ã‚Â£o TomÃƒÆ’Ã‚Â© and PrÃƒÆ’Ã‚Â­ncipe","Equatorial Guinea","South Sudan","Madagascar","Seychelles","Gambia","Guinea-Bissau"];
 const DIASPORA_COUNTRIES = ["United Kingdom","United States","Canada","United Arab Emirates","France","Germany","Netherlands","Belgium","Portugal","Italy","Saudi Arabia","Qatar","Australia","Other"];
 const ALL_COUNTRIES = [...AFRICAN_COUNTRIES, ...DIASPORA_COUNTRIES];
 const SECTORS = ["Fintech & Payments","Agritech & Food Systems","Healthtech & Biotech","Edtech & Skills","Clean Energy & Climate","Logistics & Transport","E-commerce & Retail","Real Estate & Construction","Media & Entertainment","Manufacturing & Industry","Mining & Resources","Fashion & Beauty","Travel & Hospitality","SaaS & Enterprise Tech","Telecom","Government & Civic Tech","Security & Defence","Other"];
@@ -64,7 +63,6 @@ const ROLES: { id: AppRole; title: string; desc: string; icon: React.ComponentTy
   { id: "investor", title: "Investor", desc: "Discover and back verified African businesses.", icon: TrendingUp },
   { id: "business_owner", title: "Business Owner", desc: "List your business, raise capital, and grow.", icon: Briefcase },
   { id: "startup_builder", title: "Startup Builder", desc: "Share your idea and find co-founders & mentors.", icon: Rocket },
-  { id: "mentor", title: "Mentor / Advisor", desc: "Guide founders with your expertise and experience.", icon: GraduationCap },
   { id: "professional", title: "Service Professional", desc: "Offer legal, accounting, design or tech services.", icon: Wrench },
   { id: "community_member", title: "Community Member", desc: "Learn, follow African businesses, and network.", icon: Users },
 ];
@@ -159,9 +157,9 @@ function getTrackFromIntent(intents: string[]): OnboardingTrack {
 }
 
 function getTrackRoleOptions(track: OnboardingTrack) {
-  if (track === "investor") return ["investor", "mentor", "professional", "community_member"] as AppRole[];
-  if (track === "founder") return ["business_owner", "startup_builder", "mentor", "professional", "community_member"] as AppRole[];
-  return ["community_member", "startup_builder", "mentor", "professional"] as AppRole[];
+  if (track === "investor") return ["investor", "professional", "community_member"] as AppRole[];
+  if (track === "founder") return ["business_owner", "startup_builder", "professional", "community_member"] as AppRole[];
+  return ["community_member", "startup_builder", "professional"] as AppRole[];
 }
 
 function getRoleTitle(role: AppRole) {
@@ -208,7 +206,7 @@ function Onboarding() {
   const step1Valid = data.intent.length > 0;
   const primaryTrack = getTrackFromIntent(data.intent);
   const step2Valid = data.fullName.trim().length >= 2 && data.phone.trim().length >= 7 && data.country !== "";
-  const requiresIndividualKyc = data.roles.includes("investor") || data.roles.includes("business_owner") || data.roles.includes("mentor") || data.roles.includes("professional");
+  const requiresIndividualKyc = data.roles.includes("investor") || data.roles.includes("business_owner") || data.roles.includes("professional");
   const requiresBusinessKyb = data.roles.includes("business_owner");
   const requiresNigeriaIdentifier = data.country === "Nigeria" || data.nationality === "Nigeria";
   const hasNigeriaIdentifier = data.nin.trim().length > 0 || data.bvn.trim().length > 0;
@@ -254,7 +252,6 @@ function Onboarding() {
       if (roles.includes("investor")) metadata.investor = { type: data.investorType, experience: data.investorExperience, capitalRange: data.investorCapitalRange, minTicket: data.investorMinTicket, maxTicket: data.investorMaxTicket, sectors: data.investorSectors, accredited: data.investorAccredited };
       if (roles.includes("business_owner")) metadata.business = { name: data.businessName, industry: data.businessIndustry, country: data.businessCountry, stage: data.businessStage, revenueRange: data.businessRevenueRange, teamSize: data.businessTeamSize, seeking: data.businessSeeking, capitalNeeded: data.businessCapitalNeeded };
       if (roles.includes("startup_builder")) metadata.startup = { name: data.startupName, industry: data.startupIndustry, stage: data.startupStage, cofounderStatus: data.startupCofounderStatus, seeking: data.startupSeeking };
-      if (roles.includes("mentor")) metadata.mentor = { expertise: data.mentorExpertise, experience: data.mentorExperience, industry: data.mentorIndustry, availability: data.mentorAvailability, hoursPerMonth: data.mentorHours };
       if (roles.includes("professional")) metadata.professional = { service: data.professionalService, experience: data.professionalExperience, openToStartups: data.professionalOpenToStartups, engagement: data.professionalEngagement };
       if (roles.includes("community_member")) metadata.community = { interests: data.communityInterests, referral: data.communityReferral };
       metadata.compliance = buildComplianceMetadata(roles, {
@@ -351,22 +348,213 @@ function StepProfile({ data, set, track }: { data: OBData; set: <K extends keyof
     ? "This is the profile behind your investor identity and future portfolio activity."
     : track === "founder"
       ? "This becomes the identity layer behind your founder, business, and funding journey."
-      : "This creates your CoFund profile so you can browse, follow, contribute, and grow into other roles later. You can still add investor or business roles afterward. You can still add investor or business roles afterward.";
+      : "This creates your CoFund profile so you can browse, follow, contribute, and grow into other roles later. You can still add investor or business roles afterward.";
   return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 2 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">Tell us about yourself</h1><p className="mt-2 text-muted-foreground">{intro}</p></div><div className="space-y-6"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name *" icon={<User className="h-4 w-4" />}><input type="text" value={data.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="e.g. Amara Okonkwo" className={inputCls} required /></Field><Field label="Phone number *" icon={<Phone className="h-4 w-4" />}><input type="tel" value={data.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+234 800 000 0000" className={inputCls} required /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Country *" icon={<MapPin className="h-4 w-4" />}><select value={data.country} onChange={(e) => set("country", e.target.value)} className={inputCls} required><option value="">Select country...</option><optgroup label="African Countries">{AFRICAN_COUNTRIES.map((country) => <option key={country} value={country}>{country}</option>)}</optgroup><optgroup label="Diaspora / Global">{DIASPORA_COUNTRIES.map((country) => <option key={country} value={country}>{country}</option>)}</optgroup></select></Field><Field label="City / State" icon={<MapPin className="h-4 w-4" />}><input type="text" value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="e.g. Lagos, Abuja, Nairobi..." className={inputCls} /></Field></div><Field label="Professional headline" icon={<Briefcase className="h-4 w-4" />}><input type="text" value={data.occupation} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Angel Investor | Founder | CFO" className={inputCls} maxLength={100} /></Field><Field label="About you (optional)" icon={<FileText className="h-4 w-4" />}><textarea value={data.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Brief introduction - your background, interests, and what excites you about African business..." className={`${inputCls} min-h-[96px] resize-none`} maxLength={500} /><p className="mt-1.5 text-right text-xs text-muted-foreground">{data.bio.length}/500</p></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="LinkedIn URL (optional)" icon={<Link2 className="h-4 w-4" />}><input type="url" value={data.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} placeholder="https://linkedin.com/in/yourname" className={inputCls} /></Field><Field label="Website / Portfolio (optional)" icon={<Link2 className="h-4 w-4" />}><input type="url" value={data.websiteUrl} onChange={(e) => set("websiteUrl", e.target.value)} placeholder="https://yourwebsite.com" className={inputCls} /></Field></div></div></div>;
 }
 function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData; track: OnboardingTrack; toggleRole: (role: AppRole) => void; set: <K extends keyof OBData>(key: K, value: OBData[K]) => void; toggleChip: <K extends keyof OBData>(key: K, value: string) => void }) {
-  const needsCompliance = data.roles.includes("investor") || data.roles.includes("business_owner") || data.roles.includes("mentor") || data.roles.includes("professional");
+  const needsCompliance = data.roles.includes("investor") || data.roles.includes("business_owner") || data.roles.includes("professional");
   const needsInvestorChecks = data.roles.includes("investor");
   const needsBusinessChecks = data.roles.includes("business_owner");
   const trackRoles = getTrackRoleOptions(track);
   const trackTitle = track === "investor" ? "Investor verification track" : track === "founder" ? "Founder and business track" : "Community and growth track";
-  const trackDescription = track === "investor"
-    ? "This path focuses on investor identity, suitability, and readiness to fund opportunities."
-    : track === "founder"
-      ? "This path focuses on founder identity, business verification, and the information needed before funding applications."
-      : "This path keeps things lighter: community access first, with optional upgrades into startup, mentor, professional, or investor roles later.";
+  const trackDescription =
+    track === "investor"
+      ? "This path focuses on investor identity, suitability, and readiness to fund opportunities."
+      : track === "founder"
+        ? "This path focuses on founder identity, business verification, and the information needed before funding applications."
+        : "This path keeps things lighter: community access first, with optional upgrades into startup, professional, or investor roles later.";
 
-  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 3 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">{trackTitle}</h1><p className="mt-2 text-muted-foreground">{trackDescription}</p></div><div className="mb-6 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-muted-foreground">{track === "investor" ? "You can still enable extra roles like mentor or community member, but investing stays locked behind verification and suitability checks." : track === "founder" ? "You still have one CoFund account. This flow just prioritizes the business and funding data founders need first." : "Community members can browse, follow, save, and contribute first, then expand into investing or business roles later without creating a new account."}</div><div className="grid gap-3 sm:grid-cols-2">{ROLES.filter((role) => trackRoles.includes(role.id)).map((role) => { const active = data.roles.includes(role.id); const Icon = role.icon; return <button key={role.id} type="button" onClick={() => toggleRole(role.id)} className={`rounded-2xl border p-5 text-left transition ${active ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/40"}`}><div className="flex items-start gap-3"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${active ? "gradient-brand text-white" : "bg-muted text-muted-foreground"}`}><Icon className="h-5 w-5" /></div><div className="min-w-0 flex-1"><h3 className="font-display text-base font-bold">{role.title}</h3><p className="mt-0.5 text-sm text-muted-foreground">{role.desc}</p></div><div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${active ? "border-primary bg-primary" : "border-border"}`}>{active && <Check className="h-3 w-3 text-white" />}</div></div></button>; })}</div><div className="mt-8 space-y-8">{needsCompliance && <Panel icon={<ShieldCheck className="h-5 w-5" />} title="Identity verification readiness"><div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><div className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">Verification is handled internally by CoFund operations.</div><Field label="Date of birth"><input type="date" value={data.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Nationality" value={data.nationality} onChange={(value) => set("nationality", value)} options={ALL_COUNTRIES} /><Field label="Residential address"><input type="text" value={data.residentialAddress} onChange={(e) => set("residentialAddress", e.target.value)} placeholder="Full residential address" className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Primary ID document" value={data.kycIdType} onChange={(value) => set("kycIdType", value)} options={[...ID_DOCUMENT_OPTIONS]} /><Field label="ID number"><input type="text" value={data.kycIdNumber} onChange={(e) => set("kycIdNumber", e.target.value)} placeholder="Document or national ID number" className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="NIN (Nigeria, if available)"><input type="text" value={data.nin} onChange={(e) => set("nin", e.target.value)} placeholder="National Identification Number" className={inputCls} /></Field><Field label="BVN (Nigeria, if available)"><input type="text" value={data.bvn} onChange={(e) => set("bvn", e.target.value)} placeholder="Bank Verification Number" className={inputCls} /></Field></div><div className="grid gap-3 sm:grid-cols-2"><AgreementBox checked={data.pepConsent} onChange={(value) => set("pepConsent", value)} label="I consent to PEP and politically exposed person screening as part of onboarding." required /><AgreementBox checked={data.sanctionsConsent} onChange={(value) => set("sanctionsConsent", value)} label="I consent to sanctions, watchlist, and AML screening checks." required /></div></div></Panel>}{needsInvestorChecks && <Panel icon={<TrendingUp className="h-5 w-5" />} title="Investor details"><div className="space-y-4"><SelectField label="Investor type" value={data.investorType} onChange={(value) => set("investorType", value)} options={["Individual investor","Family office","Fund / VC","Corporate investor"]} /><SelectField label="Investment experience" value={data.investorExperience} onChange={(value) => set("investorExperience", value)} options={["Less than 1 year","1-3 years","3-5 years","5-10 years","10+ years"]} /><SelectField label="Accreditation status" value={data.investorAccreditationStatus} onChange={(value) => set("investorAccreditationStatus", value)} options={[...ACCREDITATION_STATUS_OPTIONS]} /><SelectField label="Accreditation basis" value={data.investorAccreditationBasis} onChange={(value) => set("investorAccreditationBasis", value)} options={[...ACCREDITATION_BASIS_OPTIONS]} /><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Annual income range" value={data.investorAnnualIncomeRange} onChange={(value) => set("investorAnnualIncomeRange", value)} options={[...ANNUAL_INCOME_OPTIONS]} /><SelectField label="Net worth range" value={data.investorNetWorthRange} onChange={(value) => set("investorNetWorthRange", value)} options={[...NET_WORTH_OPTIONS]} /></div><SelectField label="Total investable capital" value={data.investorCapitalRange} onChange={(value) => set("investorCapitalRange", value)} options={CAPITAL_RANGES} /><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Minimum ticket" value={data.investorMinTicket} onChange={(value) => set("investorMinTicket", value)} options={TICKET_SIZES} /><SelectField label="Maximum ticket" value={data.investorMaxTicket} onChange={(value) => set("investorMaxTicket", value)} options={TICKET_SIZES} /></div><ChipField label="Sectors of interest" options={SECTORS} selected={data.investorSectors} toggle={(value) => toggleChip("investorSectors", value)} /></div></Panel>}{needsBusinessChecks && <Panel icon={<Building2 className="h-5 w-5" />} title="Business verification details"><div className="space-y-4"><Field label="Business name"><input type="text" value={data.businessName} onChange={(e) => set("businessName", e.target.value)} placeholder="e.g. Agroflow Ltd" className={inputCls} /></Field><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Industry / Sector" value={data.businessIndustry} onChange={(value) => set("businessIndustry", value)} options={SECTORS} /><SelectField label="Country of operation" value={data.businessCountry} onChange={(value) => set("businessCountry", value)} options={ALL_COUNTRIES} /></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Registration number"><input type="text" value={data.businessRegistrationNumber} onChange={(e) => set("businessRegistrationNumber", e.target.value)} placeholder="CAC / company registration number" className={inputCls} /></Field><Field label="Tax ID / TIN"><input type="text" value={data.businessTaxId} onChange={(e) => set("businessTaxId", e.target.value)} placeholder="Business tax number" className={inputCls} /></Field></div><Field label="Registered business address"><input type="text" value={data.businessAddress} onChange={(e) => set("businessAddress", e.target.value)} placeholder="Registered operating address" className={inputCls} /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="Authorized representative"><input type="text" value={data.representativeName} onChange={(e) => set("representativeName", e.target.value)} placeholder="Founder or compliance contact" className={inputCls} /></Field><Field label="Representative role"><input type="text" value={data.representativeRole} onChange={(e) => set("representativeRole", e.target.value)} placeholder="CEO, Founder, Compliance Officer..." className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Representative email"><input type="email" value={data.representativeEmail} onChange={(e) => set("representativeEmail", e.target.value)} placeholder="compliance@business.com" className={inputCls} /></Field><Field label="Directors count"><input type="text" value={data.directorsCount} onChange={(e) => set("directorsCount", e.target.value)} placeholder="e.g. 2" className={inputCls} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Beneficial owners count"><input type="text" value={data.beneficialOwnersCount} onChange={(e) => set("beneficialOwnersCount", e.target.value)} placeholder="e.g. 3" className={inputCls} /></Field><SelectField label="Business stage" value={data.businessStage} onChange={(value) => set("businessStage", value)} options={BUSINESS_STAGES} /></div><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Annual revenue" value={data.businessRevenueRange} onChange={(value) => set("businessRevenueRange", value)} options={REVENUE_RANGES} /><SelectField label="Team size" value={data.businessTeamSize} onChange={(value) => set("businessTeamSize", value)} options={TEAM_SIZES} /></div><SelectField label="Capital you're seeking" value={data.businessCapitalNeeded} onChange={(value) => set("businessCapitalNeeded", value)} options={BUSINESS_CAPITAL} /><ChipField label="What are you looking for?" options={SEEKING_OPTIONS} selected={data.businessSeeking} toggle={(value) => toggleChip("businessSeeking", value)} /></div></Panel>}{data.roles.includes("startup_builder") && <Panel icon={<Rocket className="h-5 w-5" />} title="Startup details"><div className="space-y-4"><Field label="Startup / idea name"><input type="text" value={data.startupName} onChange={(e) => set("startupName", e.target.value)} placeholder="Leave blank if not named yet" className={inputCls} /></Field><SelectField label="Industry / Domain" value={data.startupIndustry} onChange={(value) => set("startupIndustry", value)} options={SECTORS} /><SelectField label="Current stage" value={data.startupStage} onChange={(value) => set("startupStage", value)} options={STARTUP_STAGES} /><SelectField label="Co-founder status" value={data.startupCofounderStatus} onChange={(value) => set("startupCofounderStatus", value)} options={COFOUND_STATUS} /><ChipField label="What do you need from CoFund?" options={SEEKING_OPTIONS} selected={data.startupSeeking} toggle={(value) => toggleChip("startupSeeking", value)} /></div></Panel>}{data.roles.includes("mentor") && <Panel icon={<GraduationCap className="h-5 w-5" />} title="Mentor / advisor details"><div className="space-y-4"><ChipField label="Areas of expertise" options={EXPERTISE_AREAS} selected={data.mentorExpertise} toggle={(value) => toggleChip("mentorExpertise", value)} /><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Years of experience" value={data.mentorExperience} onChange={(value) => set("mentorExperience", value)} options={EXPERIENCE_YEARS} /><SelectField label="Primary industry" value={data.mentorIndustry} onChange={(value) => set("mentorIndustry", value)} options={SECTORS} /></div><SelectField label="Availability" value={data.mentorAvailability} onChange={(value) => set("mentorAvailability", value)} options={["Paid engagements only","Volunteer / pro-bono","Open to both"]} /><SelectField label="Hours per month" value={data.mentorHours} onChange={(value) => set("mentorHours", value)} options={["1-2 hours","2-5 hours","5-10 hours","10+ hours"]} /></div></Panel>}{data.roles.includes("professional") && <Panel icon={<Wrench className="h-5 w-5" />} title="Professional services"><div className="space-y-4"><SelectField label="Primary service type" value={data.professionalService} onChange={(value) => set("professionalService", value)} options={PROFESSIONAL_SERVICES} /><div className="grid gap-4 sm:grid-cols-2"><SelectField label="Years of experience" value={data.professionalExperience} onChange={(value) => set("professionalExperience", value)} options={EXPERIENCE_YEARS} /><SelectField label="Preferred engagement" value={data.professionalEngagement} onChange={(value) => set("professionalEngagement", value)} options={ENGAGEMENT_TYPES} /></div></div></Panel>}{data.roles.includes("community_member") && <Panel icon={<Users className="h-5 w-5" />} title="Community interests"><div className="space-y-4"><ChipField label="Topics you're interested in" options={COMMUNITY_INTERESTS} selected={data.communityInterests} toggle={(value) => toggleChip("communityInterests", value)} /><SelectField label="How did you hear about CoFund?" value={data.communityReferral} onChange={(value) => set("communityReferral", value)} options={REFERRAL_SOURCES} /></div></Panel>}</div></div>;
+  const introCopy =
+    track === "investor"
+      ? "You can still add professional or community roles later, but investing stays behind verification and suitability checks."
+      : track === "founder"
+        ? "You still have one CoFund account. This flow just prioritizes the business and funding data founders need first."
+        : "Community members can browse, follow, save, and contribute first, then expand into investing or business roles later without creating a new account.";
+
+  return (
+    <div>
+      <div className="mb-8">
+        <p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 3 of 4</p>
+        <h1 className="font-display text-3xl font-extrabold sm:text-4xl">{trackTitle}</h1>
+        <p className="mt-2 text-muted-foreground">{trackDescription}</p>
+      </div>
+      <div className="mb-6 space-y-4">
+        <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-muted-foreground">{introCopy}</div>
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-muted-foreground">
+          Mentorship on CoFund is application-based. Once you have been active on the platform for 6+ months, completed meaningful investments, and can show proof of expertise, you can apply from your profile and wait for admin approval.
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {ROLES.filter((role) => trackRoles.includes(role.id)).map((role) => {
+          const active = data.roles.includes(role.id);
+          const Icon = role.icon;
+          return (
+            <button
+              key={role.id}
+              type="button"
+              onClick={() => toggleRole(role.id)}
+              className={`rounded-2xl border p-5 text-left transition ${active ? "border-primary bg-primary/5 shadow-soft" : "border-border bg-card hover:border-primary/40"}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${active ? "gradient-brand text-white" : "bg-muted text-muted-foreground"}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display text-base font-bold">{role.title}</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{role.desc}</p>
+                </div>
+                <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${active ? "border-primary bg-primary" : "border-border"}`}>
+                  {active && <Check className="h-3 w-3 text-white" />}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-8 space-y-8">
+        {needsCompliance && (
+          <Panel icon={<ShieldCheck className="h-5 w-5" />} title="Identity verification readiness">
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">Verification is handled internally by CoFund operations.</div>
+                <Field label="Date of birth">
+                  <input type="date" value={data.dateOfBirth} onChange={(e) => set("dateOfBirth", e.target.value)} className={inputCls} />
+                </Field>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField label="Nationality" value={data.nationality} onChange={(value) => set("nationality", value)} options={ALL_COUNTRIES} />
+                <Field label="Residential address">
+                  <input type="text" value={data.residentialAddress} onChange={(e) => set("residentialAddress", e.target.value)} placeholder="Full residential address" className={inputCls} />
+                </Field>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField label="Primary ID document" value={data.kycIdType} onChange={(value) => set("kycIdType", value)} options={[...ID_DOCUMENT_OPTIONS]} />
+                <Field label="ID number">
+                  <input type="text" value={data.kycIdNumber} onChange={(e) => set("kycIdNumber", e.target.value)} placeholder="Document or national ID number" className={inputCls} />
+                </Field>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="NIN (Nigeria, if available)">
+                  <input type="text" value={data.nin} onChange={(e) => set("nin", e.target.value)} placeholder="National Identification Number" className={inputCls} />
+                </Field>
+                <Field label="BVN (Nigeria, if available)">
+                  <input type="text" value={data.bvn} onChange={(e) => set("bvn", e.target.value)} placeholder="Bank Verification Number" className={inputCls} />
+                </Field>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <AgreementBox checked={data.pepConsent} onChange={(value) => set("pepConsent", value)} label="I consent to PEP and politically exposed person screening as part of onboarding." required />
+                <AgreementBox checked={data.sanctionsConsent} onChange={(value) => set("sanctionsConsent", value)} label="I consent to sanctions, watchlist, and AML screening checks." required />
+              </div>
+            </div>
+          </Panel>
+        )}
+        {needsInvestorChecks && (
+          <Panel icon={<TrendingUp className="h-5 w-5" />} title="Investor details">
+            <div className="space-y-4">
+              <SelectField label="Investor type" value={data.investorType} onChange={(value) => set("investorType", value)} options={["Individual investor", "Family office", "Fund / VC", "Corporate investor"]} />
+              <SelectField label="Investment experience" value={data.investorExperience} onChange={(value) => set("investorExperience", value)} options={["Less than 1 year", "1-3 years", "3-5 years", "5-10 years", "10+ years"]} />
+              <SelectField label="Accreditation status" value={data.investorAccreditationStatus} onChange={(value) => set("investorAccreditationStatus", value)} options={[...ACCREDITATION_STATUS_OPTIONS]} />
+              <SelectField label="Accreditation basis" value={data.investorAccreditationBasis} onChange={(value) => set("investorAccreditationBasis", value)} options={[...ACCREDITATION_BASIS_OPTIONS]} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField label="Annual income range" value={data.investorAnnualIncomeRange} onChange={(value) => set("investorAnnualIncomeRange", value)} options={[...ANNUAL_INCOME_OPTIONS]} />
+                <SelectField label="Net worth range" value={data.investorNetWorthRange} onChange={(value) => set("investorNetWorthRange", value)} options={[...NET_WORTH_OPTIONS]} />
+              </div>
+              <SelectField label="Total investable capital" value={data.investorCapitalRange} onChange={(value) => set("investorCapitalRange", value)} options={CAPITAL_RANGES} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField label="Minimum ticket" value={data.investorMinTicket} onChange={(value) => set("investorMinTicket", value)} options={TICKET_SIZES} />
+                <SelectField label="Maximum ticket" value={data.investorMaxTicket} onChange={(value) => set("investorMaxTicket", value)} options={TICKET_SIZES} />
+              </div>
+              <ChipField label="Sectors of interest" options={SECTORS} selected={data.investorSectors} toggle={(value) => toggleChip("investorSectors", value)} />
+            </div>
+          </Panel>
+        )}
+        {needsBusinessChecks && (
+          <Panel icon={<Building2 className="h-5 w-5" />} title="Business verification details">
+            <div className="space-y-4">
+              <Field label="Business name">
+                <input type="text" value={data.businessName} onChange={(e) => set("businessName", e.target.value)} placeholder="e.g. Agroflow Ltd" className={inputCls} />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField label="Industry / Sector" value={data.businessIndustry} onChange={(value) => set("businessIndustry", value)} options={SECTORS} />
+                <SelectField label="Country of operation" value={data.businessCountry} onChange={(value) => set("businessCountry", value)} options={ALL_COUNTRIES} />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Registration number">
+                  <input type="text" value={data.businessRegistrationNumber} onChange={(e) => set("businessRegistrationNumber", e.target.value)} placeholder="CAC / company registration number" className={inputCls} />
+                </Field>
+                <Field label="Tax ID / TIN">
+                  <input type="text" value={data.businessTaxId} onChange={(e) => set("businessTaxId", e.target.value)} placeholder="Business tax number" className={inputCls} />
+                </Field>
+              </div>
+              <Field label="Registered business address">
+                <input type="text" value={data.businessAddress} onChange={(e) => set("businessAddress", e.target.value)} placeholder="Registered operating address" className={inputCls} />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Authorized representative">
+                  <input type="text" value={data.representativeName} onChange={(e) => set("representativeName", e.target.value)} placeholder="Founder or compliance contact" className={inputCls} />
+                </Field>
+                <Field label="Representative role">
+                  <input type="text" value={data.representativeRole} onChange={(e) => set("representativeRole", e.target.value)} placeholder="CEO, Founder, Compliance Officer..." className={inputCls} />
+                </Field>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Representative email">
+                  <input type="email" value={data.representativeEmail} onChange={(e) => set("representativeEmail", e.target.value)} placeholder="compliance@business.com" className={inputCls} />
+                </Field>
+                <Field label="Directors count">
+                  <input type="text" value={data.directorsCount} onChange={(e) => set("directorsCount", e.target.value)} placeholder="e.g. 2" className={inputCls} />
+                </Field>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Beneficial owners count">
+                  <input type="text" value={data.beneficialOwnersCount} onChange={(e) => set("beneficialOwnersCount", e.target.value)} placeholder="e.g. 3" className={inputCls} />
+                </Field>
+                <SelectField label="Business stage" value={data.businessStage} onChange={(value) => set("businessStage", value)} options={BUSINESS_STAGES} />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField label="Annual revenue" value={data.businessRevenueRange} onChange={(value) => set("businessRevenueRange", value)} options={REVENUE_RANGES} />
+                <SelectField label="Team size" value={data.businessTeamSize} onChange={(value) => set("businessTeamSize", value)} options={TEAM_SIZES} />
+              </div>
+              <SelectField label="Capital you're seeking" value={data.businessCapitalNeeded} onChange={(value) => set("businessCapitalNeeded", value)} options={BUSINESS_CAPITAL} />
+              <ChipField label="What are you looking for?" options={SEEKING_OPTIONS} selected={data.businessSeeking} toggle={(value) => toggleChip("businessSeeking", value)} />
+            </div>
+          </Panel>
+        )}
+        {data.roles.includes("startup_builder") && (
+          <Panel icon={<Rocket className="h-5 w-5" />} title="Startup details">
+            <div className="space-y-4">
+              <Field label="Startup / idea name">
+                <input type="text" value={data.startupName} onChange={(e) => set("startupName", e.target.value)} placeholder="Leave blank if not named yet" className={inputCls} />
+              </Field>
+              <SelectField label="Industry / Domain" value={data.startupIndustry} onChange={(value) => set("startupIndustry", value)} options={SECTORS} />
+              <SelectField label="Current stage" value={data.startupStage} onChange={(value) => set("startupStage", value)} options={STARTUP_STAGES} />
+              <SelectField label="Co-founder status" value={data.startupCofounderStatus} onChange={(value) => set("startupCofounderStatus", value)} options={COFOUND_STATUS} />
+              <ChipField label="What do you need from CoFund?" options={SEEKING_OPTIONS} selected={data.startupSeeking} toggle={(value) => toggleChip("startupSeeking", value)} />
+            </div>
+          </Panel>
+        )}
+        {data.roles.includes("professional") && (
+          <Panel icon={<Wrench className="h-5 w-5" />} title="Professional services">
+            <div className="space-y-4">
+              <SelectField label="Primary service type" value={data.professionalService} onChange={(value) => set("professionalService", value)} options={PROFESSIONAL_SERVICES} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectField label="Years of experience" value={data.professionalExperience} onChange={(value) => set("professionalExperience", value)} options={EXPERIENCE_YEARS} />
+                <SelectField label="Preferred engagement" value={data.professionalEngagement} onChange={(value) => set("professionalEngagement", value)} options={ENGAGEMENT_TYPES} />
+              </div>
+            </div>
+          </Panel>
+        )}
+        {data.roles.includes("community_member") && (
+          <Panel icon={<Users className="h-5 w-5" />} title="Community interests">
+            <div className="space-y-4">
+              <ChipField label="Topics you're interested in" options={COMMUNITY_INTERESTS} selected={data.communityInterests} toggle={(value) => toggleChip("communityInterests", value)} />
+              <SelectField label="How did you hear about CoFund?" value={data.communityReferral} onChange={(value) => set("communityReferral", value)} options={REFERRAL_SOURCES} />
+            </div>
+          </Panel>
+        )}
+      </div>
+    </div>
+  );
 }
 function StepReview({ data, set, track }: { data: OBData; set: <K extends keyof OBData>(key: K, value: OBData[K]) => void; track: OnboardingTrack }) {
   const hasInvestorRole = data.roles.includes("investor") || data.roles.includes("business_owner");
@@ -383,4 +571,5 @@ function SummaryRow({ label, value }: { label: string; value: string }) { if (!v
 function AgreementBox({ checked, onChange, label, required }: { checked: boolean; onChange: (value: boolean) => void; label: ReactNode; required?: boolean }) { return <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${checked ? "border-primary/40 bg-primary/5" : "border-border"}`}><button type="button" onClick={() => onChange(!checked)} className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${checked ? "border-primary bg-primary" : "border-border"}`}>{checked && <Check className="h-3 w-3 text-white" />}</button><span className="text-sm leading-relaxed text-muted-foreground">{label}{required && <span className="ml-1 text-primary">*</span>}</span></label>; }
 
 const inputCls = "w-full rounded-xl border border-border bg-card/60 px-3.5 py-2.5 text-sm outline-none transition placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20";
+
 

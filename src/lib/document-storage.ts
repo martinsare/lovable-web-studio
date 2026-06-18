@@ -4,6 +4,7 @@ export const DOCUMENT_BUCKETS = {
   businessEntity: "business-entity-documents",
   offering: "offering-documents",
   investorStatement: "investor-statements",
+  mentorApplication: "mentor-application-documents",
 } as const;
 
 export const ACCEPTED_DOCUMENT_TYPES = [

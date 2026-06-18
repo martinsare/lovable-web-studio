@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building2, CheckCircle2, CircleDollarSign, ExternalLink, FileCheck2, FileWarning, FolderOpen, ShieldCheck, Users, XCircle } from "lucide-react";
+import { Building2, CheckCircle2, CircleDollarSign, ExternalLink, FileCheck2, FileWarning, FolderOpen, GraduationCap, ShieldCheck, Users, XCircle } from "lucide-react";
 import { PageShell, EmptyState } from "@/components/page-shell";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -121,6 +121,19 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
     },
   });
 
+  const { data: mentorApplications = [] } = useQuery({
+    queryKey: ["admin", "mentor-applications"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("mentor_applications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const { data: statements = [] } = useQuery({
     queryKey: ["admin", "investor-statements"],
     queryFn: async () => {
@@ -153,6 +166,19 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       window.open(signedUrl, "_blank", "noopener,noreferrer");
     } catch (error: any) {
       toast.error(error?.message ?? "Unable to open that document.");
+    }
+  }
+
+  async function openApplicationProof(application: any) {
+    try {
+      const signedUrl =
+        application.proof_storage_bucket && application.proof_storage_path
+          ? await getDocumentSignedUrl(application.proof_storage_bucket, application.proof_storage_path, application.proof_original_filename ?? "mentor-proof")
+          : null;
+      if (!signedUrl) throw new Error("This application is missing its uploaded proof.");
+      window.open(signedUrl, "_blank", "noopener,noreferrer");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Unable to open mentor proof.");
     }
   }
 
@@ -245,6 +271,66 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
       queryClient.invalidateQueries({ queryKey: ["admin", "investor-statements"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "audit-events"] }),
       recipientId ? queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count", recipientId] }) : Promise.resolve(),
+    ]);
+  }
+
+  async function reviewMentorApplication(application: any, status: "approved" | "needs_action" | "rejected") {
+    const reviewerNote =
+      status === "approved"
+        ? "Approved from admin console."
+        : status === "needs_action"
+          ? "Please provide more proof or clarification."
+          : "Rejected from admin console.";
+
+    const { error } = await (supabase as any)
+      .from("mentor_applications")
+      .update({
+        status,
+        reviewer_note: reviewerNote,
+        reviewed_by: actorUserId,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", application.id);
+    if (error) return toast.error(error.message);
+
+    if (status === "approved") {
+      const { data: existingRole } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", application.user_id)
+        .eq("role", "mentor")
+        .maybeSingle();
+      if (!existingRole) {
+        const { error: roleError } = await supabase.from("user_roles").insert({ user_id: application.user_id, role: "mentor" });
+        if (roleError) return toast.error(roleError.message);
+      }
+    }
+
+    await createNotification({
+      userId: application.user_id,
+      category: "mentor_application_review",
+      title: `Mentor application ${status.replaceAll("_", " ")}`,
+      body: reviewerNote,
+      actionLabel: "Open profile",
+      actionHref: "/profile",
+      metadata: { application_id: application.id, status },
+    });
+
+    await logAudit({
+      targetTable: "mentor_applications",
+      targetId: application.id,
+      action: `mentor_application_${status}`,
+      severity: status === "rejected" ? "warning" : "info",
+      note: `Mentor application for ${application.user_id} marked ${status}.`,
+      suspicious: status === "rejected",
+    });
+
+    toast.success(`Mentor application marked ${status.replaceAll("_", " ")}`);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["admin", "mentor-applications"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", "audit-events"] }),
+      queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count", application.user_id] }),
+      queryClient.invalidateQueries({ queryKey: ["mentor-application", application.user_id] }),
     ]);
   }
 
@@ -427,6 +513,58 @@ function AdminDashboard({ actorUserId }: { actorUserId: string | null }) {
               </div>
             )}
           </SimpleListCard>
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-3xl border border-border bg-card p-6">
+        <div className="flex items-center gap-2">
+          <GraduationCap className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-xl font-bold">Mentor applications</h2>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">Applicants must meet the tenure, activity, investment, and proof requirements before admin approval can grant the mentor role.</p>
+        <div className="mt-5 grid gap-3">
+          {mentorApplications.length === 0 ? (
+            <EmptyState title="No mentor applications yet" hint="Eligible users will submit applications from their profile." />
+          ) : (
+            mentorApplications.map((application) => (
+              <div key={application.id} className="rounded-2xl border border-border bg-background p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">{application.applicant_name ?? application.applicant_email ?? application.user_id}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Joined {application.platform_joined_at ? new Date(application.platform_joined_at).toLocaleDateString() : "—"} · Last active {application.last_active_at ? new Date(application.last_active_at).toLocaleDateString() : "—"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {Number(application.investment_count ?? 0)} investments · {formatCurrency(Number(application.total_invested_amount ?? 0))}
+                    </p>
+                  </div>
+                  <StatusBadge status={application.status} />
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-border p-3">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Experience</p>
+                    <p className="mt-2 text-sm text-foreground">{application.experience_summary ?? "—"}</p>
+                  </div>
+                  <div className="rounded-xl border border-border p-3">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Qualifications</p>
+                    <p className="mt-2 text-sm text-foreground">{application.qualification_summary ?? "—"}</p>
+                  </div>
+                </div>
+                {application.application_note && <p className="mt-3 text-xs text-muted-foreground">{application.application_note}</p>}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {application.proof_storage_bucket && application.proof_storage_path && (
+                    <button type="button" onClick={() => void openApplicationProof(application)} className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
+                      <ExternalLink className="mr-2 inline h-3.5 w-3.5" />
+                      Open proof
+                    </button>
+                  )}
+                  <ActionButton color="green" icon={<CheckCircle2 className="h-3.5 w-3.5" />} onClick={() => void reviewMentorApplication(application, "approved")}>Approve</ActionButton>
+                  <ActionButton color="amber" icon={<FileWarning className="h-3.5 w-3.5" />} onClick={() => void reviewMentorApplication(application, "needs_action")}>Needs action</ActionButton>
+                  <ActionButton color="red" icon={<XCircle className="h-3.5 w-3.5" />} onClick={() => void reviewMentorApplication(application, "rejected")}>Reject</ActionButton>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
 

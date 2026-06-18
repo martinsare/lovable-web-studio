@@ -21,6 +21,7 @@ export interface Profile {
   agreed_terms: boolean;
   metadata: unknown;
   onboarded: boolean;
+  created_at: string;
 }
 
 interface AuthCtx {
@@ -43,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadProfileAndRoles(userId: string, isMounted: () => boolean) {
     const [{ data: prof }, { data: rs }] = await Promise.all([
-      supabase.from("profiles").select("id,full_name,username,avatar_url,phone,country,agreed_terms,metadata,onboarded").eq("id", userId).maybeSingle(),
+      supabase.from("profiles").select("id,full_name,username,avatar_url,phone,country,agreed_terms,metadata,onboarded,created_at").eq("id", userId).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
     if (!isMounted()) return;
