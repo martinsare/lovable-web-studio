@@ -1,5 +1,6 @@
 ﻿import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
+import { useRefValues } from "@/hooks/use-reference-data";
 import {
   Check,
   ChevronLeft,
@@ -35,25 +36,6 @@ export const Route = createFileRoute("/onboarding")({ ssr: false, head: () => ({
 
 const ONBOARDING_STORAGE_KEY = "cofund:onboarding-draft";
 
-const AFRICAN_COUNTRIES = ["Nigeria","South Africa","Kenya","Ghana","Ethiopia","Tanzania","Uganda","Rwanda","Senegal","Ivory Coast","Cameroon","Angola","Mozambique","Zambia","Zimbabwe","Botswana","Namibia","Mauritius","Morocco","Egypt","Tunisia","Algeria","Libya","Sudan","Somalia","DRC","Gabon","Congo","Mali","Burkina Faso","Niger","Chad","Sierra Leone","Liberia","Guinea","Benin","Togo","Malawi","Lesotho","Eswatini","Eritrea","Djibouti","Comoros","Cape Verde","SÃƒÆ’Ã‚Â£o TomÃƒÆ’Ã‚Â© and PrÃƒÆ’Ã‚Â­ncipe","Equatorial Guinea","South Sudan","Madagascar","Seychelles","Gambia","Guinea-Bissau"];
-const DIASPORA_COUNTRIES = ["United Kingdom","United States","Canada","United Arab Emirates","France","Germany","Netherlands","Belgium","Portugal","Italy","Saudi Arabia","Qatar","Australia","Other"];
-const ALL_COUNTRIES = [...AFRICAN_COUNTRIES, ...DIASPORA_COUNTRIES];
-const SECTORS = ["Fintech & Payments","Agritech & Food Systems","Healthtech & Biotech","Edtech & Skills","Clean Energy & Climate","Logistics & Transport","E-commerce & Retail","Real Estate & Construction","Media & Entertainment","Manufacturing & Industry","Mining & Resources","Fashion & Beauty","Travel & Hospitality","SaaS & Enterprise Tech","Telecom","Government & Civic Tech","Security & Defence","Other"];
-const CAPITAL_RANGES = ["Under $10,000","$10,000 - $50,000","$50,000 - $250,000","$250,000 - $1M","$1M - $5M","Over $5M"];
-const TICKET_SIZES = ["Under $1,000","$1,000 - $5,000","$5,000 - $25,000","$25,000 - $100,000","$100,000 - $500,000","Over $500,000"];
-const BUSINESS_STAGES = ["Idea stage","Pre-revenue","Revenue-generating","Profitable","Scaling"];
-const REVENUE_RANGES = ["Pre-revenue","Under $10,000 / yr","$10,000 - $100,000 / yr","$100,000 - $500,000 / yr","$500,000 - $2M / yr","$2M - $10M / yr","Over $10M / yr"];
-const TEAM_SIZES = ["Just me","2-5 people","6-20 people","21-50 people","50+ people"];
-const SEEKING_OPTIONS = ["Funding / Investment","Mentorship & Advisory","Strategic Partnerships","Customers & Distribution","Team Members","Technical Co-founder"];
-const BUSINESS_CAPITAL = ["Under $50,000","$50,000 - $250,000","$250,000 - $1M","$1M - $5M","$5M - $20M","Over $20M"];
-const STARTUP_STAGES = ["Idea / Concept","Prototype / MVP built","Beta / Early users","Launched / Live product"];
-const COFOUND_STATUS = ["I have a team","Looking for co-founders","Going solo for now"];
-const EXPERTISE_AREAS = ["Strategy & Leadership","Finance & Fundraising","Sales & Marketing","Product & Tech","Operations & Logistics","Legal & Compliance","HR & Talent","Agritech","Fintech","Healthtech","Edtech","Manufacturing","Real Estate","Media & Comms","Import / Export"];
-const EXPERIENCE_YEARS = ["Less than 2 years","2-5 years","5-10 years","10-20 years","20+ years"];
-const PROFESSIONAL_SERVICES = ["Legal & Compliance","Accounting & Finance","Software Development","Product Design & UX","Marketing & Growth","Business Development","HR & Recruitment","Project Management","Data & Analytics","Cybersecurity","Investor Relations","Other"];
-const ENGAGEMENT_TYPES = ["Project-based","Monthly retainer","Full-time contract","Advisory / Board role","Any"];
-const COMMUNITY_INTERESTS = ["Investing","Startup Building","Business Growth","Fintech","Agritech","Real Estate","Healthtech","Clean Energy","African Markets","Diaspora Investment","Mentorship","Networking"];
-const REFERRAL_SOURCES = ["Friend or colleague","LinkedIn","Twitter / X","Instagram","Google search","News article","Podcast / YouTube","Event or conference","Other"];
 const INTENTS = [
   { id: "invest", label: "I want to invest", desc: "Browse verified opportunities and build a portfolio.", roles: ["investor"], icon: TrendingUp },
   { id: "business", label: "I own a business", desc: "Raise capital, track milestones, and grow.", roles: ["business_owner"], icon: Building2 },
@@ -493,14 +475,32 @@ function StepIntent({ data, chooseIntent }: { data: OBData; chooseIntent: (inten
 }
 
 function StepProfile({ data, set, track }: { data: OBData; set: <K extends keyof OBData>(key: K, value: OBData[K]) => void; track: OnboardingTrack }) {
+  const africanCountries = useRefValues("country_african");
+  const diasporaCountries = useRefValues("country_diaspora");
   const intro = track === "investor"
     ? "This is the profile behind your investor identity and future portfolio activity."
     : track === "founder"
       ? "This becomes the identity layer behind your founder, business, and funding journey."
       : "This creates your CoFund profile so you can browse, follow, contribute, and grow into other roles later. You can still add investor or business roles afterward.";
-  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 2 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">Tell us about yourself</h1><p className="mt-2 text-muted-foreground">{intro}</p></div><div className="space-y-6"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name *" icon={<User className="h-4 w-4" />}><input type="text" value={data.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="e.g. Amara Okonkwo" className={inputCls} required /></Field><Field label="Phone number *" icon={<Phone className="h-4 w-4" />}><input type="tel" value={data.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+234 800 000 0000" className={inputCls} required /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Country *" icon={<MapPin className="h-4 w-4" />}><select value={data.country} onChange={(e) => set("country", e.target.value)} className={inputCls} required><option value="">Select country...</option><optgroup label="African Countries">{AFRICAN_COUNTRIES.map((country) => <option key={country} value={country}>{country}</option>)}</optgroup><optgroup label="Diaspora / Global">{DIASPORA_COUNTRIES.map((country) => <option key={country} value={country}>{country}</option>)}</optgroup></select></Field><Field label="City / State" icon={<MapPin className="h-4 w-4" />}><input type="text" value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="e.g. Lagos, Abuja, Nairobi..." className={inputCls} /></Field></div><Field label="Professional headline" icon={<Briefcase className="h-4 w-4" />}><input type="text" value={data.occupation} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Angel Investor | Founder | CFO" className={inputCls} maxLength={100} /></Field><Field label="About you (optional)" icon={<FileText className="h-4 w-4" />}><textarea value={data.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Brief introduction - your background, interests, and what excites you about African business..." className={`${inputCls} min-h-[96px] resize-none`} maxLength={500} /><p className="mt-1.5 text-right text-xs text-muted-foreground">{data.bio.length}/500</p></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="LinkedIn URL (optional)" icon={<Link2 className="h-4 w-4" />}><input type="url" value={data.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} placeholder="https://linkedin.com/in/yourname" className={inputCls} /></Field><Field label="Website / Portfolio (optional)" icon={<Link2 className="h-4 w-4" />}><input type="url" value={data.websiteUrl} onChange={(e) => set("websiteUrl", e.target.value)} placeholder="https://yourwebsite.com" className={inputCls} /></Field></div></div></div>;
+  return <div><div className="mb-8"><p className="mb-1.5 text-sm font-semibold uppercase tracking-wider text-primary">Step 2 of 4</p><h1 className="font-display text-3xl font-extrabold sm:text-4xl">Tell us about yourself</h1><p className="mt-2 text-muted-foreground">{intro}</p></div><div className="space-y-6"><div className="grid gap-4 sm:grid-cols-2"><Field label="Full name *" icon={<User className="h-4 w-4" />}><input type="text" value={data.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="e.g. Amara Okonkwo" className={inputCls} required /></Field><Field label="Phone number *" icon={<Phone className="h-4 w-4" />}><input type="tel" value={data.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+234 800 000 0000" className={inputCls} required /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Country *" icon={<MapPin className="h-4 w-4" />}><select value={data.country} onChange={(e) => set("country", e.target.value)} className={inputCls} required><option value="">Select country...</option><optgroup label="African Countries">{africanCountries.map((country) => <option key={country} value={country}>{country}</option>)}</optgroup><optgroup label="Diaspora / Global">{diasporaCountries.map((country) => <option key={country} value={country}>{country}</option>)}</optgroup></select></Field><Field label="City / State" icon={<MapPin className="h-4 w-4" />}><input type="text" value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="e.g. Lagos, Abuja, Nairobi..." className={inputCls} /></Field></div><Field label="Professional headline" icon={<Briefcase className="h-4 w-4" />}><input type="text" value={data.occupation} onChange={(e) => set("occupation", e.target.value)} placeholder="e.g. Angel Investor | Founder | CFO" className={inputCls} maxLength={100} /></Field><Field label="About you (optional)" icon={<FileText className="h-4 w-4" />}><textarea value={data.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Brief introduction - your background, interests, and what excites you about African business..." className={`${inputCls} min-h-[96px] resize-none`} maxLength={500} /><p className="mt-1.5 text-right text-xs text-muted-foreground">{data.bio.length}/500</p></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="LinkedIn URL (optional)" icon={<Link2 className="h-4 w-4" />}><input type="url" value={data.linkedinUrl} onChange={(e) => set("linkedinUrl", e.target.value)} placeholder="https://linkedin.com/in/yourname" className={inputCls} /></Field><Field label="Website / Portfolio (optional)" icon={<Link2 className="h-4 w-4" />}><input type="url" value={data.websiteUrl} onChange={(e) => set("websiteUrl", e.target.value)} placeholder="https://yourwebsite.com" className={inputCls} /></Field></div></div></div>;
 }
 function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData; track: OnboardingTrack; toggleRole: (role: AppRole) => void; set: <K extends keyof OBData>(key: K, value: OBData[K]) => void; toggleChip: <K extends keyof OBData>(key: K, value: string) => void }) {
+  const sectors = useRefValues("sector");
+  const capitalRanges = useRefValues("capital_range");
+  const ticketSizes = useRefValues("ticket_size");
+  const businessStages = useRefValues("business_stage");
+  const revenueRanges = useRefValues("revenue_range");
+  const teamSizes = useRefValues("team_size");
+  const seekingOptions = useRefValues("seeking_option");
+  const businessCapital = useRefValues("business_capital");
+  const startupStages = useRefValues("startup_stage");
+  const cofoundStatuses = useRefValues("cofound_status");
+  const professionalServices = useRefValues("professional_service");
+  const experienceYears = useRefValues("experience_years");
+  const engagementTypes = useRefValues("engagement_type");
+  const communityInterests = useRefValues("community_interest");
+  const referralSources = useRefValues("referral_source");
+  const allCountries = [...useRefValues("country_african"), ...useRefValues("country_diaspora")];
   const needsCompliance = data.roles.includes("investor") || data.roles.includes("business_owner") || data.roles.includes("professional");
   const needsInvestorChecks = data.roles.includes("investor");
   const needsBusinessChecks = data.roles.includes("business_owner");
@@ -591,7 +591,7 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
                 </Field>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField label="Nationality" value={data.nationality} onChange={(value) => set("nationality", value)} options={ALL_COUNTRIES} />
+                <SelectField label="Nationality" value={data.nationality} onChange={(value) => set("nationality", value)} options={allCountries} />
                 <Field label="Residential address">
                   <input type="text" value={data.residentialAddress} onChange={(e) => set("residentialAddress", e.target.value)} placeholder="Full residential address" className={inputCls} />
                 </Field>
@@ -628,12 +628,12 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
                 <SelectField label="Annual income range" value={data.investorAnnualIncomeRange} onChange={(value) => set("investorAnnualIncomeRange", value)} options={[...ANNUAL_INCOME_OPTIONS]} />
                 <SelectField label="Net worth range" value={data.investorNetWorthRange} onChange={(value) => set("investorNetWorthRange", value)} options={[...NET_WORTH_OPTIONS]} />
               </div>
-              <SelectField label="Total investable capital" value={data.investorCapitalRange} onChange={(value) => set("investorCapitalRange", value)} options={CAPITAL_RANGES} />
+              <SelectField label="Total investable capital" value={data.investorCapitalRange} onChange={(value) => set("investorCapitalRange", value)} options={capitalRanges} />
               <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField label="Minimum ticket" value={data.investorMinTicket} onChange={(value) => set("investorMinTicket", value)} options={TICKET_SIZES} />
-                <SelectField label="Maximum ticket" value={data.investorMaxTicket} onChange={(value) => set("investorMaxTicket", value)} options={TICKET_SIZES} />
+                <SelectField label="Minimum ticket" value={data.investorMinTicket} onChange={(value) => set("investorMinTicket", value)} options={ticketSizes} />
+                <SelectField label="Maximum ticket" value={data.investorMaxTicket} onChange={(value) => set("investorMaxTicket", value)} options={ticketSizes} />
               </div>
-              <ChipField label="Sectors of interest" options={SECTORS} selected={data.investorSectors} toggle={(value) => toggleChip("investorSectors", value)} />
+              <ChipField label="Sectors of interest" options={sectors} selected={data.investorSectors} toggle={(value) => toggleChip("investorSectors", value)} />
             </div>
           </Panel>
         )}
@@ -644,8 +644,8 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
                 <input type="text" value={data.businessName} onChange={(e) => set("businessName", e.target.value)} placeholder="e.g. Agroflow Ltd" className={inputCls} />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField label="Industry / Sector" value={data.businessIndustry} onChange={(value) => set("businessIndustry", value)} options={SECTORS} />
-                <SelectField label="Country of operation" value={data.businessCountry} onChange={(value) => set("businessCountry", value)} options={ALL_COUNTRIES} />
+                <SelectField label="Industry / Sector" value={data.businessIndustry} onChange={(value) => set("businessIndustry", value)} options={sectors} />
+                <SelectField label="Country of operation" value={data.businessCountry} onChange={(value) => set("businessCountry", value)} options={allCountries} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Registration number">
@@ -678,14 +678,14 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
                 <Field label="Beneficial owners count">
                   <input type="text" value={data.beneficialOwnersCount} onChange={(e) => set("beneficialOwnersCount", e.target.value)} placeholder="e.g. 3" className={inputCls} />
                 </Field>
-                <SelectField label="Business stage" value={data.businessStage} onChange={(value) => set("businessStage", value)} options={BUSINESS_STAGES} />
+                <SelectField label="Business stage" value={data.businessStage} onChange={(value) => set("businessStage", value)} options={businessStages} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField label="Annual revenue" value={data.businessRevenueRange} onChange={(value) => set("businessRevenueRange", value)} options={REVENUE_RANGES} />
-                <SelectField label="Team size" value={data.businessTeamSize} onChange={(value) => set("businessTeamSize", value)} options={TEAM_SIZES} />
+                <SelectField label="Annual revenue" value={data.businessRevenueRange} onChange={(value) => set("businessRevenueRange", value)} options={revenueRanges} />
+                <SelectField label="Team size" value={data.businessTeamSize} onChange={(value) => set("businessTeamSize", value)} options={teamSizes} />
               </div>
-              <SelectField label="Capital you're seeking (optional)" value={data.businessCapitalNeeded} onChange={(value) => set("businessCapitalNeeded", value)} options={BUSINESS_CAPITAL} />
-              <ChipField label="What are you looking for?" options={SEEKING_OPTIONS} selected={data.businessSeeking} toggle={(value) => toggleChip("businessSeeking", value)} />
+              <SelectField label="Capital you're seeking (optional)" value={data.businessCapitalNeeded} onChange={(value) => set("businessCapitalNeeded", value)} options={businessCapital} />
+              <ChipField label="What are you looking for?" options={seekingOptions} selected={data.businessSeeking} toggle={(value) => toggleChip("businessSeeking", value)} />
             </div>
           </Panel>
         )}
@@ -695,20 +695,20 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
               <Field label="Startup / idea name">
                 <input type="text" value={data.startupName} onChange={(e) => set("startupName", e.target.value)} placeholder="Leave blank if not named yet" className={inputCls} />
               </Field>
-              <SelectField label="Industry / Domain" value={data.startupIndustry} onChange={(value) => set("startupIndustry", value)} options={SECTORS} />
-              <SelectField label="Current stage" value={data.startupStage} onChange={(value) => set("startupStage", value)} options={STARTUP_STAGES} />
-              <SelectField label="Co-founder status" value={data.startupCofounderStatus} onChange={(value) => set("startupCofounderStatus", value)} options={COFOUND_STATUS} />
-              <ChipField label="What do you need from CoFund?" options={SEEKING_OPTIONS} selected={data.startupSeeking} toggle={(value) => toggleChip("startupSeeking", value)} />
+              <SelectField label="Industry / Domain" value={data.startupIndustry} onChange={(value) => set("startupIndustry", value)} options={sectors} />
+              <SelectField label="Current stage" value={data.startupStage} onChange={(value) => set("startupStage", value)} options={startupStages} />
+              <SelectField label="Co-founder status" value={data.startupCofounderStatus} onChange={(value) => set("startupCofounderStatus", value)} options={cofoundStatuses} />
+              <ChipField label="What do you need from CoFund?" options={seekingOptions} selected={data.startupSeeking} toggle={(value) => toggleChip("startupSeeking", value)} />
             </div>
           </Panel>
         )}
         {data.roles.includes("professional") && (
           <Panel icon={<Wrench className="h-5 w-5" />} title="Professional services">
             <div className="space-y-4">
-              <SelectField label="Primary service type" value={data.professionalService} onChange={(value) => set("professionalService", value)} options={PROFESSIONAL_SERVICES} />
+              <SelectField label="Primary service type" value={data.professionalService} onChange={(value) => set("professionalService", value)} options={professionalServices} />
               <div className="grid gap-4 sm:grid-cols-2">
-                <SelectField label="Years of experience" value={data.professionalExperience} onChange={(value) => set("professionalExperience", value)} options={EXPERIENCE_YEARS} />
-                <SelectField label="Preferred engagement" value={data.professionalEngagement} onChange={(value) => set("professionalEngagement", value)} options={ENGAGEMENT_TYPES} />
+                <SelectField label="Years of experience" value={data.professionalExperience} onChange={(value) => set("professionalExperience", value)} options={experienceYears} />
+                <SelectField label="Preferred engagement" value={data.professionalEngagement} onChange={(value) => set("professionalEngagement", value)} options={engagementTypes} />
               </div>
             </div>
           </Panel>
@@ -716,8 +716,8 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
         {data.roles.includes("community_member") && (
           <Panel icon={<Users className="h-5 w-5" />} title="Community interests">
             <div className="space-y-4">
-              <ChipField label="Topics you're interested in" options={COMMUNITY_INTERESTS} selected={data.communityInterests} toggle={(value) => toggleChip("communityInterests", value)} />
-              <SelectField label="How did you hear about CoFund?" value={data.communityReferral} onChange={(value) => set("communityReferral", value)} options={REFERRAL_SOURCES} />
+              <ChipField label="Topics you're interested in" options={communityInterests} selected={data.communityInterests} toggle={(value) => toggleChip("communityInterests", value)} />
+              <SelectField label="How did you hear about CoFund?" value={data.communityReferral} onChange={(value) => set("communityReferral", value)} options={referralSources} />
             </div>
           </Panel>
         )}

@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useRefValues } from "@/hooks/use-reference-data";
 import { AppLayout } from "@/components/app-layout";
 import { EmptySearchIllustration } from "@/components/animated-illustration";
 import {
@@ -28,19 +29,6 @@ export const Route = createFileRoute("/_authenticated/browse")({
 type ViewTab = "opportunities" | "businesses";
 type SortKey = "newest" | "funded" | "returns";
 
-const INDUSTRIES = [
-  "All",
-  "Agriculture",
-  "Technology",
-  "Hospitality",
-  "Healthcare",
-  "Manufacturing",
-  "Retail",
-  "Energy",
-  "Real Estate",
-  "Fintech",
-  "Education",
-];
 
 function fmtNGN(n: number) {
   if (n >= 1_000_000_000) return `₦${(n / 1_000_000_000).toFixed(1)}B`;
@@ -103,6 +91,7 @@ function BrowsePage() {
   const [sort, setSort] = useState<SortKey>("newest");
   const [showSort, setShowSort] = useState(false);
   const { saved, toggle } = useWatchlist(user?.id ?? "");
+  const industries = useRefValues("industry");
 
   return (
     <AppLayout>
@@ -188,7 +177,7 @@ function BrowsePage() {
 
             {/* Industry filter pills */}
             <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
-              {INDUSTRIES.map((ind) => (
+              {industries.map((ind) => (
                 <button
                   key={ind}
                   type="button"

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useReferenceData, useRefValues } from "@/hooks/use-reference-data";
 import { toast } from "sonner";
 import {
   Bell,
@@ -39,18 +40,6 @@ const SECTIONS: { id: Section; label: string; icon: any }[] = [
   { id: "danger", label: "Danger zone", icon: AlertTriangle },
 ];
 
-const INDUSTRIES = [
-  "Agriculture", "Technology", "Hospitality", "Healthcare",
-  "Manufacturing", "Retail", "Energy", "Real Estate", "Fintech", "Education",
-];
-
-const RISK_LEVELS = [
-  { value: "conservative", label: "Conservative", desc: "Low risk, stable returns" },
-  { value: "moderate", label: "Moderate", desc: "Balanced risk and growth" },
-  { value: "aggressive", label: "Aggressive", desc: "High risk, high potential" },
-];
-
-const MIN_AMOUNTS = ["₦25,000", "₦50,000", "₦100,000", "₦250,000", "₦500,000", "₦1,000,000+"];
 
 
 function SettingsPage() {
@@ -59,6 +48,10 @@ function SettingsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [section, setSection] = useState<Section>("account");
+
+  const industries = useRefValues("industry").filter((v) => v !== "All");
+  const { data: riskLevels = [] } = useReferenceData("risk_level");
+  const minTickets = useRefValues("min_ticket");
 
   // Account form
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
@@ -345,7 +338,7 @@ function SettingsPage() {
                     <div>
                       <p className="text-sm font-bold mb-3">Preferred industries</p>
                       <div className="flex flex-wrap gap-2">
-                        {INDUSTRIES.map((ind) => (
+                        {industries.map((ind) => (
                           <button
                             key={ind}
                             type="button"
@@ -370,7 +363,7 @@ function SettingsPage() {
                     <div className="border-t border-border pt-5">
                       <p className="text-sm font-bold mb-3">Risk appetite</p>
                       <div className="space-y-2">
-                        {RISK_LEVELS.map(({ value, label, desc }) => (
+                        {riskLevels.map(({ value, label, metadata }) => { const desc = metadata?.desc ?? ""; return (
                           <button
                             key={value}
                             type="button"
@@ -393,14 +386,14 @@ function SettingsPage() {
                               <p className="text-xs text-muted-foreground">{desc}</p>
                             </div>
                           </button>
-                        ))}
+                        ); })}
                       </div>
                     </div>
 
                     <div className="border-t border-border pt-5">
                       <p className="text-sm font-bold mb-3">Minimum ticket size</p>
                       <div className="flex flex-wrap gap-2">
-                        {MIN_AMOUNTS.map((amt) => (
+                        {minTickets.map((amt) => (
                           <button
                             key={amt}
                             type="button"

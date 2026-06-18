@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useReferenceData, useRefValues } from "@/hooks/use-reference-data";
 import { toast } from "sonner";
 import {
   ArrowDownLeft,
@@ -29,15 +30,6 @@ type DepositStep = "amount" | "details" | "done";
 type WithdrawStep = "form" | "review" | "done";
 type Modal = "none" | "deposit" | "withdraw";
 
-const QUICK_AMOUNTS = [25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000];
-
-const NIGERIAN_BANKS = [
-  "Access Bank", "Citibank Nigeria", "Ecobank Nigeria", "Fidelity Bank",
-  "First Bank of Nigeria", "FCMB", "GTBank", "Heritage Bank",
-  "Keystone Bank", "OPay", "PalmPay", "Polaris Bank",
-  "Providus Bank", "Stanbic IBTC", "Standard Chartered", "Sterling Bank",
-  "UBA", "Union Bank", "Unity Bank", "Wema Bank", "Zenith Bank",
-];
 
 function copyText(text: string, label = "Copied") {
   navigator.clipboard.writeText(text).then(() => toast.success(label));
@@ -46,6 +38,8 @@ function copyText(text: string, label = "Copied") {
 function WalletPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { data: quickAmountsData = [] } = useReferenceData("wallet_quick_amount");
+  const banks = useRefValues("nigerian_bank");
   const [modal, setModal] = useState<Modal>("none");
   const [ledgerTab, setLedgerTab] = useState<LedgerTab>("transactions");
 
@@ -389,20 +383,23 @@ function WalletPage() {
                 <div>
                   <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Quick select</p>
                   <div className="grid grid-cols-3 gap-2">
-                    {QUICK_AMOUNTS.map((amt) => (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => setDepositAmount(amt.toLocaleString())}
-                        className={`rounded-xl border py-2.5 text-sm font-bold transition ${
-                          depositAmount === amt.toLocaleString()
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30"
-                        }`}
-                      >
-                        {fmtShort(amt)}
-                      </button>
-                    ))}
+                    {quickAmountsData.map((r) => {
+                      const amt = parseInt(r.value, 10);
+                      return (
+                        <button
+                          key={r.value}
+                          type="button"
+                          onClick={() => setDepositAmount(amt.toLocaleString())}
+                          className={`rounded-xl border py-2.5 text-sm font-bold transition ${
+                            depositAmount === amt.toLocaleString()
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30"
+                          }`}
+                        >
+                          {fmtShort(amt)}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -525,7 +522,7 @@ function WalletPage() {
                       className="w-full appearance-none rounded-2xl border border-border bg-card pl-12 pr-4 py-3.5 text-sm outline-none focus:border-primary"
                     >
                       <option value="">Select bank…</option>
-                      {NIGERIAN_BANKS.map((b) => (
+                      {banks.map((b) => (
                         <option key={b} value={b}>{b}</option>
                       ))}
                     </select>

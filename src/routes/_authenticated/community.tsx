@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useReferenceData, useRefValues } from "@/hooks/use-reference-data";
 import { AppLayout } from "@/components/app-layout";
 import { toast } from "sonner";
 import {
@@ -39,26 +40,6 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: "circles", label: "Circles", icon: Users },
 ];
 
-const CATEGORIES = [
-  "discussion", "startup", "agriculture", "technology", "healthcare",
-  "fintech", "real estate", "energy", "hospitality", "manufacturing",
-  "retail", "education",
-];
-
-const CIRCLES = [
-  { name: "Agriculture", emoji: "🌾", cat: "agriculture" },
-  { name: "Technology", emoji: "💻", cat: "technology" },
-  { name: "Healthcare", emoji: "🏥", cat: "healthcare" },
-  { name: "Fintech", emoji: "💳", cat: "fintech" },
-  { name: "Real Estate", emoji: "🏘️", cat: "real estate" },
-  { name: "Energy", emoji: "⚡", cat: "energy" },
-  { name: "Hospitality", emoji: "🏨", cat: "hospitality" },
-  { name: "Manufacturing", emoji: "🏭", cat: "manufacturing" },
-  { name: "Retail", emoji: "🛍️", cat: "retail" },
-  { name: "Education", emoji: "📚", cat: "education" },
-  { name: "Startup", emoji: "🚀", cat: "startup" },
-  { name: "Logistics", emoji: "🚚", cat: "logistics" },
-];
 
 type PostData = {
   id: string;
@@ -340,6 +321,7 @@ function XCompose({
   const [content, setContent] = useState("");
   const [category, setCategory] = useState(defaultCategory);
   const [busy, setBusy] = useState(false);
+  const categories = useRefValues("community_category");
   const limit = 500;
   const initial = (profile?.full_name ?? user?.email ?? "U").charAt(0).toUpperCase();
 
@@ -378,7 +360,7 @@ function XCompose({
                 onChange={(e) => setCategory(e.target.value)}
                 className="rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary outline-none"
               >
-                {CATEGORIES.map((c) => (
+                {categories.map((c) => (
                   <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                 ))}
               </select>
@@ -1021,6 +1003,7 @@ function CirclesTab({
 }) {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
+  const { data: circlesData = [] } = useReferenceData("community_circle");
   const userId = user?.id ?? "";
   const userInitial = (profile?.full_name ?? user?.email ?? "U").charAt(0).toUpperCase();
   const qk = ["community", "circles", circleFilter];
@@ -1039,14 +1022,14 @@ function CirclesTab({
           Choose an industry circle to connect with founders, investors, and operators.
         </p>
         <div className="grid grid-cols-2 gap-3">
-          {CIRCLES.map((c) => (
+          {circlesData.map((c) => (
             <button
-              key={c.name}
-              onClick={() => setCircleFilter(c.name)}
+              key={c.value}
+              onClick={() => setCircleFilter(c.label)}
               className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 text-left transition-all hover:border-primary/40 hover:bg-secondary/40"
             >
-              <span className="text-2xl">{c.emoji}</span>
-              <span className="text-sm font-semibold">{c.name}</span>
+              <span className="text-2xl">{c.metadata?.emoji}</span>
+              <span className="text-sm font-semibold">{c.label}</span>
             </button>
           ))}
         </div>
@@ -1054,7 +1037,7 @@ function CirclesTab({
     );
   }
 
-  const circle = CIRCLES.find((c) => c.name === circleFilter);
+  const circle = circlesData.find((c) => c.label === circleFilter);
 
   return (
     <div>
@@ -1066,10 +1049,10 @@ function CirclesTab({
           <Users className="h-3.5 w-3.5" /> Circles
         </button>
         <span className="text-muted-foreground">/</span>
-        <span className="text-sm font-bold">{circle?.emoji} {circleFilter}</span>
+        <span className="text-sm font-bold">{circle?.metadata?.emoji} {circleFilter}</span>
       </div>
       <XCompose
-        defaultCategory={circle?.cat ?? circleFilter.toLowerCase()}
+        defaultCategory={circle?.metadata?.cat ?? circleFilter.toLowerCase()}
         placeholder={`Post about ${circleFilter}…`}
         onPosted={() => qc.invalidateQueries({ queryKey: qk })}
       />
