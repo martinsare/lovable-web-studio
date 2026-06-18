@@ -95,6 +95,20 @@ function UserProfilePage() {
     },
   });
 
+  // Investment count — graceful 0 if table doesn't exist yet
+  const { data: investmentCount = 0 } = useQuery({
+    enabled: !!profile?.id,
+    queryKey: ["user-investment-count", profile?.id],
+    queryFn: async () => {
+      const { count } = await db
+        .from("investment_commitments")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", profile!.id)
+        .in("status", ["funded", "in_escrow", "released"]);
+      return (count as number | null) ?? 0;
+    },
+  });
+
   const followMutation = useMutation({
     mutationFn: async (shouldFollow: boolean) => {
       if (shouldFollow) {
@@ -249,7 +263,7 @@ function UserProfilePage() {
           {[
             { label: "Followers", value: profile.followers_count ?? 0, tab: "followers" as ProfileTab },
             { label: "Following", value: profile.following_count ?? 0, tab: "following" as ProfileTab },
-            { label: "Investments", value: "—", tab: null },
+            { label: "Investments", value: investmentCount, tab: null as ProfileTab | null },
           ].map(({ label, value, tab: t }) => (
             <button
               key={label}
@@ -439,34 +453,28 @@ function FollowersList({
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["user-follows-list", profileId, type],
     queryFn: async () => {
-      let profiles: any[] = [];
+      // Step 1: fetch the user IDs from the junction table
+      // (user_follows FKs point to auth.users, not profiles, so we cannot embed profiles directly)
+      const idCol = type === "followers" ? "follower_id" : "following_id";
+      const filterCol = type === "followers" ? "following_id" : "follower_id";
 
-      if (type === "followers") {
-        const { data } = await db
-          .from("user_follows")
-          .select(
-            "follower_id, profiles!user_follows_follower_id_fkey(id,full_name,username,avatar_url,bio,followers_count)",
-          )
-          .eq("following_id", profileId)
-          .order("created_at", { ascending: false })
-          .limit(50);
-        profiles = (data ?? []).map((r: any) => r.profiles).filter(Boolean);
-      } else {
-        const { data } = await db
-          .from("user_follows")
-          .select(
-            "following_id, profiles!user_follows_following_id_fkey(id,full_name,username,avatar_url,bio,followers_count)",
-          )
-          .eq("follower_id", profileId)
-          .order("created_at", { ascending: false })
-          .limit(50);
-        profiles = (data ?? []).map((r: any) => r.profiles).filter(Boolean);
-      }
+      const { data: followRows } = await db
+        .from("user_follows")
+        .select(idCol)
+        .eq(filterCol, profileId)
+        .order("created_at", { ascending: false })
+        .limit(50);
 
-      if (!profiles.length) return [];
+      const ids: string[] = (followRows ?? []).map((r: any) => r[idCol]).filter(Boolean);
+      if (!ids.length) return [];
 
-      // Batch-fetch roles for all users
-      const ids = profiles.map((p: any) => p.id);
+      // Step 2: fetch profile data for those IDs
+      const { data: profileRows } = await db
+        .from("profiles")
+        .select("id,full_name,username,avatar_url,bio,followers_count")
+        .in("id", ids);
+
+      // Step 3: batch-fetch roles
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("user_id,role")
@@ -479,7 +487,12 @@ function FollowersList({
         rolesMap.set(r.user_id, list);
       }
 
-      return profiles.map((p: any) => ({ ...p, roles: rolesMap.get(p.id) ?? [] }));
+      // Preserve follow order
+      const profileMap = new Map((profileRows ?? []).map((p: any) => [p.id, p]));
+      return ids
+        .map((id) => profileMap.get(id))
+        .filter(Boolean)
+        .map((p: any) => ({ ...p, roles: rolesMap.get(p.id) ?? [] }));
     },
   });
 
