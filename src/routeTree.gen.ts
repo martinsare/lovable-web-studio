@@ -32,9 +32,11 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedCommunityRouteImport } from './routes/_authenticated/community'
 import { Route as AuthenticatedBrowseRouteImport } from './routes/_authenticated/browse'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated/messages/index'
 import { Route as AuthenticatedLearnIndexRouteImport } from './routes/_authenticated/learn/index'
 import { Route as AuthenticatedUsersUsernameRouteImport } from './routes/_authenticated/users/$username'
 import { Route as AuthenticatedOfferingsOpportunityIdRouteImport } from './routes/_authenticated/offerings/$opportunityId'
+import { Route as AuthenticatedMessagesConversationIdRouteImport } from './routes/_authenticated/messages/$conversationId'
 import { Route as AuthenticatedLearnSlugRouteImport } from './routes/_authenticated/learn/$slug'
 import { Route as AuthenticatedInvestOpportunityIdRouteImport } from './routes/_authenticated/invest/$opportunityId'
 import { Route as AuthenticatedBusinessSlugRouteImport } from './routes/_authenticated/business/$slug'
@@ -155,6 +157,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMessagesIndexRoute =
+  AuthenticatedMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLearnIndexRoute = AuthenticatedLearnIndexRouteImport.update({
   id: '/learn/',
   path: '/learn/',
@@ -170,6 +178,12 @@ const AuthenticatedOfferingsOpportunityIdRoute =
   AuthenticatedOfferingsOpportunityIdRouteImport.update({
     id: '/offerings/$opportunityId',
     path: '/offerings/$opportunityId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMessagesConversationIdRoute =
+  AuthenticatedMessagesConversationIdRouteImport.update({
+    id: '/messages/$conversationId',
+    path: '/messages/$conversationId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLearnSlugRoute = AuthenticatedLearnSlugRouteImport.update({
@@ -216,9 +230,11 @@ export interface FileRoutesByFullPath {
   '/business/$slug': typeof AuthenticatedBusinessSlugRoute
   '/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
   '/learn/$slug': typeof AuthenticatedLearnSlugRoute
+  '/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
   '/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
   '/users/$username': typeof AuthenticatedUsersUsernameRoute
   '/learn/': typeof AuthenticatedLearnIndexRoute
+  '/messages/': typeof AuthenticatedMessagesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -246,9 +262,11 @@ export interface FileRoutesByTo {
   '/business/$slug': typeof AuthenticatedBusinessSlugRoute
   '/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
   '/learn/$slug': typeof AuthenticatedLearnSlugRoute
+  '/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
   '/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
   '/users/$username': typeof AuthenticatedUsersUsernameRoute
   '/learn': typeof AuthenticatedLearnIndexRoute
+  '/messages': typeof AuthenticatedMessagesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -278,9 +296,11 @@ export interface FileRoutesById {
   '/_authenticated/business/$slug': typeof AuthenticatedBusinessSlugRoute
   '/_authenticated/invest/$opportunityId': typeof AuthenticatedInvestOpportunityIdRoute
   '/_authenticated/learn/$slug': typeof AuthenticatedLearnSlugRoute
+  '/_authenticated/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
   '/_authenticated/offerings/$opportunityId': typeof AuthenticatedOfferingsOpportunityIdRoute
   '/_authenticated/users/$username': typeof AuthenticatedUsersUsernameRoute
   '/_authenticated/learn/': typeof AuthenticatedLearnIndexRoute
+  '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -310,9 +330,11 @@ export interface FileRouteTypes {
     | '/business/$slug'
     | '/invest/$opportunityId'
     | '/learn/$slug'
+    | '/messages/$conversationId'
     | '/offerings/$opportunityId'
     | '/users/$username'
     | '/learn/'
+    | '/messages/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -340,9 +362,11 @@ export interface FileRouteTypes {
     | '/business/$slug'
     | '/invest/$opportunityId'
     | '/learn/$slug'
+    | '/messages/$conversationId'
     | '/offerings/$opportunityId'
     | '/users/$username'
     | '/learn'
+    | '/messages'
   id:
     | '__root__'
     | '/'
@@ -371,9 +395,11 @@ export interface FileRouteTypes {
     | '/_authenticated/business/$slug'
     | '/_authenticated/invest/$opportunityId'
     | '/_authenticated/learn/$slug'
+    | '/_authenticated/messages/$conversationId'
     | '/_authenticated/offerings/$opportunityId'
     | '/_authenticated/users/$username'
     | '/_authenticated/learn/'
+    | '/_authenticated/messages/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -553,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/messages/': {
+      id: '/_authenticated/messages/'
+      path: '/messages'
+      fullPath: '/messages/'
+      preLoaderRoute: typeof AuthenticatedMessagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/learn/': {
       id: '/_authenticated/learn/'
       path: '/learn'
@@ -572,6 +605,13 @@ declare module '@tanstack/react-router' {
       path: '/offerings/$opportunityId'
       fullPath: '/offerings/$opportunityId'
       preLoaderRoute: typeof AuthenticatedOfferingsOpportunityIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages/$conversationId': {
+      id: '/_authenticated/messages/$conversationId'
+      path: '/messages/$conversationId'
+      fullPath: '/messages/$conversationId'
+      preLoaderRoute: typeof AuthenticatedMessagesConversationIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/learn/$slug': {
@@ -614,9 +654,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBusinessSlugRoute: typeof AuthenticatedBusinessSlugRoute
   AuthenticatedInvestOpportunityIdRoute: typeof AuthenticatedInvestOpportunityIdRoute
   AuthenticatedLearnSlugRoute: typeof AuthenticatedLearnSlugRoute
+  AuthenticatedMessagesConversationIdRoute: typeof AuthenticatedMessagesConversationIdRoute
   AuthenticatedOfferingsOpportunityIdRoute: typeof AuthenticatedOfferingsOpportunityIdRoute
   AuthenticatedUsersUsernameRoute: typeof AuthenticatedUsersUsernameRoute
   AuthenticatedLearnIndexRoute: typeof AuthenticatedLearnIndexRoute
+  AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -635,10 +677,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBusinessSlugRoute: AuthenticatedBusinessSlugRoute,
   AuthenticatedInvestOpportunityIdRoute: AuthenticatedInvestOpportunityIdRoute,
   AuthenticatedLearnSlugRoute: AuthenticatedLearnSlugRoute,
+  AuthenticatedMessagesConversationIdRoute:
+    AuthenticatedMessagesConversationIdRoute,
   AuthenticatedOfferingsOpportunityIdRoute:
     AuthenticatedOfferingsOpportunityIdRoute,
   AuthenticatedUsersUsernameRoute: AuthenticatedUsersUsernameRoute,
   AuthenticatedLearnIndexRoute: AuthenticatedLearnIndexRoute,
+  AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

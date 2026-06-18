@@ -24,6 +24,7 @@ import {
   BarChart3,
   Star,
   Home,
+  Mail,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -39,6 +40,7 @@ function buildNav(roles: AppRole[], unreadCount: number): NavItem[] {
     { to: "/home", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/browse", icon: Search, label: "Browse" },
     { to: "/community", icon: MessageCircle, label: "Community" },
+    { to: "/messages", icon: Mail, label: "Messages" },
   ];
   if (roles.includes("investor")) {
     items.push({ to: "/portfolio", icon: BarChart3, label: "Portfolio" });
@@ -62,7 +64,7 @@ const MOBILE_NAV = [
   { to: "/home", icon: Home, label: "Home" },
   { to: "/browse", icon: Search, label: "Browse" },
   { to: "/community", icon: MessageCircle, label: "Community" },
-  { to: "/portfolio", icon: BarChart3, label: "Portfolio" },
+  { to: "/messages", icon: Mail, label: "Messages" },
   { to: "/settings", icon: Settings, label: "More" },
 ] as const;
 

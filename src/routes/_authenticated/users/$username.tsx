@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,8 +14,11 @@ import {
   Globe,
   Link2,
   BadgeCheck,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const db = supabase as any;
 
 export const Route = createFileRoute("/_authenticated/users/$username")({
   head: () => ({ meta: [{ title: "User Profile · CoFund" }] }),
@@ -23,8 +26,6 @@ export const Route = createFileRoute("/_authenticated/users/$username")({
 });
 
 type ProfileTab = "overview" | "followers" | "following";
-
-const db = supabase as any;
 
 function UserProfilePage() {
   const { username } = Route.useParams();
@@ -275,7 +276,7 @@ function UserProfilePage() {
           </div>
 
           {/* CTA */}
-          <div className="sm:self-end sm:pb-1">
+          <div className="sm:self-end sm:pb-1 flex items-center gap-2">
             {isOwnProfile ? (
               <Link
                 to="/profile"
@@ -284,21 +285,24 @@ function UserProfilePage() {
                 Edit profile
               </Link>
             ) : (
-              <button
-                onClick={() => followMutation.mutate(!isFollowing)}
-                disabled={followMutation.isPending}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${
-                  isFollowing
-                    ? "border-brand-green bg-brand-green/10 text-brand-green"
-                    : "gradient-brand border-transparent text-primary-foreground shadow-brand hover:opacity-90"
-                }`}
-              >
-                {isFollowing ? (
-                  <><UserCheck className="h-4 w-4" /> Following</>
-                ) : (
-                  <><UserPlus className="h-4 w-4" /> Follow</>
-                )}
-              </button>
+              <>
+                <MessageButton userId={user?.id ?? ""} otherUserId={profile.id} />
+                <button
+                  onClick={() => followMutation.mutate(!isFollowing)}
+                  disabled={followMutation.isPending}
+                  className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${
+                    isFollowing
+                      ? "border-brand-green bg-brand-green/10 text-brand-green"
+                      : "gradient-brand border-transparent text-primary-foreground shadow-brand hover:opacity-90"
+                  }`}
+                >
+                  {isFollowing ? (
+                    <><UserCheck className="h-4 w-4" /> Following</>
+                  ) : (
+                    <><UserPlus className="h-4 w-4" /> Follow</>
+                  )}
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -650,6 +654,55 @@ function UserRow({
         </button>
       )}
     </div>
+  );
+}
+
+function MessageButton({ userId, otherUserId }: { userId: string; otherUserId: string }) {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  async function handleMessage() {
+    if (!userId || !otherUserId) return;
+    setLoading(true);
+    try {
+      const a = userId < otherUserId ? userId : otherUserId;
+      const b = userId < otherUserId ? otherUserId : userId;
+      const { data: existing } = await db
+        .from("conversations")
+        .select("id")
+        .eq("participant_a", a)
+        .eq("participant_b", b)
+        .maybeSingle();
+
+      let conversationId: string;
+      if (existing) {
+        conversationId = existing.id;
+      } else {
+        const { data: created, error } = await db
+          .from("conversations")
+          .insert({ participant_a: a, participant_b: b })
+          .select("id")
+          .single();
+        if (error) throw error;
+        conversationId = created.id;
+      }
+      navigate({ to: "/messages/$conversationId", params: { conversationId } });
+    } catch {
+      toast.error("Could not open conversation");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleMessage}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold transition hover:bg-secondary disabled:opacity-60"
+    >
+      <MessageCircle className="h-4 w-4" />
+      Message
+    </button>
   );
 }
 
