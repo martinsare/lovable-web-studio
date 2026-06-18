@@ -1,5 +1,5 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,9 +29,23 @@ function AuthPage() {
   const [resetBusy, setResetBusy] = useState(false);
   const passwordChecks = getPasswordChecks(password);
   const passwordStrong = passwordChecks.every((item) => item.valid);
+  const redirectTarget = !loading && user ? (profile?.onboarded ? "/home" : "/onboarding") : null;
 
-  if (!loading && user) {
-    throw redirect({ to: profile?.onboarded ? "/home" : "/onboarding" });
+  useEffect(() => {
+    if (redirectTarget) {
+      navigate({ to: redirectTarget, replace: true });
+    }
+  }, [navigate, redirectTarget]);
+
+  if (redirectTarget) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-sm text-center">
+          <h1 className="font-display text-2xl font-bold">Redirecting</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Taking you to your CoFund dashboard.</p>
+        </div>
+      </div>
+    );
   }
 
   async function onSubmit(e: React.FormEvent) {
