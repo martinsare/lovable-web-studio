@@ -522,7 +522,7 @@ function WalletPage() {
                     <select
                       value={withdrawBank}
                       onChange={(e) => setWithdrawBank(e.target.value)}
-                      className="w-full appearance-none rounded-2xl border border-border bg-card pl-11 pr-4 py-3.5 text-sm outline-none focus:border-primary"
+                      className="w-full appearance-none rounded-2xl border border-border bg-card pl-12 pr-4 py-3.5 text-sm outline-none focus:border-primary"
                     >
                       <option value="">Select bank…</option>
                       {NIGERIAN_BANKS.map((b) => (

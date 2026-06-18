@@ -113,7 +113,7 @@ function BrowsePage() {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder={`Search ${tab}…`}
-                  className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary/60 placeholder:text-muted-foreground/50"
+                  className="w-full rounded-xl border border-border bg-card pl-11 pr-4 py-2.5 text-sm outline-none focus:border-primary/60 placeholder:text-muted-foreground/50"
                 />
                 {q && (
                   <button
