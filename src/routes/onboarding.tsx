@@ -139,6 +139,131 @@ type OBData = {
 
 type OnboardingTrack = "investor" | "founder" | "community";
 
+type PersistedOnboardingDraft = Pick<
+  OBData,
+  | "fullName"
+  | "phone"
+  | "country"
+  | "city"
+  | "bio"
+  | "occupation"
+  | "linkedinUrl"
+  | "websiteUrl"
+  | "investorType"
+  | "investorExperience"
+  | "investorCapitalRange"
+  | "investorMinTicket"
+  | "investorMaxTicket"
+  | "investorAccredited"
+  | "businessName"
+  | "businessIndustry"
+  | "businessCountry"
+  | "businessStage"
+  | "businessRevenueRange"
+  | "businessTeamSize"
+  | "businessCapitalNeeded"
+  | "startupName"
+  | "startupIndustry"
+  | "startupStage"
+  | "startupCofounderStatus"
+  | "mentorExperience"
+  | "mentorIndustry"
+  | "mentorAvailability"
+  | "mentorHours"
+  | "professionalService"
+  | "professionalExperience"
+  | "professionalOpenToStartups"
+  | "professionalEngagement"
+  | "communityReferral"
+  | "dateOfBirth"
+  | "nationality"
+  | "residentialAddress"
+  | "kycIdType"
+  | "kycIdNumber"
+  | "nin"
+  | "bvn"
+  | "pepConsent"
+  | "sanctionsConsent"
+  | "investorAccreditationStatus"
+  | "investorAccreditationBasis"
+  | "investorAnnualIncomeRange"
+  | "investorNetWorthRange"
+  | "businessRegistrationNumber"
+  | "businessTaxId"
+  | "businessAddress"
+  | "representativeName"
+  | "representativeRole"
+  | "representativeEmail"
+  | "directorsCount"
+  | "beneficialOwnersCount"
+  | "agreedAge"
+  | "agreedTerms"
+  | "agreedRisk"
+>;
+
+function buildOnboardingDraft(data: OBData): Partial<PersistedOnboardingDraft> {
+  return {
+    fullName: data.fullName,
+    phone: data.phone,
+    country: data.country,
+    city: data.city,
+    bio: data.bio,
+    occupation: data.occupation,
+    linkedinUrl: data.linkedinUrl,
+    websiteUrl: data.websiteUrl,
+    investorType: data.investorType,
+    investorExperience: data.investorExperience,
+    investorCapitalRange: data.investorCapitalRange,
+    investorMinTicket: data.investorMinTicket,
+    investorMaxTicket: data.investorMaxTicket,
+    investorAccredited: data.investorAccredited,
+    businessName: data.businessName,
+    businessIndustry: data.businessIndustry,
+    businessCountry: data.businessCountry,
+    businessStage: data.businessStage,
+    businessRevenueRange: data.businessRevenueRange,
+    businessTeamSize: data.businessTeamSize,
+    businessCapitalNeeded: data.businessCapitalNeeded,
+    startupName: data.startupName,
+    startupIndustry: data.startupIndustry,
+    startupStage: data.startupStage,
+    startupCofounderStatus: data.startupCofounderStatus,
+    mentorExperience: data.mentorExperience,
+    mentorIndustry: data.mentorIndustry,
+    mentorAvailability: data.mentorAvailability,
+    mentorHours: data.mentorHours,
+    professionalService: data.professionalService,
+    professionalExperience: data.professionalExperience,
+    professionalOpenToStartups: data.professionalOpenToStartups,
+    professionalEngagement: data.professionalEngagement,
+    communityReferral: data.communityReferral,
+    dateOfBirth: data.dateOfBirth,
+    nationality: data.nationality,
+    residentialAddress: data.residentialAddress,
+    kycIdType: data.kycIdType,
+    kycIdNumber: data.kycIdNumber,
+    nin: data.nin,
+    bvn: data.bvn,
+    pepConsent: data.pepConsent,
+    sanctionsConsent: data.sanctionsConsent,
+    investorAccreditationStatus: data.investorAccreditationStatus,
+    investorAccreditationBasis: data.investorAccreditationBasis,
+    investorAnnualIncomeRange: data.investorAnnualIncomeRange,
+    investorNetWorthRange: data.investorNetWorthRange,
+    businessRegistrationNumber: data.businessRegistrationNumber,
+    businessTaxId: data.businessTaxId,
+    businessAddress: data.businessAddress,
+    representativeName: data.representativeName,
+    representativeRole: data.representativeRole,
+    representativeEmail: data.representativeEmail,
+    directorsCount: data.directorsCount,
+    beneficialOwnersCount: data.beneficialOwnersCount,
+    agreedAge: data.agreedAge,
+    agreedTerms: data.agreedTerms,
+    agreedRisk: data.agreedRisk,
+  };
+}
+
 const INITIAL: OBData = {
   intent: [], fullName: "", phone: "", country: "", city: "", bio: "", occupation: "", linkedinUrl: "", websiteUrl: "", roles: [],
   investorType: "", investorExperience: "", investorCapitalRange: "", investorMinTicket: "", investorMaxTicket: "", investorSectors: [], investorAccredited: "",
@@ -191,9 +316,8 @@ function Onboarding() {
     try {
       const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as { step?: 1 | 2 | 3 | 4; data?: Partial<OBData> };
+      const parsed = JSON.parse(raw) as { data?: Partial<PersistedOnboardingDraft> };
       if (parsed?.data) setData((current) => ({ ...current, ...parsed.data }));
-      if (parsed?.step && [1, 2, 3, 4].includes(parsed.step)) setStep(parsed.step);
     } catch {
       window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
     }
@@ -208,11 +332,11 @@ function Onboarding() {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ step, data }));
+      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ data: buildOnboardingDraft(data) }));
     } catch {
       // Ignore storage write failures and keep the form working.
     }
-  }, [data, step]);
+  }, [data]);
 
   if (!loading && !user) throw redirect({ to: "/auth", search: { mode: "signin" } });
   if (!loading && profile?.onboarded) throw redirect({ to: "/home" });
@@ -560,7 +684,7 @@ function StepRoles({ data, track, toggleRole, set, toggleChip }: { data: OBData;
                 <SelectField label="Annual revenue" value={data.businessRevenueRange} onChange={(value) => set("businessRevenueRange", value)} options={REVENUE_RANGES} />
                 <SelectField label="Team size" value={data.businessTeamSize} onChange={(value) => set("businessTeamSize", value)} options={TEAM_SIZES} />
               </div>
-              <SelectField label="Capital you're seeking" value={data.businessCapitalNeeded} onChange={(value) => set("businessCapitalNeeded", value)} options={BUSINESS_CAPITAL} />
+              <SelectField label="Capital you're seeking (optional)" value={data.businessCapitalNeeded} onChange={(value) => set("businessCapitalNeeded", value)} options={BUSINESS_CAPITAL} />
               <ChipField label="What are you looking for?" options={SEEKING_OPTIONS} selected={data.businessSeeking} toggle={(value) => toggleChip("businessSeeking", value)} />
             </div>
           </Panel>
