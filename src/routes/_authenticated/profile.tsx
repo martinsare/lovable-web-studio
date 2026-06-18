@@ -13,6 +13,8 @@ import {
   FileText,
   Upload,
   ChevronRight,
+  UserCheck,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/app-layout";
@@ -34,8 +36,10 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
 
-const TABS = ["Overview", "Mentor program", "Verification"] as const;
+const TABS = ["Overview", "Followers", "Following", "Mentor program", "Verification"] as const;
 type Tab = (typeof TABS)[number];
+
+const db = supabase as any;
 
 function ProfilePage() {
   const { profile, roles, user } = useAuth();
@@ -109,6 +113,30 @@ function ProfilePage() {
       user?.last_sign_in_at,
     ],
   );
+
+  const { data: followerCount = 0 } = useQuery({
+    enabled: !!user?.id,
+    queryKey: ["follower-count", user?.id],
+    queryFn: async () => {
+      const { count } = await db
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("following_id", user!.id);
+      return (count as number | null) ?? 0;
+    },
+  });
+
+  const { data: followingCount = 0 } = useQuery({
+    enabled: !!user?.id,
+    queryKey: ["following-count", user?.id],
+    queryFn: async () => {
+      const { count } = await db
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("follower_id", user!.id);
+      return (count as number | null) ?? 0;
+    },
+  });
 
   const [focus, setFocus] = useState("");
   const [experienceSummary, setExperienceSummary] = useState("");
@@ -236,21 +264,27 @@ function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-8 flex gap-0 border-b border-border/60">
-              {TABS.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${
-                    activeTab === tab
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div className="mt-8 flex gap-0 border-b border-border/60 overflow-x-auto scrollbar-hide">
+              {TABS.map((tab) => {
+                const label =
+                  tab === "Followers" ? `Followers · ${followerCount}` :
+                  tab === "Following" ? `Following · ${followingCount}` :
+                  tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`shrink-0 px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                      activeTab === tab
+                        ? "border-primary text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -258,6 +292,12 @@ function ProfilePage() {
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           {activeTab === "Overview" && (
             <OverviewTab roles={roles} investmentCount={completedCommitments.length} totalInvested={totalInvestedAmount} />
+          )}
+          {activeTab === "Followers" && (
+            <FollowersListTab userId={user?.id ?? ""} type="followers" />
+          )}
+          {activeTab === "Following" && (
+            <FollowersListTab userId={user?.id ?? ""} type="following" />
           )}
           {activeTab === "Mentor program" && (
             <MentorTab
@@ -703,6 +743,133 @@ function VerificationTab({
           </div>
         </section>
       </aside>
+    </div>
+  );
+}
+
+function FollowersListTab({ userId, type }: { userId: string; type: "followers" | "following" }) {
+  const { data: users = [], isLoading } = useQuery({
+    enabled: !!userId,
+    queryKey: ["user-follows-list", userId, type],
+    queryFn: async () => {
+      const idCol = type === "followers" ? "follower_id" : "following_id";
+      const filterCol = type === "followers" ? "following_id" : "follower_id";
+      const { data: followRows } = await db
+        .from("user_follows")
+        .select(idCol)
+        .eq(filterCol, userId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const ids: string[] = (followRows ?? []).map((r: any) => r[idCol]).filter(Boolean);
+      if (!ids.length) return [];
+      const { data: profileRows } = await db
+        .from("profiles")
+        .select("id,full_name,username,avatar_url,bio")
+        .in("id", ids);
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("user_id,role")
+        .in("user_id", ids);
+      const rolesMap = new Map<string, string[]>();
+      for (const r of rolesData ?? []) {
+        const list = rolesMap.get(r.user_id) ?? [];
+        list.push(r.role);
+        rolesMap.set(r.user_id, list);
+      }
+      const profileMap = new Map((profileRows ?? []).map((p: any) => [p.id, p]));
+      return ids
+        .map((id) => profileMap.get(id))
+        .filter(Boolean)
+        .map((p: any) => ({ ...p, roles: rolesMap.get(p.id) ?? [] }));
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="divide-y divide-border/60 max-w-2xl">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-5 first:pt-0">
+            <div className="h-11 w-11 animate-pulse rounded-full bg-secondary" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-36 animate-pulse rounded bg-secondary" />
+              <div className="h-2.5 w-52 animate-pulse rounded bg-secondary" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (users.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground/40">
+          <Users className="h-6 w-6" />
+        </div>
+        <p className="font-display text-base font-semibold">
+          {type === "followers" ? "No followers yet" : "Not following anyone yet"}
+        </p>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {type === "followers"
+            ? "When people follow you, they'll appear here."
+            : "Users you follow will appear here."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="divide-y divide-border/60 max-w-2xl">
+      {users.map((u: any) => {
+        const displayName = u.full_name ?? u.username ?? "Member";
+        const initial = displayName.charAt(0).toUpperCase();
+        return (
+          <div key={u.id} className="flex items-center gap-4 py-4 first:pt-0">
+            {u.username ? (
+              <Link to="/users/$username" params={{ username: u.username }} className="shrink-0">
+                {u.avatar_url ? (
+                  <img src={u.avatar_url} alt="" className="h-11 w-11 rounded-full object-cover hover:opacity-80 transition" />
+                ) : (
+                  <div className="gradient-brand flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-primary-foreground hover:opacity-80 transition">
+                    {initial}
+                  </div>
+                )}
+              </Link>
+            ) : (
+              <div className="gradient-brand flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground">
+                {initial}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {u.username ? (
+                  <Link to="/users/$username" params={{ username: u.username }} className="font-semibold hover:text-primary transition-colors">
+                    {displayName}
+                  </Link>
+                ) : (
+                  <p className="font-semibold">{displayName}</p>
+                )}
+                {(u.roles as string[]).slice(0, 2).map((r: string) => (
+                  <span key={r} className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                    {r.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+              {u.username && <p className="text-xs text-muted-foreground">@{u.username}</p>}
+              {u.bio && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{u.bio}</p>}
+            </div>
+            {u.username && (
+              <Link
+                to="/users/$username"
+                params={{ username: u.username }}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary transition"
+              >
+                View profile
+              </Link>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
